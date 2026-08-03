@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}
+
+/* Modern sleek scrollbar applied globally across all light popups, overlays, and tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* Sidebar Dark Scrollbar Override (Must be at bottom to override global * styles) */
+.sidebar-scrollbar,
+.sidebar-scrollbar * {
+  scrollbar-width: thin !important;
+  scrollbar-color: #1e294d #0b1021 !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: #0b1021 !important;
+  border-radius: 6px !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e294d !important;
+  border-radius: 6px !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #2e3b66 !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
