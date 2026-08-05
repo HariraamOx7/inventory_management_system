@@ -232,6 +232,13 @@ export default function BillEntry() {
     });
   }, [formData.Total, formData.Discount, formData.GST, formData.IGST, formData.VAT_CST, formData.P_F, formData.LorryFreight]);
 
+  // Unique parties from existing bill entries (for filter dropdown)
+  const uniqueBillParties = useMemo(() => {
+    const setP = new Set();
+    billEntries.forEach(b => { if (b.PartyName) setP.add(b.PartyName); });
+    return Array.from(setP).sort();
+  }, [billEntries]);
+
   // Filtered & Sorted Bill Entries
   const filteredAndSortedBills = useMemo(() => {
     return billEntries
@@ -486,6 +493,10 @@ export default function BillEntry() {
     // GST entries (SGST and CGST)
     const gstAmount = parseFloat(bill.GST) || 0;
     const itemsTotal = parseFloat(bill.Total) || 0;
+    const discountAmt = parseFloat(bill.Discount) || 0;
+    const pfAmt = parseFloat(bill.P_F) || 0;
+    const lorryAmt = parseFloat(bill.LorryFreight) || 0;
+    const baseForGst = itemsTotal - discountAmt + pfAmt + lorryAmt;
 
     if (gstAmount > 0) {
       const sgstAmt = bill.SGSTAmount || parseFloat((gstAmount / 2).toFixed(2));
@@ -493,11 +504,11 @@ export default function BillEntry() {
       let sgstPct = parseFloat(bill.SGSTPct) || 0;
       let cgstPct = parseFloat(bill.CGSTPct) || 0;
 
-      if (!sgstPct && itemsTotal > 0) {
-        sgstPct = parseFloat(((sgstAmt / itemsTotal) * 100).toFixed(2));
+      if (!sgstPct && baseForGst > 0) {
+        sgstPct = parseFloat(((sgstAmt / baseForGst) * 100).toFixed(2));
       }
-      if (!cgstPct && itemsTotal > 0) {
-        cgstPct = parseFloat(((cgstAmt / itemsTotal) * 100).toFixed(2));
+      if (!cgstPct && baseForGst > 0) {
+        cgstPct = parseFloat(((cgstAmt / baseForGst) * 100).toFixed(2));
       }
 
       const sgstStr = sgstPct > 0 ? ` ${sgstPct}%` : '';
@@ -521,8 +532,8 @@ export default function BillEntry() {
     const igstAmount = parseFloat(bill.IGST) || 0;
     if (igstAmount > 0) {
       let igstPct = parseFloat(bill.IGSTPct) || 0;
-      if (!igstPct && itemsTotal > 0) {
-        igstPct = parseFloat(((igstAmount / itemsTotal) * 100).toFixed(2));
+      if (!igstPct && baseForGst > 0) {
+        igstPct = parseFloat(((igstAmount / baseForGst) * 100).toFixed(2));
       }
       const igstStr = igstPct > 0 ? ` ${igstPct}%` : '';
       const igstLabel = `INPUT IGST${igstStr}`;
@@ -532,9 +543,9 @@ export default function BillEntry() {
       y += 5;
     }
 
-    // Purchase Type line (main purchase amount = Total which is items subtotal)
+
     const purchaseLabel = bill.PurchaseType
-      ? `    PURCHASE OF ${bill.PurchaseType.toUpperCase()}`
+      ? `    ${bill.PurchaseType.toUpperCase()}`
       : '    PURCHASE OF MATERIALS';
     const totalAmount = parseFloat(bill.Total) || 0;
     doc.text(purchaseLabel, col1X, y);
@@ -542,8 +553,7 @@ export default function BillEntry() {
     totalDebit += totalAmount;
     y += 5;
 
-    // Discount (as negative debit or credit)
-    const discountAmt = parseFloat(bill.Discount) || 0;
+
     if (discountAmt > 0) {
       doc.text('    DISCOUNT', col1X, y);
       doc.text(fmt(discountAmt), col3X + 30, y, { align: 'right' });
@@ -561,7 +571,6 @@ export default function BillEntry() {
     }
 
     // P&F
-    const pfAmt = parseFloat(bill.P_F) || 0;
     if (pfAmt > 0) {
       doc.text('    PACKING & FORWARDING', col1X, y);
       doc.text(fmt(pfAmt), col2X + 15, y, { align: 'right' });
@@ -570,7 +579,6 @@ export default function BillEntry() {
     }
 
     // Lorry Freight
-    const lorryAmt = parseFloat(bill.LorryFreight) || 0;
     if (lorryAmt > 0) {
       doc.text('    LORRY FREIGHT', col1X, y);
       doc.text(fmt(lorryAmt), col2X + 15, y, { align: 'right' });
@@ -671,7 +679,7 @@ export default function BillEntry() {
               },
               options: [
                 { value: 'ALL', label: 'All Parties' },
-                ...parties.map(p => ({ value: p.name, label: p.name }))
+                ...uniqueBillParties.map(p => ({ value: p, label: p }))
               ],
               searchable: true
             },

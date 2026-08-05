@@ -660,7 +660,6 @@ export default function Receipt() {
                                 label: `GI-${gi.InwardNo}`,
                                 name: `GI-${gi.InwardNo}`
                               }))}
-                              searchable={true}
                               searchPlaceholder="Search gate inward no..."
                               disabled={!formData.PartyName}
                             />

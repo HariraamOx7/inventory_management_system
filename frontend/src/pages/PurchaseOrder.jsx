@@ -177,20 +177,24 @@ export default function PurchaseOrder() {
     const discountAmt = (totalAmount * discountPct) / 100;
     const amountAfterDiscount = totalAmount - discountAmt;
 
+    const pfAmt = parseFloat(detailData.PF_Amount) || 0;
+    const lorryFreight = parseFloat(detailData.LorryFreight) || 0;
+
+    // Lorry freight and P&F amount are added to total amount before calculating GST
+    const taxableAmount = amountAfterDiscount + pfAmt + lorryFreight;
+
     let sgst = 0, cgst = 0, igst = 0;
     if (detailData.GSTType === 'SGST+CGST') {
       const sgstPct = parseFloat(detailData.SGSTPct) || 0;
       const cgstPct = parseFloat(detailData.CGSTPct) || 0;
-      sgst = (amountAfterDiscount * sgstPct) / 100;
-      cgst = (amountAfterDiscount * cgstPct) / 100;
+      sgst = (taxableAmount * sgstPct) / 100;
+      cgst = (taxableAmount * cgstPct) / 100;
     } else {
       const igstPct = parseFloat(detailData.IGSTPct) || 0;
-      igst = (amountAfterDiscount * igstPct) / 100;
+      igst = (taxableAmount * igstPct) / 100;
     }
 
-    const pfAmt = parseFloat(detailData.PF_Amount) || 0;
-    const lorryFreight = parseFloat(detailData.LorryFreight) || 0;
-    const unroundedGrandTotal = amountAfterDiscount + sgst + cgst + igst + pfAmt + lorryFreight;
+    const unroundedGrandTotal = taxableAmount + sgst + cgst + igst;
     const grandTotal = Math.round(unroundedGrandTotal);
 
     setDetailData(prev => ({
@@ -624,15 +628,15 @@ export default function PurchaseOrder() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="py-4 px-4 w-12 text-center"></th>
-                  <th className="py-4 px-6 whitespace-nowrap">Order No</th>
-                  <th className="py-4 px-6 whitespace-nowrap">Order Date</th>
-                  <th className="py-4 px-6">Party Name</th>
-                  <th className="py-4 px-6 whitespace-nowrap">Ref No</th>
-                  <th className="py-4 px-6 text-center whitespace-nowrap">Status</th>
-                  <th className="py-4 px-6 text-center whitespace-nowrap">Items</th>
-                  <th className="py-4 px-6 text-right whitespace-nowrap">Grand Total (₹)</th>
-                  <th className="py-4 px-6 text-right whitespace-nowrap">Actions</th>
+                  <th className="py-4 px-3 w-12 text-center"></th>
+                  <th className="py-4 px-4 whitespace-nowrap">Order No</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Order Date</th>
+                  <th className="py-4 px-4">Party Name</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Ref No</th>
+                  <th className="py-4 px-4 text-center whitespace-nowrap">Status</th>
+                  <th className="py-4 px-4 text-center whitespace-nowrap">Items</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">Grand Total (₹)</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -644,7 +648,7 @@ export default function PurchaseOrder() {
                   return (
                     <Fragment key={order.OrderNo}>
                       <tr className="hover:bg-slate-50/60 transition-colors group">
-                        <td className="py-4 px-4 text-center">
+                        <td className="py-4 px-3 text-center">
                           <button
                             type="button"
                             onClick={() => setExpandedOrderNo(isExpanded ? null : order.OrderNo)}
@@ -654,20 +658,20 @@ export default function PurchaseOrder() {
                             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
                         </td>
-                        <td className="py-4 px-6 font-bold text-slate-900 whitespace-nowrap">
+                        <td className="py-4 px-4 font-bold text-slate-900 whitespace-nowrap">
                           PO-{String(order.OrderNo).padStart(3, '0')}
                         </td>
-                        <td className="py-4 px-6 text-slate-600 font-medium whitespace-nowrap">
+                        <td className="py-4 px-4 text-slate-600 font-medium whitespace-nowrap">
                           {order.OrderDate ? new Date(order.OrderDate).toLocaleDateString('en-IN') : '-'}
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4">
                           <div className="font-semibold text-slate-800">{order.PartyName}</div>
                           {order.Place && <div className="text-xs text-slate-400">{order.Place}</div>}
                         </td>
-                        <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
+                        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
                           {order.RefNo || '-'}
                         </td>
-                        <td className="py-4 px-6 text-center whitespace-nowrap">
+                        <td className="py-4 px-4 text-center whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${status === 'InwardCreated'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -675,7 +679,7 @@ export default function PurchaseOrder() {
                             {status === 'InwardCreated' ? 'Inward Created' : 'Draft'}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-center font-medium text-slate-600 whitespace-nowrap">
+                        <td className="py-4 px-4 text-center font-medium text-slate-600 whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => setExpandedOrderNo(isExpanded ? null : order.OrderNo)}
@@ -685,10 +689,10 @@ export default function PurchaseOrder() {
                             {detailCount} items
                           </button>
                         </td>
-                        <td className="py-4 px-6 text-right font-bold text-emerald-600 text-base whitespace-nowrap">
+                        <td className="py-4 px-4 text-right font-bold text-emerald-600 text-sm whitespace-nowrap">
                           ₹{formatCurrency(order.GrandTotal)}
                         </td>
-                        <td className="py-4 px-6 text-right whitespace-nowrap">
+                        <td className="py-4 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"

@@ -523,17 +523,22 @@ exports.getPrintData = async (req, res) => {
     const billData = billEntry.toJSON();
 
     const totalAmount = parseFloat(billData.Total) || 0;
+    const discountAmount = parseFloat(billData.Discount) || 0;
+    const pfAmount = parseFloat(billData.P_F) || 0;
+    const lorryFreightAmount = parseFloat(billData.LorryFreight) || 0;
+    const taxableBase = totalAmount - discountAmount + pfAmount + lorryFreightAmount;
+
     const gstAmount = parseFloat(billData.GST) || 0;
     const igstAmount = parseFloat(billData.IGST) || 0;
 
     // Fallback: Calculate percentages from amounts if missing
-    if (gstAmount > 0 && totalAmount > 0) {
-      if (!sgstPct) sgstPct = parseFloat(((gstAmount / 2 / totalAmount) * 100).toFixed(2));
-      if (!cgstPct) cgstPct = parseFloat(((gstAmount / 2 / totalAmount) * 100).toFixed(2));
+    if (gstAmount > 0 && taxableBase > 0) {
+      if (!sgstPct) sgstPct = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
+      if (!cgstPct) cgstPct = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
     }
 
-    if (igstAmount > 0 && totalAmount > 0) {
-      if (!igstPct) igstPct = parseFloat(((igstAmount / totalAmount) * 100).toFixed(2));
+    if (igstAmount > 0 && taxableBase > 0) {
+      if (!igstPct) igstPct = parseFloat(((igstAmount / taxableBase) * 100).toFixed(2));
     }
 
     billData.SGSTPct = sgstPct;

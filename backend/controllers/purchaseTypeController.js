@@ -2,7 +2,7 @@ const PurchaseType = require('../models/PurchaseType');
 
 // Default formulas for reset functionality
 const DEFAULT_FORMULAS = {
-  AssessValue: '[TotalAmount]-[DiscountAmount]',
+  AssessValue: '[TotalAmount]-[DiscountAmount]+[PFAmount]+[LorryFreight]',
   RoundOff: '[RoundOff]',
   LorryFreight: '[PFAmount]+[LorryFreightN]',
   SGST: '[SGST]',
