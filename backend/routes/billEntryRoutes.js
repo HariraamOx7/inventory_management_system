@@ -8,10 +8,12 @@ router.get('/available-gate-inwards', billEntryController.getAvailableGateInward
 router.get('/available-grns', billEntryController.getAvailableGRNs);
 router.get('/grn-details', billEntryController.getGRNDetails);
 router.get('/print-data/:voucherNo', billEntryController.getPrintData);
+router.get('/check-duplicate', billEntryController.checkDuplicateBillEntry);
 
 router.get('/', billEntryController.getBillEntries);
 router.post('/', billEntryController.createBillEntry);
 router.put('/:voucherNo', billEntryController.updateBillEntry);
+router.delete('/delete-chain/:voucherNo', billEntryController.deleteBillChain);
 router.delete('/:voucherNo', billEntryController.deleteBillEntry);
 
-module.exports = router;
+module.exports = router;

@@ -205,6 +205,29 @@ exports.createGateInward = async (req, res) => {
       });
     }
 
+    // Check for duplicate InvoiceNo per party (skip if blank)
+    if (InvoiceNo && InvoiceNo.trim()) {
+      const duplicateInward = await GateInward.findOne({
+        where: { PartyName: PartyName.trim(), InvoiceNo: InvoiceNo.trim() }
+      });
+      if (duplicateInward) {
+        const dupPO = duplicateInward.OrderNo
+          ? await PurchaseOrder.findByPk(duplicateInward.OrderNo, { raw: true })
+          : null;
+        return res.status(409).json({
+          success: false,
+          message: `A Gate Inward already exists for party "${PartyName.trim()}" with invoice number "${InvoiceNo.trim()}".`,
+          duplicate: {
+            InwardNo: duplicateInward.InwardNo,
+            PartyName: duplicateInward.PartyName,
+            InvoiceNo: duplicateInward.InvoiceNo,
+            OrderNo: duplicateInward.OrderNo,
+            hasPurchaseOrder: !!dupPO
+          }
+        });
+      }
+    }
+
     const poCount = await PurchaseOrder.count({
       where: {
         OrderNo: { [Op.in]: orderNos },
@@ -293,6 +316,23 @@ exports.updateGateInward = async (req, res) => {
         success: false,
         message: 'Gate Inward not found'
       });
+    }
+
+    // Check for duplicate InvoiceNo per party (skip if blank)
+    if (InvoiceNo && InvoiceNo.trim()) {
+      const duplicateInward = await GateInward.findOne({
+        where: {
+          PartyName: PartyName.trim(),
+          InvoiceNo: InvoiceNo.trim(),
+          InwardNo: { [Op.ne]: inwardNo }
+        }
+      });
+      if (duplicateInward) {
+        return res.status(409).json({
+          success: false,
+          message: `A Gate Inward already exists for party "${PartyName.trim()}" with invoice number "${InvoiceNo.trim()}".`
+        });
+      }
     }
 
     await inward.update({
@@ -467,5 +507,100 @@ exports.getItemsByParty = async (req, res) => {
       message: 'Error fetching items',
       error: error.message
     });
+  }
+};
+
+// Check for duplicate GateInward by PartyName + InvoiceNo
+exports.checkDuplicateInvoice = async (req, res) => {
+  try {
+    const { partyName, invoiceNo, excludeInwardNo } = req.query;
+
+    if (!partyName || !invoiceNo) {
+      return res.json({ success: true, duplicate: null });
+    }
+
+    const whereClause = {
+      PartyName: partyName.trim(),
+      InvoiceNo: invoiceNo.trim()
+    };
+    if (excludeInwardNo) {
+      whereClause.InwardNo = { [Op.ne]: excludeInwardNo };
+    }
+
+    const duplicateInward = await GateInward.findOne({ where: whereClause });
+
+    if (!duplicateInward) {
+      return res.json({ success: true, duplicate: null });
+    }
+
+    res.json({
+      success: true,
+      duplicate: {
+        InwardNo: duplicateInward.InwardNo,
+        PartyName: duplicateInward.PartyName,
+        InvoiceNo: duplicateInward.InvoiceNo,
+        InwardDate: duplicateInward.InwardDate,
+        OrderNo: duplicateInward.OrderNo
+      }
+    });
+  } catch (error) {
+    console.error('Error checking duplicate invoice:', error);
+    res.status(500).json({ success: false, message: 'Error checking duplicate', error: error.message });
+  }
+};
+
+// Cascade-delete a GateInward chain
+// Body: { layers: { gateInward: true, purchaseOrder: true } }
+exports.deleteGateInwardChain = async (req, res) => {
+  try {
+    const { inwardNo } = req.params;
+    const layers = req.body?.layers || {};
+
+    const inward = await GateInward.findByPk(inwardNo);
+    if (!inward) {
+      return res.status(404).json({ success: false, message: 'Gate Inward not found' });
+    }
+
+    const deletedLayers = [];
+    const orderNo = inward.OrderNo;
+
+    // Layer 1: Delete GateInward + Details
+    if (layers.gateInward) {
+      await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
+      await inward.destroy();
+      deletedLayers.push('GateInward');
+
+      // Restore PurchaseOrder status to Draft if deleting inward
+      if (orderNo) {
+        await PurchaseOrder.update(
+          { Status: 'Draft' },
+          { where: { OrderNo: orderNo } }
+        );
+      }
+    }
+
+    // Layer 2: Delete PurchaseOrder + Details (only if not used by another GateInward)
+    if (layers.purchaseOrder && orderNo) {
+      const otherGI = await GateInwardDetail.findOne({
+        where: { OrderNo: orderNo }
+      });
+      if (!otherGI) {
+        await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo } });
+        await PurchaseOrder.destroy({ where: { OrderNo: orderNo } });
+        deletedLayers.push('PurchaseOrder');
+      } else {
+        // Another gate inward uses this PO — skip PO deletion safely
+        deletedLayers.push('PurchaseOrder (skipped — used by another GateInward)');
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Deleted: ${deletedLayers.join(', ')}`,
+      deletedLayers
+    });
+  } catch (error) {
+    console.error('Error deleting gate inward chain:', error);
+    res.status(500).json({ success: false, message: 'Error deleting gate inward chain', error: error.message });
   }
 };

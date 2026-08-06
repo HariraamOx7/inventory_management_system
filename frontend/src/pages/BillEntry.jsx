@@ -367,6 +367,56 @@ export default function BillEntry() {
     }
   };
 
+  // Helper: run layered deletion confirmation for a duplicate bill entry chain
+  const handleDuplicateBillCleanup = async (duplicate, payload) => {
+    const { VoucherNo, PartyName: dupParty, PartyBillNo: dupBillNo, GRNNo, GateInwardNo, hasReceipt, hasGateInward, hasPurchaseOrder } = duplicate;
+
+    // Layer 1: Confirm BillEntry deletion
+    const confirmBill = window.confirm(
+      `⚠️ DUPLICATE BILL ENTRY FOUND\n\n` +
+      `Party: ${dupParty}\nBill No: ${dupBillNo}\nVoucher No: ${VoucherNo}\n\n` +
+      `Do you want to DELETE this duplicate bill entry (#${VoucherNo}) to proceed?`
+    );
+    if (!confirmBill) {
+      showToast('Save cancelled — duplicate bill entry was not removed.', 'warning');
+      return false;
+    }
+
+    const layers = { bill: true, receipt: false, gateInward: false, purchaseOrder: false };
+
+    // Layer 2: Confirm Receipt deletion
+    if (hasReceipt && GRNNo) {
+      layers.receipt = window.confirm(
+        `Also DELETE the linked Receipt/GRN (GRN #${GRNNo}) and its item details?`
+      );
+    }
+
+    // Layer 3: Confirm GateInward deletion
+    if (hasGateInward && GateInwardNo) {
+      layers.gateInward = window.confirm(
+        `Also DELETE the linked Gate Inward (#${GateInwardNo}) and its item details?`
+      );
+    }
+
+    // Layer 4: Confirm PurchaseOrder deletion
+    if (hasPurchaseOrder && layers.gateInward) {
+      layers.purchaseOrder = window.confirm(
+        `Also DELETE the linked Purchase Order (Order #${duplicate.OrderNo}) and its item details?\n\n(Will be skipped if another Gate Inward references the same PO.)`
+      );
+    }
+
+    // Execute cascade delete
+    try {
+      await axios.delete(`${API_URL}/bill-entries/delete-chain/${VoucherNo}`, { data: { layers } });
+      showToast(`Duplicate bill entry #${VoucherNo} and selected linked records removed.`, 'success');
+      return true;
+    } catch (deleteErr) {
+      console.error('Error deleting duplicate chain:', deleteErr);
+      showToast(deleteErr.response?.data?.message || 'Failed to delete duplicate records.', 'error');
+      return false;
+    }
+  };
+
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     if (!formData.PartyName) {
@@ -398,13 +448,32 @@ export default function BillEntry() {
       if (editingVoucherNo) {
         await axios.put(`${API_URL}/bill-entries/${editingVoucherNo}`, payload);
         showToast('Bill entry updated successfully!', 'success');
+        handleCloseEditDrawer();
+        fetchBillEntries();
       } else {
-        await axios.post(`${API_URL}/bill-entries`, payload);
-        showToast('Bill entry created successfully!', 'success');
+        try {
+          await axios.post(`${API_URL}/bill-entries`, payload);
+          showToast('Bill entry created successfully!', 'success');
+          handleCloseEditDrawer();
+          fetchBillEntries();
+        } catch (createErr) {
+          if (createErr.response?.status === 409 && createErr.response?.data?.duplicate) {
+            // Duplicate detected — run layered confirmation flow
+            setLoading(false);
+            const cleaned = await handleDuplicateBillCleanup(createErr.response.data.duplicate, payload);
+            if (cleaned) {
+              // Re-attempt save after cleanup
+              setLoading(true);
+              await axios.post(`${API_URL}/bill-entries`, payload);
+              showToast('Bill entry created successfully!', 'success');
+              handleCloseEditDrawer();
+              fetchBillEntries();
+            }
+            return;
+          }
+          throw createErr;
+        }
       }
-
-      handleCloseEditDrawer();
-      fetchBillEntries();
     } catch (error) {
       console.error('Error saving bill entry:', error);
       const msg = error.response?.data?.message || 'Error saving bill entry. Please check all fields and try again.';
@@ -413,6 +482,7 @@ export default function BillEntry() {
       setLoading(false);
     }
   };
+
 
   const handlePrint = async (voucherNo) => {
     try {
