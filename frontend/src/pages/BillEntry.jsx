@@ -1139,8 +1139,7 @@ export default function BillEntry() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">Discount (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={formData.Discount}
+                            step="1" value={formData.Discount}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, Discount: parseFloat(e.target.value) || 0 })}
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
@@ -1150,8 +1149,7 @@ export default function BillEntry() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">GST (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={formData.GST}
+                            step="1" value={formData.GST}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, GST: parseFloat(e.target.value) || 0 })}
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"

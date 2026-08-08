@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const GateInward = require('../models/GateInward');
 const GateInwardDetail = require('../models/GateInwardDetail');
 const PurchaseOrder = require('../models/PurchaseOrder');
@@ -10,6 +10,65 @@ const findInvalidReceivedQtyItem = (items = []) => items.find((item) => {
 
   return receivedQty < 0 || receivedQty > pendingQty;
 });
+
+/**
+ * Recalculate and update PO status based on total ordered vs total received.
+ *   Draft     — no qty received yet
+ *   Partial   — some qty received, more pending
+ *   Completed — all qty fully received
+ */
+const recalcPOStatus = async (orderNo) => {
+  if (!orderNo) return;
+
+  const poDetails = await PurchaseOrderDetail.findAll({
+    where: { OrderNo: orderNo },
+    attributes: ['ItemName', 'Qty'],
+    raw: true
+  });
+
+  if (!poDetails || poDetails.length === 0) return;
+
+  const giDetails = await GateInwardDetail.findAll({
+    where: { OrderNo: orderNo },
+    attributes: ['ItemName', [fn('SUM', col('ReceivedQty')), 'totalReceived']],
+    group: ['ItemName'],
+    raw: true
+  });
+
+  const receivedMap = {};
+  for (const row of giDetails) {
+    receivedMap[row.ItemName] = parseFloat(row.totalReceived) || 0;
+  }
+
+  let totalItemsCount = poDetails.length;
+  let fullyReceivedCount = 0;
+  let zeroReceivedCount = 0;
+
+  for (const item of poDetails) {
+    const ordered = parseFloat(item.Qty) || 0;
+    const received = receivedMap[item.ItemName] || 0;
+
+    if (received >= ordered && ordered > 0) {
+      fullyReceivedCount++;
+    } else if (received <= 0) {
+      zeroReceivedCount++;
+    }
+  }
+
+  let newStatus;
+  if (fullyReceivedCount === totalItemsCount) {
+    newStatus = 'Completed';
+  } else if (zeroReceivedCount === totalItemsCount) {
+    newStatus = 'Draft';
+  } else {
+    newStatus = 'Partial';
+  }
+
+  await PurchaseOrder.update(
+    { Status: newStatus },
+    { where: { OrderNo: orderNo } }
+  );
+};
 
 // Get last inward number
 exports.getLastInwardNo = async (req, res) => {
@@ -32,24 +91,12 @@ exports.getLastInwardNo = async (req, res) => {
   }
 };
 
-// Get all purchase orders with party details
+// Get all purchase orders with party details (Draft or Partial)
 exports.getPurchaseOrders = async (req, res) => {
   try {
-    const usedOrderRows = await GateInwardDetail.findAll({
-      attributes: ['OrderNo'],
-      group: ['OrderNo'],
-      raw: true
-    });
-    const usedOrderNos = usedOrderRows.map(r => r.OrderNo);
-
-    const whereClause = { Status: 'Draft' };
-    if (usedOrderNos.length > 0) {
-      whereClause.OrderNo = { [Op.notIn]: usedOrderNos };
-    }
-
     const orders = await PurchaseOrder.findAll({
       attributes: ['OrderNo', 'PartyName', 'OrderDate'],
-      where: whereClause,
+      where: { Status: { [Op.in]: ['Draft', 'Partial'] } },
       order: [['OrderNo', 'DESC']]
     });
 
@@ -195,16 +242,6 @@ exports.createGateInward = async (req, res) => {
       });
     }
 
-    const alreadyUsed = await GateInwardDetail.findOne({
-      where: { OrderNo: { [Op.in]: orderNos } }
-    });
-    if (alreadyUsed) {
-      return res.status(400).json({
-        success: false,
-        message: 'One or more selected purchase orders are already used in Gate Inward'
-      });
-    }
-
     // Check for duplicate InvoiceNo per party (skip if blank)
     if (InvoiceNo && InvoiceNo.trim()) {
       const duplicateInward = await GateInward.findOne({
@@ -228,17 +265,18 @@ exports.createGateInward = async (req, res) => {
       }
     }
 
+    // Validate POs belong to this party and are not Completed
     const poCount = await PurchaseOrder.count({
       where: {
         OrderNo: { [Op.in]: orderNos },
         PartyName: PartyName.trim(),
-        Status: 'Draft'
+        Status: { [Op.in]: ['Draft', 'Partial'] }
       }
     });
     if (poCount !== orderNos.length) {
       return res.status(400).json({
         success: false,
-        message: 'Selected purchase order(s) are invalid for this party or already processed'
+        message: 'Selected purchase order(s) are invalid for this party or already fully received'
       });
     }
 
@@ -258,15 +296,15 @@ exports.createGateInward = async (req, res) => {
         InwardNo: newInward.InwardNo,
         OrderNo: item.OrderNo,
         ItemName: item.ItemName,
-        PendingQty: item.Qty || item.PendingQty || 0,
+        PendingQty: item.PendingQty || item.Qty || 0,
         ReceivedQty: item.ReceivedQty || 0
       });
     }
 
-    await PurchaseOrder.update(
-      { Status: 'InwardCreated' },
-      { where: { OrderNo: { [Op.in]: orderNos } } }
-    );
+    // Recalculate PO status (Draft / Partial / Completed)
+    for (const oNo of orderNos) {
+      await recalcPOStatus(oNo);
+    }
 
     res.status(201).json({
       success: true,
@@ -348,14 +386,21 @@ exports.updateGateInward = async (req, res) => {
     if (items && items.length > 0) {
       await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
 
+      const affectedOrderNos = new Set();
       for (const item of items) {
         await GateInwardDetail.create({
           InwardNo: inwardNo,
           OrderNo: item.OrderNo,
           ItemName: item.ItemName,
-          PendingQty: item.Qty || item.PendingQty || 0,
+          PendingQty: item.PendingQty || item.Qty || 0,
           ReceivedQty: item.ReceivedQty || 0
         });
+        if (item.OrderNo) affectedOrderNos.add(item.OrderNo);
+      }
+
+      // Recalculate PO status after updating details
+      for (const oNo of affectedOrderNos) {
+        await recalcPOStatus(oNo);
       }
     }
 
@@ -395,15 +440,13 @@ exports.deleteGateInward = async (req, res) => {
 
     const orderNos = [...new Set([inward.OrderNo, ...details.map(d => d.OrderNo)].filter(Boolean))];
 
-    if (orderNos.length > 0) {
-      await PurchaseOrder.update(
-        { Status: 'Draft' },
-        { where: { OrderNo: { [Op.in]: orderNos } } }
-      );
-    }
-
     await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
     await inward.destroy();
+
+    // Recalculate PO status after deletion
+    for (const oNo of orderNos) {
+      await recalcPOStatus(oNo);
+    }
 
     res.json({
       success: true,
@@ -419,24 +462,12 @@ exports.deleteGateInward = async (req, res) => {
   }
 };
 
-// Get all parties from not-yet-used purchase orders
+// Get all parties from purchase orders that are not fully received
 exports.getParties = async (req, res) => {
   try {
-    const usedOrderRows = await GateInwardDetail.findAll({
-      attributes: ['OrderNo'],
-      group: ['OrderNo'],
-      raw: true
-    });
-    const usedOrderNos = usedOrderRows.map(r => r.OrderNo);
-
-    const whereClause = { Status: 'Draft' };
-    if (usedOrderNos.length > 0) {
-      whereClause.OrderNo = { [Op.notIn]: usedOrderNos };
-    }
-
     const parties = await PurchaseOrder.findAll({
       attributes: ['PartyName'],
-      where: whereClause,
+      where: { Status: { [Op.in]: ['Draft', 'Partial'] } },
       group: ['PartyName'],
       order: [['PartyName', 'ASC']]
     });
@@ -455,7 +486,7 @@ exports.getParties = async (req, res) => {
   }
 };
 
-// Get all items from all unused purchase orders of a specific party
+// Get all items from purchase orders of a specific party (with remaining pending qty)
 exports.getItemsByParty = async (req, res) => {
   try {
     const { partyName } = req.query;
@@ -467,20 +498,12 @@ exports.getItemsByParty = async (req, res) => {
       });
     }
 
-    const usedOrderRows = await GateInwardDetail.findAll({
-      attributes: ['OrderNo'],
-      group: ['OrderNo'],
-      raw: true
-    });
-    const usedOrderNos = usedOrderRows.map(r => r.OrderNo);
-
-    const orderWhere = { PartyName: partyName, Status: 'Draft' };
-    if (usedOrderNos.length > 0) {
-      orderWhere.OrderNo = { [Op.notIn]: usedOrderNos };
-    }
-
+    // Get orders that are Draft or Partial for this party
     const orders = await PurchaseOrder.findAll({
-      where: orderWhere,
+      where: {
+        PartyName: partyName,
+        Status: { [Op.in]: ['Draft', 'Partial'] }
+      },
       attributes: ['OrderNo'],
       raw: true
     });
@@ -490,15 +513,50 @@ exports.getItemsByParty = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
-    const items = await PurchaseOrderDetail.findAll({
+    // Get all PO items
+    const poItems = await PurchaseOrderDetail.findAll({
       where: { OrderNo: { [Op.in]: eligibleOrderNos } },
       attributes: ['ItemName', 'Qty', 'OrderNo', 'UnitRate'],
-      order: [['OrderNo', 'ASC']]
+      order: [['OrderNo', 'ASC']],
+      raw: true
     });
+
+    // Get total received qty per (OrderNo, ItemName) across all gate inwards
+    const receivedRows = await GateInwardDetail.findAll({
+      where: { OrderNo: { [Op.in]: eligibleOrderNos } },
+      attributes: [
+        'OrderNo',
+        'ItemName',
+        [fn('SUM', col('ReceivedQty')), 'totalReceived']
+      ],
+      group: ['OrderNo', 'ItemName'],
+      raw: true
+    });
+
+    // Build lookup: "OrderNo-ItemName" -> totalReceived
+    const receivedMap = {};
+    for (const row of receivedRows) {
+      receivedMap[`${row.OrderNo}-${row.ItemName}`] = parseFloat(row.totalReceived) || 0;
+    }
+
+    // Calculate remaining pending qty for each item
+    const itemsWithPending = poItems
+      .map(item => {
+        const orderedQty = parseFloat(item.Qty) || 0;
+        const alreadyReceived = receivedMap[`${item.OrderNo}-${item.ItemName}`] || 0;
+        const pendingQty = orderedQty - alreadyReceived;
+        return {
+          ItemName: item.ItemName,
+          Qty: pendingQty,  // Remaining qty to be received
+          OrderNo: item.OrderNo,
+          UnitRate: item.UnitRate
+        };
+      })
+      .filter(item => item.Qty > 0);  // Only return items with pending qty
 
     res.json({
       success: true,
-      data: items
+      data: itemsWithPending
     });
   } catch (error) {
     console.error('Error fetching items by party:', error);
@@ -570,12 +628,9 @@ exports.deleteGateInwardChain = async (req, res) => {
       await inward.destroy();
       deletedLayers.push('GateInward');
 
-      // Restore PurchaseOrder status to Draft if deleting inward
+      // Recalculate PO status after deletion
       if (orderNo) {
-        await PurchaseOrder.update(
-          { Status: 'Draft' },
-          { where: { OrderNo: orderNo } }
-        );
+        await recalcPOStatus(orderNo);
       }
     }
 
@@ -604,3 +659,6 @@ exports.deleteGateInwardChain = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error deleting gate inward chain', error: error.message });
   }
 };
+
+// Export recalcPOStatus so other controllers (e.g. PurchaseOrder) can use it
+exports.recalcPOStatus = recalcPOStatus;

@@ -730,8 +730,7 @@ export default function GateInward() {
                                   <td className="py-3.5 px-4 text-right">
                                     <input
                                       type="number"
-                                      step="0.01"
-                                      value={item.ReceivedQty}
+                                      step="1" value={item.ReceivedQty}
                                       onWheel={(e) => e.target.blur()}
                                       onChange={(e) => {
                                         const enteredValue = e.target.value;

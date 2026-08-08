@@ -722,9 +722,17 @@ export default function Receipt() {
                                     <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
                                     <td className="py-2.5 px-3 text-right font-medium">{qty}</td>
                                     <td className="py-2.5 px-3 text-right">
-                                      <span className="inline-block w-24 px-2 py-1 bg-slate-100 border border-slate-200 rounded text-right font-bold text-slate-700">
-                                        ₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </span>
+                                      <input
+                                        type="number"
+                                        step="1" value={item.UnitRate}
+                                        onWheel={(e) => e.target.blur()}
+                                        onChange={(e) => {
+                                          const nextItems = [...items];
+                                          nextItems[idx] = { ...item, UnitRate: e.target.value };
+                                          setItems(nextItems);
+                                        }}
+                                        className="w-24 px-2 py-1 bg-white border border-slate-300 rounded text-right font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
                                     </td>
                                     <td className="py-2.5 px-3 text-right font-bold text-slate-900">
                                       ₹{rowTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

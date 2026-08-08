@@ -2,7 +2,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-class ReceiptDetail extends Model {}
+class ReceiptDetail extends Model { }
 
 ReceiptDetail.init({
   DetailId: {
@@ -27,7 +27,7 @@ ReceiptDetail.init({
     defaultValue: 0
   },
   UnitRate: {
-    type: DataTypes.DECIMAL(15, 2),
+    type: DataTypes.DECIMAL(15, 6),
     defaultValue: 0
   },
   TotalAmount: {

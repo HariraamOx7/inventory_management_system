@@ -24,6 +24,16 @@ const getPurchaseOrderUnitRateMap = async (orderNos = []) => {
   );
 };
 
+const resolveUnitRate = (item, unitRateMap) => {
+  const hasSubmittedRate = item.UnitRate !== undefined && item.UnitRate !== null && item.UnitRate !== '';
+  if (hasSubmittedRate) {
+    const submittedRate = parseFloat(item.UnitRate);
+    return Number.isFinite(submittedRate) ? submittedRate : 0;
+  }
+
+  return unitRateMap.get(`${item.OrderNo}::${item.ItemName}`) || 0;
+};
+
 // Get last GRN number
 exports.getLastGRNNo = async (req, res) => {
   try {
@@ -346,7 +356,7 @@ exports.createReceipt = async (req, res) => {
 
     for (const item of items) {
       const qty = item.Qty ?? item.ReceivedQty ?? 0;
-      const unitRate = unitRateMap.get(`${item.OrderNo}::${item.ItemName}`) || 0;
+      const unitRate = resolveUnitRate(item, unitRateMap);
       await ReceiptDetail.create({
         GRNNo: newReceipt.GRNNo,
         OrderNo: item.OrderNo || null,
@@ -422,7 +432,7 @@ exports.updateReceipt = async (req, res) => {
 
       for (const item of items) {
         const qty = item.Qty ?? item.ReceivedQty ?? 0;
-        const unitRate = unitRateMap.get(`${item.OrderNo}::${item.ItemName}`) || 0;
+        const unitRate = resolveUnitRate(item, unitRateMap);
         await ReceiptDetail.create({
           GRNNo: grnNo,
           OrderNo: item.OrderNo || null,

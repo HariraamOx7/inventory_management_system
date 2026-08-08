@@ -29,6 +29,25 @@ const formatNumber = (val, decimals = 2) => {
   return num.toFixed(decimals);
 };
 
+const formatRate = (val) => {
+  const num = parseFloat(val) || 0;
+  return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+};
+
+// The line total is calculated from the rate the user entered. If a default rate
+// ever replaces that value in state, keep the rate consistent with the total.
+const resolveLineUnitRate = ({ Qty, UnitRate, TotalAmount }) => {
+  const qty = parseFloat(Qty) || 0;
+  const unitRate = parseFloat(UnitRate) || 0;
+  const totalAmount = parseFloat(TotalAmount) || 0;
+
+  if (qty > 0 && totalAmount > 0 && Math.abs(totalAmount - (qty * unitRate)) > 0.005) {
+    return totalAmount / qty;
+  }
+
+  return unitRate;
+};
+
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return new Date().toISOString().split('T')[0];
   try {
@@ -333,7 +352,7 @@ export default function PurchaseOrder() {
     const newItem = {
       ...detailData,
       Qty: parseFloat(detailData.Qty) || 0,
-      UnitRate: parseFloat(detailData.UnitRate) || 0,
+      UnitRate: resolveLineUnitRate(detailData),
       TotalAmount: parseFloat(detailData.TotalAmount) || 0,
       DiscountPct: parseFloat(detailData.DiscountPct) || 0,
       DiscountAmt: parseFloat(detailData.DiscountAmt) || 0,
@@ -393,7 +412,7 @@ export default function PurchaseOrder() {
     const updatedItem = {
       ...detailData,
       Qty: parseFloat(detailData.Qty) || 0,
-      UnitRate: parseFloat(detailData.UnitRate) || 0,
+      UnitRate: resolveLineUnitRate(detailData),
       TotalAmount: parseFloat(detailData.TotalAmount) || 0,
       DiscountPct: parseFloat(detailData.DiscountPct) || 0,
       DiscountAmt: parseFloat(detailData.DiscountAmt) || 0,
@@ -449,7 +468,10 @@ export default function PurchaseOrder() {
       setLoading(true);
       const payload = {
         ...headData,
-        items,
+        items: items.map(item => ({
+          ...item,
+          UnitRate: resolveLineUnitRate(item)
+        })),
         ...totals
       };
 
@@ -672,11 +694,13 @@ export default function PurchaseOrder() {
                           {order.RefNo || '-'}
                         </td>
                         <td className="py-4 px-4 text-center whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${status === 'InwardCreated'
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${status === 'Completed'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                            : status === 'Partial'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}>
-                            {status === 'InwardCreated' ? 'Inward Created' : 'Draft'}
+                            {status === 'Completed' ? 'Completed' : status === 'Partial' ? 'Partial' : 'Draft'}
                           </span>
                         </td>
                         <td className="py-4 px-4 text-center font-medium text-slate-600 whitespace-nowrap">
@@ -963,7 +987,7 @@ export default function PurchaseOrder() {
                                 <td className="py-3 px-3 font-medium text-slate-400">{idx + 1}</td>
                                 <td className="py-3 px-3 font-semibold text-slate-800">{item.ItemName}</td>
                                 <td className="py-3 px-3 text-right font-semibold">{item.Qty}</td>
-                                <td className="py-3 px-3 text-right">₹{(item.UnitRate || 0).toFixed(2)}</td>
+                                <td className="py-3 px-3 text-right">₹{formatRate(item.UnitRate)}</td>
                                 <td className="py-3 px-3 text-right text-slate-500">₹{(item.DiscountAmt || 0).toFixed(2)}</td>
                                 <td className="py-3 px-3 text-right text-slate-500">₹{taxSum.toFixed(2)}</td>
                                 <td className="py-3 px-3 text-right text-slate-500">₹{(item.PF_Amount || 0).toFixed(2)}</td>
@@ -1220,8 +1244,7 @@ export default function PurchaseOrder() {
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Unit Rate (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={detailData.UnitRate}
+                            step="1" value={detailData.UnitRate}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setDetailData({ ...detailData, UnitRate: e.target.value })}
                             placeholder="0.00"
@@ -1422,7 +1445,7 @@ export default function PurchaseOrder() {
                                     <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
                                     <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
                                     <td className="py-2.5 px-3 text-right font-medium">{item.Qty}</td>
-                                    <td className="py-2.5 px-3 text-right">₹{formatCurrency(item.UnitRate)}</td>
+                                    <td className="py-2.5 px-3 text-right">₹{formatRate(item.UnitRate)}</td>
                                     <td className="py-2.5 px-3 text-right text-slate-500">₹{formatCurrency(item.DiscountAmt)}</td>
                                     <td className="py-2.5 px-3 text-right text-slate-500">₹{formatCurrency(taxSum)}</td>
                                     <td className="py-2.5 px-3 text-right text-slate-500">₹{formatCurrency(item.LorryFreight)}</td>
