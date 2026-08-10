@@ -137,7 +137,7 @@ export default function GateInward() {
           String(inward.InwardNo).toLowerCase().includes(search.toLowerCase()) ||
           (inward.PartyName && inward.PartyName.toLowerCase().includes(search.toLowerCase())) ||
           (inward.InvoiceNo && inward.InvoiceNo.toLowerCase().includes(search.toLowerCase()));
-        const matchParty = partyFilter === 'ALL' || inward.PartyName === partyFilter;
+        const matchParty = partyFilter === 'ALL' || (inward.PartyName || '').trim() === partyFilter.trim();
         return matchSearch && matchParty;
       })
       .sort((a, b) => {
@@ -371,7 +371,8 @@ export default function GateInward() {
               },
               options: [
                 { value: 'ALL', label: 'All Parties' },
-                ...parties.map(p => ({ value: p.name, label: p.name }))
+                ...[...new Set(gateInwards.map(g => g.PartyName).filter(Boolean))].sort()
+                  .map(name => ({ value: name, label: name }))
               ],
               searchable: true
             },
