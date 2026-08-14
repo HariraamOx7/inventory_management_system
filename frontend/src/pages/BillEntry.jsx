@@ -232,6 +232,13 @@ export default function BillEntry() {
     });
   }, [formData.Total, formData.Discount, formData.GST, formData.IGST, formData.VAT_CST, formData.P_F, formData.LorryFreight]);
 
+  // Unique parties from existing bill entries (for filter dropdown)
+  const uniqueBillParties = useMemo(() => {
+    const setP = new Set();
+    billEntries.forEach(b => { if (b.PartyName) setP.add(b.PartyName); });
+    return Array.from(setP).sort();
+  }, [billEntries]);
+
   // Filtered & Sorted Bill Entries
   const filteredAndSortedBills = useMemo(() => {
     return billEntries
@@ -360,6 +367,56 @@ export default function BillEntry() {
     }
   };
 
+  // Helper: run layered deletion confirmation for a duplicate bill entry chain
+  const handleDuplicateBillCleanup = async (duplicate, payload) => {
+    const { VoucherNo, PartyName: dupParty, PartyBillNo: dupBillNo, GRNNo, GateInwardNo, hasReceipt, hasGateInward, hasPurchaseOrder } = duplicate;
+
+    // Layer 1: Confirm BillEntry deletion
+    const confirmBill = window.confirm(
+      `⚠️ DUPLICATE BILL ENTRY FOUND\n\n` +
+      `Party: ${dupParty}\nBill No: ${dupBillNo}\nVoucher No: ${VoucherNo}\n\n` +
+      `Do you want to DELETE this duplicate bill entry (#${VoucherNo}) to proceed?`
+    );
+    if (!confirmBill) {
+      showToast('Save cancelled — duplicate bill entry was not removed.', 'warning');
+      return false;
+    }
+
+    const layers = { bill: true, receipt: false, gateInward: false, purchaseOrder: false };
+
+    // Layer 2: Confirm Receipt deletion
+    if (hasReceipt && GRNNo) {
+      layers.receipt = window.confirm(
+        `Also DELETE the linked Receipt/GRN (GRN #${GRNNo}) and its item details?`
+      );
+    }
+
+    // Layer 3: Confirm GateInward deletion
+    if (hasGateInward && GateInwardNo) {
+      layers.gateInward = window.confirm(
+        `Also DELETE the linked Gate Inward (#${GateInwardNo}) and its item details?`
+      );
+    }
+
+    // Layer 4: Confirm PurchaseOrder deletion
+    if (hasPurchaseOrder && layers.gateInward) {
+      layers.purchaseOrder = window.confirm(
+        `Also DELETE the linked Purchase Order (Order #${duplicate.OrderNo}) and its item details?\n\n(Will be skipped if another Gate Inward references the same PO.)`
+      );
+    }
+
+    // Execute cascade delete
+    try {
+      await axios.delete(`${API_URL}/bill-entries/delete-chain/${VoucherNo}`, { data: { layers } });
+      showToast(`Duplicate bill entry #${VoucherNo} and selected linked records removed.`, 'success');
+      return true;
+    } catch (deleteErr) {
+      console.error('Error deleting duplicate chain:', deleteErr);
+      showToast(deleteErr.response?.data?.message || 'Failed to delete duplicate records.', 'error');
+      return false;
+    }
+  };
+
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     if (!formData.PartyName) {
@@ -391,13 +448,32 @@ export default function BillEntry() {
       if (editingVoucherNo) {
         await axios.put(`${API_URL}/bill-entries/${editingVoucherNo}`, payload);
         showToast('Bill entry updated successfully!', 'success');
+        handleCloseEditDrawer();
+        fetchBillEntries();
       } else {
-        await axios.post(`${API_URL}/bill-entries`, payload);
-        showToast('Bill entry created successfully!', 'success');
+        try {
+          await axios.post(`${API_URL}/bill-entries`, payload);
+          showToast('Bill entry created successfully!', 'success');
+          handleCloseEditDrawer();
+          fetchBillEntries();
+        } catch (createErr) {
+          if (createErr.response?.status === 409 && createErr.response?.data?.duplicate) {
+            // Duplicate detected — run layered confirmation flow
+            setLoading(false);
+            const cleaned = await handleDuplicateBillCleanup(createErr.response.data.duplicate, payload);
+            if (cleaned) {
+              // Re-attempt save after cleanup
+              setLoading(true);
+              await axios.post(`${API_URL}/bill-entries`, payload);
+              showToast('Bill entry created successfully!', 'success');
+              handleCloseEditDrawer();
+              fetchBillEntries();
+            }
+            return;
+          }
+          throw createErr;
+        }
       }
-
-      handleCloseEditDrawer();
-      fetchBillEntries();
     } catch (error) {
       console.error('Error saving bill entry:', error);
       const msg = error.response?.data?.message || 'Error saving bill entry. Please check all fields and try again.';
@@ -406,6 +482,7 @@ export default function BillEntry() {
       setLoading(false);
     }
   };
+
 
   const handlePrint = async (voucherNo) => {
     try {
@@ -438,7 +515,7 @@ export default function BillEntry() {
       return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
     const drawLine = (yPos, x1 = margin, x2 = pageWidth - margin) => {
-      doc.setLineWidth(0.3);
+      doc.setLineWidth(0.2);
       doc.line(x1, yPos, x2, yPos);
     };
 
@@ -448,7 +525,7 @@ export default function BillEntry() {
     doc.text('Purchase Voucher', pageWidth / 2, y, { align: 'center' });
     // Underline title
     const titleWidth = doc.getTextWidth('Purchase Voucher');
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.3);
     doc.line((pageWidth - titleWidth) / 2, y + 1, (pageWidth + titleWidth) / 2, y + 1);
     y += 10;
 
@@ -470,7 +547,7 @@ export default function BillEntry() {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text('Description / Account Head', col1X, y);
+    doc.text('Description / Account Head', col1X + 12, y);
     doc.text('Debit', col2X + 15, y, { align: 'right' });
     doc.text('Credit', col3X + 30, y, { align: 'right' });
     y += 2;
@@ -486,6 +563,10 @@ export default function BillEntry() {
     // GST entries (SGST and CGST)
     const gstAmount = parseFloat(bill.GST) || 0;
     const itemsTotal = parseFloat(bill.Total) || 0;
+    const discountAmt = parseFloat(bill.Discount) || 0;
+    const pfAmt = parseFloat(bill.P_F) || 0;
+    const lorryAmt = parseFloat(bill.LorryFreight) || 0;
+    const baseForGst = itemsTotal - discountAmt + pfAmt + lorryAmt;
 
     if (gstAmount > 0) {
       const sgstAmt = bill.SGSTAmount || parseFloat((gstAmount / 2).toFixed(2));
@@ -493,11 +574,11 @@ export default function BillEntry() {
       let sgstPct = parseFloat(bill.SGSTPct) || 0;
       let cgstPct = parseFloat(bill.CGSTPct) || 0;
 
-      if (!sgstPct && itemsTotal > 0) {
-        sgstPct = parseFloat(((sgstAmt / itemsTotal) * 100).toFixed(2));
+      if (!sgstPct && baseForGst > 0) {
+        sgstPct = parseFloat(((sgstAmt / baseForGst) * 100).toFixed(2));
       }
-      if (!cgstPct && itemsTotal > 0) {
-        cgstPct = parseFloat(((cgstAmt / itemsTotal) * 100).toFixed(2));
+      if (!cgstPct && baseForGst > 0) {
+        cgstPct = parseFloat(((cgstAmt / baseForGst) * 100).toFixed(2));
       }
 
       const sgstStr = sgstPct > 0 ? ` ${sgstPct}%` : '';
@@ -506,12 +587,12 @@ export default function BillEntry() {
       const sgstLabel = `INPUT SGST${sgstStr}`;
       const cgstLabel = `INPUT CGST${cgstStr}`;
 
-      doc.text(`    ${sgstLabel}`, col1X, y);
+      doc.text(sgstLabel, col1X + 12, y);
       doc.text(fmt(sgstAmt), col2X + 15, y, { align: 'right' });
       totalDebit += sgstAmt;
       y += 5;
 
-      doc.text(`    ${cgstLabel}`, col1X, y);
+      doc.text(cgstLabel, col1X + 12, y);
       doc.text(fmt(cgstAmt), col2X + 15, y, { align: 'right' });
       totalDebit += cgstAmt;
       y += 5;
@@ -521,31 +602,30 @@ export default function BillEntry() {
     const igstAmount = parseFloat(bill.IGST) || 0;
     if (igstAmount > 0) {
       let igstPct = parseFloat(bill.IGSTPct) || 0;
-      if (!igstPct && itemsTotal > 0) {
-        igstPct = parseFloat(((igstAmount / itemsTotal) * 100).toFixed(2));
+      if (!igstPct && baseForGst > 0) {
+        igstPct = parseFloat(((igstAmount / baseForGst) * 100).toFixed(2));
       }
       const igstStr = igstPct > 0 ? ` ${igstPct}%` : '';
       const igstLabel = `INPUT IGST${igstStr}`;
-      doc.text(`    ${igstLabel}`, col1X, y);
+      doc.text(igstLabel, col1X + 12, y);
       doc.text(fmt(igstAmount), col2X + 15, y, { align: 'right' });
       totalDebit += igstAmount;
       y += 5;
     }
 
-    // Purchase Type line (main purchase amount = Total which is items subtotal)
+
     const purchaseLabel = bill.PurchaseType
-      ? `    PURCHASE OF ${bill.PurchaseType.toUpperCase()}`
-      : '    PURCHASE OF MATERIALS';
+      ? bill.PurchaseType.toUpperCase()
+      : 'PURCHASE OF MATERIALS';
     const totalAmount = parseFloat(bill.Total) || 0;
-    doc.text(purchaseLabel, col1X, y);
+    doc.text(purchaseLabel, col1X + 12, y);
     doc.text(fmt(totalAmount), col2X + 15, y, { align: 'right' });
     totalDebit += totalAmount;
     y += 5;
 
-    // Discount (as negative debit or credit)
-    const discountAmt = parseFloat(bill.Discount) || 0;
+
     if (discountAmt > 0) {
-      doc.text('    DISCOUNT', col1X, y);
+      doc.text('DISCOUNT', col1X + 12, y);
       doc.text(fmt(discountAmt), col3X + 30, y, { align: 'right' });
       totalCredit += discountAmt;
       y += 5;
@@ -554,33 +634,48 @@ export default function BillEntry() {
     // VAT/CST
     const vatCstAmt = parseFloat(bill.VAT_CST) || 0;
     if (vatCstAmt > 0) {
-      doc.text('    VAT / CST', col1X, y);
+      doc.text('VAT / CST', col1X + 12, y);
       doc.text(fmt(vatCstAmt), col2X + 15, y, { align: 'right' });
       totalDebit += vatCstAmt;
       y += 5;
     }
 
     // P&F
-    const pfAmt = parseFloat(bill.P_F) || 0;
     if (pfAmt > 0) {
-      doc.text('    PACKING & FORWARDING', col1X, y);
+      doc.text('PACKING & FORWARDING', col1X + 12, y);
       doc.text(fmt(pfAmt), col2X + 15, y, { align: 'right' });
       totalDebit += pfAmt;
       y += 5;
     }
 
     // Lorry Freight
-    const lorryAmt = parseFloat(bill.LorryFreight) || 0;
     if (lorryAmt > 0) {
-      doc.text('    LORRY FREIGHT', col1X, y);
+      doc.text('LORRY FREIGHT', col1X + 12, y);
       doc.text(fmt(lorryAmt), col2X + 15, y, { align: 'right' });
       totalDebit += lorryAmt;
       y += 5;
     }
 
+    // Round Off entry in accounting table
+    const unroundedGrandTotal = totalAmount - discountAmt + gstAmount + igstAmount + vatCstAmt + pfAmt + lorryAmt;
+    const grandTotal = bill.GrandTotal !== undefined && bill.GrandTotal !== null ? parseFloat(bill.GrandTotal) : Math.round(unroundedGrandTotal);
+    const roundOff = bill.RoundOff !== undefined && bill.RoundOff !== null ? parseFloat(bill.RoundOff) : parseFloat((grandTotal - unroundedGrandTotal).toFixed(2));
+
+    if (roundOff !== 0) {
+      doc.text('ROUND OFF', col1X + 12, y);
+      if (roundOff > 0) {
+        doc.text(fmt(roundOff), col2X + 15, y, { align: 'right' });
+        totalDebit += roundOff;
+      } else {
+        doc.text(fmt(Math.abs(roundOff)), col3X + 30, y, { align: 'right' });
+        totalCredit += Math.abs(roundOff);
+      }
+      y += 5;
+    }
+
     // Party Name (Credit entry)
-    doc.text(`To    ${bill.PartyName || ''}`, col1X, y);
-    const grandTotal = parseFloat(bill.GrandTotal) || 0;
+    doc.text('To', col1X, y);
+    doc.text(bill.PartyName || '', col1X + 12, y);
     doc.text(fmt(grandTotal), col3X + 30, y, { align: 'right' });
     totalCredit += grandTotal;
     y += 3;
@@ -595,13 +690,70 @@ export default function BillEntry() {
     drawLine(y);
     y += 8;
 
+    // ORDER SUMMARY Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('ORDER SUMMARY', col1X, y);
+    y += 4;
+    drawLine(y);
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Items Subtotal:', col1X, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Rs. ${fmt(totalAmount)}`, col3X + 30, y, { align: 'right' });
+    y += 5;
+
+    if (discountAmt > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.text('Total Discount:', col1X, y);
+      doc.text(`-Rs. ${fmt(discountAmt)}`, col3X + 30, y, { align: 'right' });
+      y += 5;
+    }
+
+    if (gstAmount > 0 || igstAmount > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.text('Tax (GST/IGST):', col1X, y);
+      doc.text(`+Rs. ${fmt(gstAmount + igstAmount)}`, col3X + 30, y, { align: 'right' });
+      y += 5;
+    }
+
+    if (pfAmt > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.text('P & F:', col1X, y);
+      doc.text(`+Rs. ${fmt(pfAmt)}`, col3X + 30, y, { align: 'right' });
+      y += 5;
+    }
+
+    if (lorryAmt > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.text('Lorry Freight:', col1X, y);
+      doc.text(`+Rs. ${fmt(lorryAmt)}`, col3X + 30, y, { align: 'right' });
+      y += 5;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('Round Off:', col1X, y);
+    const roundOffStr = roundOff > 0 ? `+${roundOff.toFixed(2)}` : roundOff.toFixed(2);
+    doc.text(roundOffStr, col3X + 30, y, { align: 'right' });
+    y += 5;
+
+    drawLine(y);
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Grand Total:', col1X, y);
+    doc.text(`Rs. ${fmt(grandTotal)}`, col3X + 30, y, { align: 'right' });
+    y += 8;
+
     // Narration
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     const narration = bill.Narration || '';
     if (narration) {
       const lines = doc.splitTextToSize(narration, contentWidth - 10);
-      doc.text(lines, col1X + 4, y);
+      doc.text(lines, col1X, y);
       y += lines.length * 4.5;
     }
     y += 8;
@@ -621,7 +773,7 @@ export default function BillEntry() {
     doc.setFontSize(11);
     doc.text('Payment Particulars', pageWidth / 2, y, { align: 'center' });
     const ppTitleWidth = doc.getTextWidth('Payment Particulars');
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.3);
     doc.line((pageWidth - ppTitleWidth) / 2, y + 1, (pageWidth + ppTitleWidth) / 2, y + 1);
     y += 8;
 
@@ -671,7 +823,7 @@ export default function BillEntry() {
               },
               options: [
                 { value: 'ALL', label: 'All Parties' },
-                ...parties.map(p => ({ value: p.name, label: p.name }))
+                ...uniqueBillParties.map(p => ({ value: p, label: p }))
               ],
               searchable: true
             },
@@ -1061,8 +1213,7 @@ export default function BillEntry() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">Discount (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={formData.Discount}
+                            step="1" value={formData.Discount}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, Discount: parseFloat(e.target.value) || 0 })}
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
@@ -1072,8 +1223,7 @@ export default function BillEntry() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">GST (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={formData.GST}
+                            step="1" value={formData.GST}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, GST: parseFloat(e.target.value) || 0 })}
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"

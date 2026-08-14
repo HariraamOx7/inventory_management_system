@@ -22,7 +22,7 @@ const initialPTFormState = {
   Code: '',
   PurchaseType: '',
   Description: '',
-  AssessValue: '[TotalAmount]-[DiscountAmount]',
+  AssessValue: '[TotalAmount]-[DiscountAmount]+[PFAmount]+[LorryFreight]',
   RoundOff: '[RoundOff]',
   Duty1: '',
   Commodity: '',

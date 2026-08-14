@@ -13,7 +13,7 @@ Department.init({
   dept_name: {
     type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true
+    unique: 'departments_dept_name_unique'
   }
 }, {
   sequelize,

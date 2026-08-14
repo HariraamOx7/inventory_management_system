@@ -12,6 +12,20 @@ const BillEntryDetail = require('../models/BillEntryDetail');
 const Supplier = require('../models/Supplier');
 const Item = require('../models/Item');
 
+const resolveLineUnitRate = (item) => {
+  const qty = parseFloat(item.Qty) || 0;
+  const unitRate = parseFloat(item.UnitRate) || 0;
+  const totalAmount = parseFloat(item.TotalAmount) || 0;
+
+  // TotalAmount is calculated from the rate entered in the PO form. Preserve
+  // that rate if an item master default has overwritten the submitted value.
+  if (qty > 0 && totalAmount > 0 && Math.abs(totalAmount - (qty * unitRate)) > 0.005) {
+    return totalAmount / qty;
+  }
+
+  return unitRate;
+};
+
 // Get last order number
 exports.getLastOrderNo = async (req, res) => {
   try {
@@ -190,11 +204,12 @@ exports.createPurchaseOrder = async (req, res) => {
 
     // Create order details
     for (const item of items) {
+      const unitRate = resolveLineUnitRate(item);
       await PurchaseOrderDetail.create({
         OrderNo: newOrder.OrderNo,
         ItemName: item.ItemName,
         Qty: item.Qty || 0,
-        UnitRate: item.UnitRate || 0,
+        UnitRate: unitRate,
         TotalAmount: item.TotalAmount || 0,
         DiscountPct: item.DiscountPct || 0,
         DiscountAmt: item.DiscountAmt || 0,
@@ -290,11 +305,12 @@ exports.updatePurchaseOrder = async (req, res) => {
       await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo } });
       
       for (const item of items) {
+        const unitRate = resolveLineUnitRate(item);
         await PurchaseOrderDetail.create({
           OrderNo: orderNo,
           ItemName: item.ItemName,
           Qty: item.Qty || 0,
-          UnitRate: item.UnitRate || 0,
+          UnitRate: unitRate,
           TotalAmount: item.TotalAmount || 0,
           DiscountPct: item.DiscountPct || 0,
           DiscountAmt: item.DiscountAmt || 0,
@@ -317,6 +333,10 @@ exports.updatePurchaseOrder = async (req, res) => {
           MRS_No: item.MRS_No || null
         });
       }
+
+      // Recalculate PO status (ordered qty may have changed)
+      const { recalcPOStatus } = require('./gateInwardController');
+      await recalcPOStatus(orderNo);
     }
 
     res.json({

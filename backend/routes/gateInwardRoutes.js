@@ -18,6 +18,9 @@ router.get('/purchase-orders', gateInwardController.getPurchaseOrders);
 // Get items for a specific purchase order
 router.get('/order-items', gateInwardController.getPurchaseOrderItems);
 
+// Check for duplicate invoice number
+router.get('/check-duplicate-invoice', gateInwardController.checkDuplicateInvoice);
+
 // Get all gate inwards
 router.get('/', gateInwardController.getGateInwards);
 
@@ -29,6 +32,9 @@ router.post('/', gateInwardController.createGateInward);
 
 // Update gate inward
 router.put('/:inwardNo', gateInwardController.updateGateInward);
+
+// Cascade-delete a gate inward chain
+router.delete('/delete-inward-chain/:inwardNo', gateInwardController.deleteGateInwardChain);
 
 // Delete gate inward
 router.delete('/:inwardNo', gateInwardController.deleteGateInward);

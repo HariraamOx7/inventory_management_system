@@ -2,7 +2,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-class PurchaseOrderDetail extends Model {}
+class PurchaseOrderDetail extends Model { }
 
 PurchaseOrderDetail.init({
   DetailId: {
@@ -23,7 +23,7 @@ PurchaseOrderDetail.init({
     defaultValue: 0
   },
   UnitRate: {
-    type: DataTypes.DECIMAL(15, 2),
+    type: DataTypes.DECIMAL(15, 6),
     defaultValue: 0
   },
   TotalAmount: {

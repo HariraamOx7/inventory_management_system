@@ -462,26 +462,37 @@ export default function Receipt() {
                           GRN-{String(receipt.GRNNo).padStart(3, '0')}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3 pt-3 border-t border-slate-100">
                         <div>
-                          <span className="text-slate-500">Gate Inward:</span>{' '}
+                          <span className="text-slate-500 text-xs block">Gate Inward</span>
                           <span className="text-slate-700 font-medium">GI-{String(receipt.GateInwardNo).padStart(3, '0')}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500">Inward Date:</span>{' '}
+                          <span className="text-slate-500 text-xs block">Inward Date</span>
                           <span className="text-slate-700 font-medium">
-                            {new Date(receipt.InwardDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {receipt.InwardDate ? new Date(receipt.InwardDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                           </span>
                         </div>
-                        {receipt.InvoiceNo && (
-                          <div>
-                            <span className="text-slate-500">Invoice No:</span>{' '}
-                            <span className="text-slate-700 font-medium">{receipt.InvoiceNo}</span>
-                          </div>
-                        )}
                         <div>
-                          <span className="text-slate-500">Grand Total:</span>{' '}
-                          <span className="text-emerald-600 font-bold">₹{(receipt.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-slate-500 text-xs block">Invoice No & Date</span>
+                          <span className="text-slate-800 font-medium">
+                            {receipt.InvoiceNo ? (
+                              <>
+                                <span className="font-semibold text-blue-700">{receipt.InvoiceNo}</span>
+                                {receipt.InvoiceDate && (
+                                  <span className="text-xs text-slate-500 block">
+                                    {new Date(receipt.InvoiceDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 text-xs block">Grand Total</span>
+                          <span className="text-emerald-600 font-bold text-base">₹{(receipt.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
@@ -660,7 +671,6 @@ export default function Receipt() {
                                 label: `GI-${gi.InwardNo}`,
                                 name: `GI-${gi.InwardNo}`
                               }))}
-                              searchable={true}
                               searchPlaceholder="Search gate inward no..."
                               disabled={!formData.PartyName}
                             />
@@ -669,25 +679,40 @@ export default function Receipt() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Invoice No</label>
-                        <input
-                          type="text"
-                          value={formData.InvoiceNo}
-                          onChange={(e) => setFormData({ ...formData, InvoiceNo: e.target.value })}
-                          placeholder="Enter Invoice No"
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Inward Date</label>
-                        <input
-                          type="date"
-                          value={formData.InwardDate}
-                          onChange={(e) => setFormData({ ...formData, InwardDate: e.target.value })}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    {/* Invoice Details Section */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4 shadow-sm">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">
+                        Invoice Details
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Invoice No</label>
+                          <input
+                            type="text"
+                            value={formData.InvoiceNo}
+                            onChange={(e) => setFormData({ ...formData, InvoiceNo: e.target.value })}
+                            placeholder="Enter Invoice No"
+                            className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Invoice Date</label>
+                          <input
+                            type="date"
+                            value={formData.InvoiceDate}
+                            onChange={(e) => setFormData({ ...formData, InvoiceDate: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Inward Date</label>
+                          <input
+                            type="date"
+                            value={formData.InwardDate}
+                            onChange={(e) => setFormData({ ...formData, InwardDate: e.target.value })}
+                            className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -723,9 +748,17 @@ export default function Receipt() {
                                     <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
                                     <td className="py-2.5 px-3 text-right font-medium">{qty}</td>
                                     <td className="py-2.5 px-3 text-right">
-                                      <span className="inline-block w-24 px-2 py-1 bg-slate-100 border border-slate-200 rounded text-right font-bold text-slate-700">
-                                        ₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </span>
+                                      <input
+                                        type="number"
+                                        step="1" value={item.UnitRate}
+                                        onWheel={(e) => e.target.blur()}
+                                        onChange={(e) => {
+                                          const nextItems = [...items];
+                                          nextItems[idx] = { ...item, UnitRate: e.target.value };
+                                          setItems(nextItems);
+                                        }}
+                                        className="w-24 px-2 py-1 bg-white border border-slate-300 rounded text-right font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
                                     </td>
                                     <td className="py-2.5 px-3 text-right font-bold text-slate-900">
                                       ₹{rowTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

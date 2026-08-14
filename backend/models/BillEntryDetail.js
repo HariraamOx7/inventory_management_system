@@ -2,7 +2,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-class BillEntryDetail extends Model {}
+class BillEntryDetail extends Model { }
 
 BillEntryDetail.init({
   DetailId: {

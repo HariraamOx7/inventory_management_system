@@ -4,6 +4,7 @@ const BillEntryDetail = require('../models/BillEntryDetail');
 const Receipt = require('../models/Receipt');
 const ReceiptDetail = require('../models/ReceiptDetail');
 const GateInward = require('../models/GateInward');
+const GateInwardDetail = require('../models/GateInwardDetail');
 const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 
@@ -230,6 +231,41 @@ exports.createBillEntry = async (req, res) => {
         success: false,
         message: 'This GRN is already billed'
       });
+    }
+
+    // Check for duplicate PartyBillNo per party (skip if blank)
+    if (PartyBillNo && PartyBillNo.trim()) {
+      const duplicateBill = await BillEntry.findOne({
+        where: { PartyName: PartyName.trim(), PartyBillNo: PartyBillNo.trim() }
+      });
+      if (duplicateBill) {
+        // Build chain info for frontend confirmation flow
+        const dupReceipt = duplicateBill.GRNNo
+          ? await Receipt.findByPk(duplicateBill.GRNNo, { raw: true })
+          : null;
+        const dupGateInward = duplicateBill.GateInwardNo
+          ? await GateInward.findByPk(duplicateBill.GateInwardNo, { raw: true })
+          : null;
+        const dupPO = dupGateInward
+          ? await PurchaseOrder.findByPk(dupGateInward.OrderNo, { raw: true })
+          : null;
+
+        return res.status(409).json({
+          success: false,
+          message: `A bill entry already exists for party "${PartyName.trim()}" with bill number "${PartyBillNo.trim()}".`,
+          duplicate: {
+            VoucherNo: duplicateBill.VoucherNo,
+            PartyName: duplicateBill.PartyName,
+            PartyBillNo: duplicateBill.PartyBillNo,
+            GRNNo: duplicateBill.GRNNo,
+            GateInwardNo: duplicateBill.GateInwardNo,
+            OrderNo: dupGateInward ? dupGateInward.OrderNo : null,
+            hasReceipt: !!dupReceipt,
+            hasGateInward: !!dupGateInward,
+            hasPurchaseOrder: !!dupPO
+          }
+        });
+      }
     }
 
     // Generate next VoucherNo
@@ -523,17 +559,22 @@ exports.getPrintData = async (req, res) => {
     const billData = billEntry.toJSON();
 
     const totalAmount = parseFloat(billData.Total) || 0;
+    const discountAmount = parseFloat(billData.Discount) || 0;
+    const pfAmount = parseFloat(billData.P_F) || 0;
+    const lorryFreightAmount = parseFloat(billData.LorryFreight) || 0;
+    const taxableBase = totalAmount - discountAmount + pfAmount + lorryFreightAmount;
+
     const gstAmount = parseFloat(billData.GST) || 0;
     const igstAmount = parseFloat(billData.IGST) || 0;
 
     // Fallback: Calculate percentages from amounts if missing
-    if (gstAmount > 0 && totalAmount > 0) {
-      if (!sgstPct) sgstPct = parseFloat(((gstAmount / 2 / totalAmount) * 100).toFixed(2));
-      if (!cgstPct) cgstPct = parseFloat(((gstAmount / 2 / totalAmount) * 100).toFixed(2));
+    if (gstAmount > 0 && taxableBase > 0) {
+      if (!sgstPct) sgstPct = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
+      if (!cgstPct) cgstPct = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
     }
 
-    if (igstAmount > 0 && totalAmount > 0) {
-      if (!igstPct) igstPct = parseFloat(((igstAmount / totalAmount) * 100).toFixed(2));
+    if (igstAmount > 0 && taxableBase > 0) {
+      if (!igstPct) igstPct = parseFloat(((igstAmount / taxableBase) * 100).toFixed(2));
     }
 
     billData.SGSTPct = sgstPct;
@@ -554,5 +595,109 @@ exports.getPrintData = async (req, res) => {
       message: 'Error fetching print data',
       error: error.message
     });
+  }
+};
+
+// Check for duplicate bill entry by PartyName + PartyBillNo
+exports.checkDuplicateBillEntry = async (req, res) => {
+  try {
+    const { partyName, partyBillNo } = req.query;
+
+    if (!partyName || !partyBillNo) {
+      return res.json({ success: true, duplicate: null });
+    }
+
+    const duplicateBill = await BillEntry.findOne({
+      where: { PartyName: partyName.trim(), PartyBillNo: partyBillNo.trim() }
+    });
+
+    if (!duplicateBill) {
+      return res.json({ success: true, duplicate: null });
+    }
+
+    const dupGateInward = duplicateBill.GateInwardNo
+      ? await GateInward.findByPk(duplicateBill.GateInwardNo, { raw: true })
+      : null;
+
+    res.json({
+      success: true,
+      duplicate: {
+        VoucherNo: duplicateBill.VoucherNo,
+        PartyName: duplicateBill.PartyName,
+        PartyBillNo: duplicateBill.PartyBillNo,
+        GRNNo: duplicateBill.GRNNo,
+        GateInwardNo: duplicateBill.GateInwardNo,
+        OrderNo: dupGateInward ? dupGateInward.OrderNo : null
+      }
+    });
+  } catch (error) {
+    console.error('Error checking duplicate bill:', error);
+    res.status(500).json({ success: false, message: 'Error checking duplicate', error: error.message });
+  }
+};
+
+// Cascade-delete a duplicate bill entry chain
+// Body: { layers: { bill: true, receipt: true, gateInward: true, purchaseOrder: true } }
+exports.deleteBillChain = async (req, res) => {
+  try {
+    const { voucherNo } = req.params;
+    const layers = req.body?.layers || {};
+
+    const billEntry = await BillEntry.findByPk(voucherNo);
+    if (!billEntry) {
+      return res.status(404).json({ success: false, message: 'Bill Entry not found' });
+    }
+
+    const deletedLayers = [];
+
+    // Layer 1: Delete BillEntry + Details
+    if (layers.bill) {
+      await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo } });
+      await billEntry.destroy();
+      deletedLayers.push('BillEntry');
+    }
+
+    // Layer 2: Delete Receipt (GRN) + Details
+    if (layers.receipt && billEntry.GRNNo) {
+      await ReceiptDetail.destroy({ where: { GRNNo: billEntry.GRNNo } });
+      await Receipt.destroy({ where: { GRNNo: billEntry.GRNNo } });
+      deletedLayers.push('Receipt');
+    }
+
+    // Layer 3: Delete GateInward + Details
+    if (layers.gateInward && billEntry.GateInwardNo) {
+      await GateInwardDetail.destroy({ where: { InwardNo: billEntry.GateInwardNo } });
+      const gateInward = await GateInward.findByPk(billEntry.GateInwardNo);
+      if (gateInward) {
+        await gateInward.destroy();
+        deletedLayers.push('GateInward');
+      }
+    }
+
+    // Layer 4: Delete PurchaseOrder + Details (only if not used by any other GateInward)
+    if (layers.purchaseOrder && billEntry.GateInwardNo) {
+      const gi = await GateInward.findByPk(billEntry.GateInwardNo);
+      const orderNo = gi ? gi.OrderNo : null;
+      if (orderNo) {
+        // Check no other gate inwards reference this PO
+        const otherGI = await GateInwardDetail.findOne({
+          where: { OrderNo: orderNo, InwardNo: { [Op.ne]: billEntry.GateInwardNo } }
+        });
+        if (!otherGI) {
+          await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo } });
+          await PurchaseOrder.destroy({ where: { OrderNo: orderNo } });
+          deletedLayers.push('PurchaseOrder');
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Deleted: ${deletedLayers.join(', ')}`,
+      deletedLayers
+    });
+  } catch (error) {
+    console.error('Error deleting bill chain:', error);
+    res.status(500).json({ success: false, message: 'Error deleting bill chain', error: error.message });
   }
 };

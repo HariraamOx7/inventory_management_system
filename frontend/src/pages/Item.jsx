@@ -443,8 +443,7 @@ export default function Item() {
                         value={data.UnitRate}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter unit rate"
-                        step="0.01"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
@@ -501,8 +500,7 @@ export default function Item() {
                         value={data.OpenValue}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter opening value"
-                        step="0.01"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>

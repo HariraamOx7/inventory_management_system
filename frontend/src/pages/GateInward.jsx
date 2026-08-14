@@ -51,6 +51,7 @@ export default function GateInward() {
   const [loading, setLoading] = useState(false);
   const [gateInwards, setGateInwards] = useState([]);
   const [editingInwardNo, setEditingInwardNo] = useState(null);
+  const [invoiceDuplicateWarning, setInvoiceDuplicateWarning] = useState(null);
 
   // Slide-over Drawer states (Matching Item Master style)
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -136,7 +137,7 @@ export default function GateInward() {
           String(inward.InwardNo).toLowerCase().includes(search.toLowerCase()) ||
           (inward.PartyName && inward.PartyName.toLowerCase().includes(search.toLowerCase())) ||
           (inward.InvoiceNo && inward.InvoiceNo.toLowerCase().includes(search.toLowerCase()));
-        const matchParty = partyFilter === 'ALL' || inward.PartyName === partyFilter;
+        const matchParty = partyFilter === 'ALL' || (inward.PartyName || '').trim() === partyFilter.trim();
         return matchSearch && matchParty;
       })
       .sort((a, b) => {
@@ -210,6 +211,7 @@ export default function GateInward() {
       setEditingInwardNo(null);
       setFormData(initialFormState);
       setItems([]);
+      setInvoiceDuplicateWarning(null);
     }, 300);
   };
 
@@ -225,6 +227,43 @@ export default function GateInward() {
       showToast(error.response?.data?.message || 'Error deleting gate inward', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper: run layered deletion confirmation for a duplicate gate inward chain
+  const handleDuplicateGateInwardCleanup = async (duplicate) => {
+    const { InwardNo: dupInwardNo, PartyName: dupParty, InvoiceNo: dupInvoice, OrderNo, hasPurchaseOrder } = duplicate;
+
+    // Layer 1: Confirm GateInward deletion
+    const confirmGI = window.confirm(
+      `⚠️ DUPLICATE GATE INWARD FOUND\n\n` +
+      `Party: ${dupParty}\nInvoice No: ${dupInvoice}\nInward No: GI-${String(dupInwardNo).padStart(3, '0')}\n\n` +
+      `Do you want to DELETE this duplicate Gate Inward (#${dupInwardNo}) to proceed?`
+    );
+    if (!confirmGI) {
+      showToast('Save cancelled — duplicate Gate Inward was not removed.', 'warning');
+      return false;
+    }
+
+    const layers = { gateInward: true, purchaseOrder: false };
+
+    // Layer 2: Confirm PurchaseOrder deletion
+    if (hasPurchaseOrder && OrderNo) {
+      layers.purchaseOrder = window.confirm(
+        `Also DELETE the linked Purchase Order (#${OrderNo}) and its item details?\n\n(Will be skipped if another Gate Inward references the same PO.)`
+      );
+    }
+
+    // Execute cascade delete
+    try {
+      await axios.delete(`${API_URL}/gate-inwards/delete-inward-chain/${dupInwardNo}`, { data: { layers } });
+      showToast(`Duplicate Gate Inward #${dupInwardNo} and selected linked records removed.`, 'success');
+      setInvoiceDuplicateWarning(null);
+      return true;
+    } catch (deleteErr) {
+      console.error('Error deleting duplicate gate inward chain:', deleteErr);
+      showToast(deleteErr.response?.data?.message || 'Failed to delete duplicate records.', 'error');
+      return false;
     }
   };
 
@@ -259,15 +298,40 @@ export default function GateInward() {
       };
 
       if (editingInwardNo) {
-        await axios.put(`${API_URL}/gate-inwards/${editingInwardNo}`, payload);
-        showToast('Gate Inward updated successfully!', 'success');
+        try {
+          await axios.put(`${API_URL}/gate-inwards/${editingInwardNo}`, payload);
+          showToast('Gate Inward updated successfully!', 'success');
+          handleCloseEditDrawer();
+          fetchInitialData();
+        } catch (updateErr) {
+          if (updateErr.response?.status === 409) {
+            showToast(updateErr.response?.data?.message || 'Duplicate invoice number detected.', 'error');
+          } else {
+            throw updateErr;
+          }
+        }
       } else {
-        await axios.post(`${API_URL}/gate-inwards`, payload);
-        showToast('Gate Inward entry saved successfully!', 'success');
+        try {
+          await axios.post(`${API_URL}/gate-inwards`, payload);
+          showToast('Gate Inward entry saved successfully!', 'success');
+          handleCloseEditDrawer();
+          fetchInitialData();
+        } catch (createErr) {
+          if (createErr.response?.status === 409 && createErr.response?.data?.duplicate) {
+            setLoading(false);
+            const cleaned = await handleDuplicateGateInwardCleanup(createErr.response.data.duplicate);
+            if (cleaned) {
+              setLoading(true);
+              await axios.post(`${API_URL}/gate-inwards`, payload);
+              showToast('Gate Inward entry saved successfully!', 'success');
+              handleCloseEditDrawer();
+              fetchInitialData();
+            }
+            return;
+          }
+          throw createErr;
+        }
       }
-
-      handleCloseEditDrawer();
-      fetchInitialData();
     } catch (error) {
       console.error('Error saving gate inward:', error);
       showToast(error.response?.data?.message || 'Error saving gate inward entry', 'error');
@@ -307,7 +371,8 @@ export default function GateInward() {
               },
               options: [
                 { value: 'ALL', label: 'All Parties' },
-                ...parties.map(p => ({ value: p.name, label: p.name }))
+                ...[...new Set(gateInwards.map(g => g.PartyName).filter(Boolean))].sort()
+                  .map(name => ({ value: name, label: name }))
               ],
               searchable: true
             },
@@ -561,10 +626,35 @@ export default function GateInward() {
                         <input
                           type="text"
                           value={formData.InvoiceNo}
-                          onChange={(e) => setFormData({ ...formData, InvoiceNo: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, InvoiceNo: e.target.value });
+                            setInvoiceDuplicateWarning(null);
+                          }}
+                          onBlur={async (e) => {
+                            const invoiceVal = e.target.value.trim();
+                            const partyVal = formData.PartyName;
+                            if (!invoiceVal || !partyVal) return;
+                            try {
+                              const params = { partyName: partyVal, invoiceNo: invoiceVal };
+                              if (editingInwardNo) params.excludeInwardNo = editingInwardNo;
+                              const res = await axios.get(`${API_URL}/gate-inwards/check-duplicate-invoice`, { params });
+                              if (res.data?.duplicate) {
+                                setInvoiceDuplicateWarning(res.data.duplicate);
+                              } else {
+                                setInvoiceDuplicateWarning(null);
+                              }
+                            } catch {/* silent */ }
+                          }}
                           placeholder="Enter Invoice No"
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${invoiceDuplicateWarning ? 'border-amber-400 bg-amber-50' : 'border-slate-300'
+                            }`}
                         />
+                        {invoiceDuplicateWarning && (
+                          <p className="mt-1 text-xs text-amber-600 font-medium">
+                            ⚠️ Invoice already used in Gate Inward #GI-{String(invoiceDuplicateWarning.InwardNo).padStart(3, '0')}{' '}
+                            ({new Date(invoiceDuplicateWarning.InwardDate).toLocaleDateString('en-GB')})
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Invoice Date</label>
@@ -641,8 +731,7 @@ export default function GateInward() {
                                   <td className="py-3.5 px-4 text-right">
                                     <input
                                       type="number"
-                                      step="0.01"
-                                      value={item.ReceivedQty}
+                                      step="1" value={item.ReceivedQty}
                                       onWheel={(e) => e.target.blur()}
                                       onChange={(e) => {
                                         const enteredValue = e.target.value;
