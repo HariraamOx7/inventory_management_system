@@ -140,10 +140,6 @@ export default function Receipt() {
       if (res.data?.success) {
         const pos = res.data.data || [];
         setPurchaseOrders(pos);
-        // If there is exactly one completed PO for this party, automatically select it!
-        if (pos.length === 1) {
-          handleOrderChange(pos[0].OrderNo);
-        }
       }
     } catch (err) {
       console.error('Error fetching available POs for receipt:', err);
@@ -687,23 +683,8 @@ export default function Receipt() {
                               searchable
                               placeholder="Select party name"
                               value={formData.PartyName}
-                              onChange={(val) => {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  PartyName: val,
-                                  OrderNo: '',
-                                  GateInwardNo: '',
-                                  InvoiceNo: '',
-                                  InvoiceDate: ''
-                                }));
-                                setPurchaseOrders([]);
-                                setLinkedGateInwards([]);
-                                setItems([]);
-                              }}
-                              options={parties.map(p => ({
-                                value: p.name,
-                                label: p.name
-                              }))}
+                              onChange={handlePartyChange}
+                              options={partyOptions}
                               searchPlaceholder="Search party by name..."
                             />
                           ) : (
@@ -737,14 +718,10 @@ export default function Receipt() {
                                 searchable
                                 placeholder={formData.PartyName ? (purchaseOrders.length > 0 ? 'Select purchase order' : 'No completed purchase orders available') : 'Select party name first'}
                                 value={formData.OrderNo}
-                                onChange={(val) => setFormData(prev => ({ ...prev, OrderNo: val }))}
-                                options={purchaseOrders.map(po => ({
-                                  value: po.OrderNo,
-                                  label: `PO-${po.OrderNo} (${po.OrderDate ? new Date(po.OrderDate).toLocaleDateString('en-GB') : ''}) - ₹${parseFloat(po.GrandTotal || 0).toLocaleString('en-IN')}`,
-                                  name: `PO-${po.OrderNo}`
-                                }))}
+                                onChange={handleOrderChange}
+                                options={purchaseOrderOptions}
                                 searchPlaceholder="Search purchase order..."
-                                disabled={!formData.PartyName || purchaseOrders.length === 0}
+                                disabled={!formData.PartyName}
                               />
                             </div>
                           )}
@@ -753,31 +730,28 @@ export default function Receipt() {
 
                       {/* Linked Gate Inwards Section */}
                       {linkedGateInwards.length > 0 && (
-                        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 space-y-3 pt-3">
-                          <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
+                        <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3 shadow-xs">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold uppercase tracking-wider text-blue-900">
-                                Linked Gate Inward Batches ({linkedGateInwards.length})
+                              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                Gate Inward Batches ({linkedGateInwards.length})
                               </span>
                               {formData.OrderNo && (
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-300">
+                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-full border border-slate-200">
                                   PO-{formData.OrderNo}
                                 </span>
                               )}
                             </div>
-                            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
-                              ✓ 100% Ordered Qty Received
-                            </span>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {linkedGateInwards.map((gi) => (
                               <div
                                 key={gi.InwardNo}
-                                className="bg-white rounded-lg p-2.5 border border-blue-100 shadow-xs flex flex-col justify-between space-y-1"
+                                className="bg-slate-50/80 rounded-lg p-2.5 border border-slate-200/80 flex flex-col justify-between space-y-1 hover:bg-slate-100/70 transition-colors"
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-blue-700 text-xs">
+                                  <span className="font-bold text-slate-800 text-xs">
                                     GI-{String(gi.InwardNo).padStart(3, '0')}
                                   </span>
                                   <span className="text-[11px] text-slate-500 font-medium">
@@ -786,7 +760,7 @@ export default function Receipt() {
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] text-slate-600">
                                   <span>Invoice: <strong className="text-slate-700">{gi.InvoiceNo || 'N/A'}</strong></span>
-                                  <span className="text-slate-500">{gi.details?.length || 0} item(s)</span>
+                                  <span className="text-slate-500 font-medium">{gi.details?.length || 0} item(s)</span>
                                 </div>
                               </div>
                             ))}

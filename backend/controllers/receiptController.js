@@ -128,7 +128,7 @@ exports.getAvailablePurchaseOrders = async (req, res) => {
     const whereClause = {
       Status: 'Completed'
     };
-    if (partyName) whereClause.PartyName = partyName;
+    if (partyName) whereClause.PartyName = partyName.trim();
     if (usedOrderNos.length > 0) whereClause.OrderNo = { [Op.notIn]: usedOrderNos };
 
     const completedPOs = await PurchaseOrder.findAll({
