@@ -4,7 +4,8 @@
 
 /* === Scale Fix: Consistent UI across all screens === */
 html {
-  font-size: 14px; /* Reduces base size from 16px → 14px (87.5% scale) */
+  font-size: 14px;
+  /* Reduces base size from 16px → 14px (87.5% scale) */
 }
 
 @media (min-width: 1280px) {
@@ -20,6 +21,7 @@ html {
 }
 
 @layer utilities {
+
   /* Custom scrollbar for content areas */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

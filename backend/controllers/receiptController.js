@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const Receipt = require('../models/Receipt');
 const ReceiptDetail = require('../models/ReceiptDetail');
 const Supplier = require('../models/Supplier');
@@ -55,20 +55,45 @@ exports.getLastGRNNo = async (req, res) => {
   }
 };
 
-// Get all parties (suppliers) for dropdown
+// Get all parties (suppliers) who have at least one Completed Purchase Order and NO receipt created yet
 exports.getParties = async (req, res) => {
   try {
-    const suppliers = await Supplier.findAll({
-      attributes: ['AccountName'],
-      order: [['AccountName', 'ASC']]
+    // Find all Gate Inwards that are already linked in an existing Receipt
+    const usedReceipts = await Receipt.findAll({
+      attributes: ['GateInwardNo'],
+      where: { GateInwardNo: { [Op.ne]: null } },
+      raw: true
+    });
+    const usedInwardNos = usedReceipts.map(r => r.GateInwardNo);
+
+    // Find all POs that already have a Receipt created (via any of their Gate Inwards)
+    const usedGIs = usedInwardNos.length > 0
+      ? await GateInward.findAll({
+          where: { InwardNo: { [Op.in]: usedInwardNos } },
+          attributes: ['OrderNo'],
+          raw: true
+        })
+      : [];
+    const usedOrderNos = [...new Set(usedGIs.map(g => g.OrderNo).filter(Boolean))];
+
+    // Find distinct PartyNames for POs that are 'Completed' and not yet in usedOrderNos
+    const completedPOs = await PurchaseOrder.findAll({
+      attributes: ['PartyName'],
+      where: {
+        Status: 'Completed',
+        ...(usedOrderNos.length > 0 ? { OrderNo: { [Op.notIn]: usedOrderNos } } : {})
+      },
+      group: ['PartyName'],
+      order: [['PartyName', 'ASC']],
+      raw: true
     });
 
     res.json({
       success: true,
-      data: suppliers.map(s => ({ name: s.AccountName }))
+      data: completedPOs.map(p => ({ name: p.PartyName }))
     });
   } catch (error) {
-    console.error('Error fetching parties:', error);
+    console.error('Error fetching parties for receipt:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching parties',
@@ -77,34 +102,220 @@ exports.getParties = async (req, res) => {
   }
 };
 
-// New: Get available gate inwards not yet used in receipt
-exports.getAvailableGateInwards = async (req, res) => {
+// Get available purchase orders (Completed with Gate Inwards, not yet having a Receipt)
+exports.getAvailablePurchaseOrders = async (req, res) => {
   try {
     const { partyName } = req.query;
 
-    const usedRows = await Receipt.findAll({
+    // Find all Gate Inwards that are already linked in an existing Receipt
+    const usedReceipts = await Receipt.findAll({
       attributes: ['GateInwardNo'],
-      where: {
-        GateInwardNo: { [Op.ne]: null }
-      },
-      group: ['GateInwardNo'],
+      where: { GateInwardNo: { [Op.ne]: null } },
       raw: true
     });
-    const usedInwardNos = usedRows.map(r => r.GateInwardNo);
+    const usedInwardNos = usedReceipts.map(r => r.GateInwardNo);
 
-    const whereClause = {};
+    // Find all POs that already have a Receipt created (via any of their Gate Inwards)
+    const usedGIs = usedInwardNos.length > 0
+      ? await GateInward.findAll({
+          where: { InwardNo: { [Op.in]: usedInwardNos } },
+          attributes: ['OrderNo'],
+          raw: true
+        })
+      : [];
+    const usedOrderNos = [...new Set(usedGIs.map(g => g.OrderNo).filter(Boolean))];
+
+    const whereClause = {
+      Status: 'Completed'
+    };
     if (partyName) whereClause.PartyName = partyName;
-    if (usedInwardNos.length > 0) whereClause.InwardNo = { [Op.notIn]: usedInwardNos };
+    if (usedOrderNos.length > 0) whereClause.OrderNo = { [Op.notIn]: usedOrderNos };
 
-    const gateInwards = await GateInward.findAll({
+    const completedPOs = await PurchaseOrder.findAll({
       where: whereClause,
-      attributes: ['InwardNo', 'OrderNo', 'PartyName', 'InwardDate', 'InvoiceNo', 'InvoiceDate', 'DCNo', 'DCDate'],
-      order: [['InwardNo', 'DESC']]
+      attributes: ['OrderNo', 'PartyName', 'OrderDate', 'Total', 'GrandTotal', 'Status'],
+      order: [['OrderNo', 'DESC']]
     });
 
     res.json({
       success: true,
-      data: gateInwards
+      data: completedPOs
+    });
+  } catch (error) {
+    console.error('Error fetching available purchase orders for receipt:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching purchase orders',
+      error: error.message
+    });
+  }
+};
+
+// Get details for a specific Purchase Order for receipt creation (including all linked Gate Inwards)
+exports.getPurchaseOrderReceiptDetails = async (req, res) => {
+  try {
+    const { orderNo } = req.query;
+
+    if (!orderNo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order number is required'
+      });
+    }
+
+    const po = await PurchaseOrder.findByPk(orderNo, { raw: true });
+    if (!po) {
+      return res.status(404).json({
+        success: false,
+        message: 'Purchase Order not found'
+      });
+    }
+
+    // Find all Gate Inwards linked to this PO
+    const gateInwards = await GateInward.findAll({
+      where: { OrderNo: orderNo },
+      include: [{ model: GateInwardDetail, as: 'details' }],
+      order: [['InwardNo', 'ASC']]
+    });
+
+    const poTotals = {
+      Discount: parseFloat(po.Discount) || 0,
+      GST: parseFloat(po.GST) || 0,
+      IGST: parseFloat(po.IGST) || 0,
+      VAT_CST: parseFloat(po.VAT_CST) || 0,
+      P_F: parseFloat(po.P_F) || 0,
+      LorryFreight: parseFloat(po.LorryFreight) || 0,
+      RoundOff: parseFloat(po.RoundOff) || 0
+    };
+
+    // Fetch all PO item definitions for this order
+    const poDetails = await PurchaseOrderDetail.findAll({
+      where: { OrderNo: orderNo },
+      attributes: ['OrderNo', 'ItemName', 'Qty', 'UnitRate', 'TotalAmount'],
+      order: [['DetailId', 'ASC']],
+      raw: true
+    });
+
+    // Sum total received quantities across ALL Gate Inwards for this OrderNo
+    const giSums = await GateInwardDetail.findAll({
+      where: { OrderNo: orderNo },
+      attributes: [
+        'ItemName',
+        [fn('SUM', col('ReceivedQty')), 'totalReceived']
+      ],
+      group: ['ItemName'],
+      raw: true
+    });
+    const receivedMap = {};
+    for (const row of giSums) {
+      receivedMap[row.ItemName] = parseFloat(row.totalReceived) || 0;
+    }
+
+    const itemsForReceipt = poDetails.map(d => {
+      const qtyVal = receivedMap[d.ItemName] !== undefined ? receivedMap[d.ItemName] : (parseFloat(d.Qty) || 0);
+      const rateVal = parseFloat(d.UnitRate) || 0;
+      return {
+        ItemName: d.ItemName,
+        OrderNo: d.OrderNo,
+        PendingQty: 0,
+        ReceivedQty: qtyVal,
+        Qty: qtyVal,
+        UnitRate: rateVal,
+        TotalAmount: qtyVal * rateVal
+      };
+    });
+
+    // Primary Gate Inward (e.g. latest)
+    const primaryGI = gateInwards.length > 0 ? gateInwards[gateInwards.length - 1] : null;
+
+    res.json({
+      success: true,
+      data: {
+        OrderNo: po.OrderNo,
+        PartyName: po.PartyName,
+        GateInwardNo: primaryGI ? primaryGI.InwardNo : null,
+        InvoiceNo: primaryGI ? primaryGI.InvoiceNo : '',
+        InvoiceDate: primaryGI ? primaryGI.InvoiceDate : null,
+        InwardDate: primaryGI ? primaryGI.InwardDate : null,
+        gateInwards: gateInwards.map(gi => gi.toJSON()),
+        details: itemsForReceipt,
+        POTotals: poTotals
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching purchase order details for receipt:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching purchase order receipt details',
+      error: error.message
+    });
+  }
+};
+
+// New: Get available gate inwards not yet used in receipt (only for 100% completed POs, 1 receipt per PO)
+exports.getAvailableGateInwards = async (req, res) => {
+  try {
+    const { partyName } = req.query;
+
+    // Find all Gate Inwards that are already linked in an existing Receipt
+    const usedReceipts = await Receipt.findAll({
+      attributes: ['GateInwardNo'],
+      where: {
+        GateInwardNo: { [Op.ne]: null }
+      },
+      raw: true
+    });
+    const usedInwardNos = usedReceipts.map(r => r.GateInwardNo);
+
+    // Find all POs that already have a Receipt created (via any of their Gate Inwards)
+    const usedGIs = usedInwardNos.length > 0
+      ? await GateInward.findAll({
+          where: { InwardNo: { [Op.in]: usedInwardNos } },
+          attributes: ['OrderNo'],
+          raw: true
+        })
+      : [];
+    const usedOrderNos = [...new Set(usedGIs.map(g => g.OrderNo).filter(Boolean))];
+
+    // Only allow Gate Inwards whose Purchase Order is fully received ('Completed') and has no Receipt yet
+    const completedOrders = await PurchaseOrder.findAll({
+      attributes: ['OrderNo'],
+      where: {
+        Status: 'Completed',
+        ...(usedOrderNos.length > 0 ? { OrderNo: { [Op.notIn]: usedOrderNos } } : {})
+      },
+      raw: true
+    });
+    const completedOrderNos = completedOrders.map(o => o.OrderNo);
+
+    const whereClause = {};
+    if (partyName) whereClause.PartyName = partyName;
+    if (completedOrderNos.length > 0) {
+      whereClause.OrderNo = { [Op.in]: completedOrderNos };
+    } else {
+      whereClause.OrderNo = { [Op.in]: [-1] };
+    }
+
+    const gateInwards = await GateInward.findAll({
+      where: whereClause,
+      attributes: ['InwardNo', 'OrderNo', 'PartyName', 'InwardDate', 'InvoiceNo', 'InvoiceDate'],
+      order: [['InwardNo', 'DESC']]
+    });
+
+    // Group by OrderNo so each completed PO is represented once (by its latest Gate Inward)
+    const uniqueByOrder = [];
+    const seenOrders = new Set();
+    for (const gi of gateInwards) {
+      const oKey = gi.OrderNo || gi.InwardNo;
+      if (!seenOrders.has(oKey)) {
+        seenOrders.add(oKey);
+        uniqueByOrder.push(gi);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: uniqueByOrder
     });
   } catch (error) {
     console.error('Error fetching available gate inwards:', error);
@@ -116,7 +327,7 @@ exports.getAvailableGateInwards = async (req, res) => {
   }
 };
 
-// New: Get gate inward with details
+// New: Get gate inward with details, aggregating all received quantities across all batches for this PO
 exports.getGateInwardDetails = async (req, res) => {
   try {
     const { inwardNo } = req.query;
@@ -139,60 +350,75 @@ exports.getGateInwardDetails = async (req, res) => {
       });
     }
 
-    const detailRows = (gateInward.details || []).map(d => d.toJSON());
-    const orderNos = [...new Set(detailRows.map(d => d.OrderNo).filter(Boolean))];
+    const targetOrderNo = gateInward.OrderNo || (gateInward.details && gateInward.details[0]?.OrderNo);
 
     let poTotals = { Discount: 0, GST: 0, IGST: 0, VAT_CST: 0, P_F: 0, LorryFreight: 0, RoundOff: 0 };
-    let unitRateMap = new Map();
+    let itemsForReceipt = [];
 
-    if (orderNos.length > 0) {
-      const poHeads = await PurchaseOrder.findAll({
-        where: { OrderNo: { [Op.in]: orderNos } },
-        attributes: ['OrderNo', 'Discount', 'GST', 'IGST', 'VAT_CST', 'P_F', 'RoundOff'],
-        raw: true
-      });
+    if (targetOrderNo) {
+      const po = await PurchaseOrder.findByPk(targetOrderNo, { raw: true });
+      if (po) {
+        poTotals = {
+          Discount: parseFloat(po.Discount) || 0,
+          GST: parseFloat(po.GST) || 0,
+          IGST: parseFloat(po.IGST) || 0,
+          VAT_CST: parseFloat(po.VAT_CST) || 0,
+          P_F: parseFloat(po.P_F) || 0,
+          LorryFreight: parseFloat(po.LorryFreight) || 0,
+          RoundOff: parseFloat(po.RoundOff) || 0
+        };
+      }
 
-      poTotals = poHeads.reduce(
-        (acc, po) => {
-          acc.Discount += parseFloat(po.Discount) || 0;
-          acc.GST += parseFloat(po.GST) || 0;
-          acc.IGST += parseFloat(po.IGST) || 0;
-          acc.VAT_CST += parseFloat(po.VAT_CST) || 0;
-          acc.P_F += parseFloat(po.P_F) || 0;
-          acc.RoundOff += parseFloat(po.RoundOff) || 0;
-          return acc;
-        },
-        { Discount: 0, GST: 0, IGST: 0, VAT_CST: 0, P_F: 0, LorryFreight: 0, RoundOff: 0 }
-      );
-
+      // Fetch all PO item definitions for this order
       const poDetails = await PurchaseOrderDetail.findAll({
-        where: { OrderNo: { [Op.in]: orderNos } },
-        attributes: ['OrderNo', 'ItemName', 'UnitRate', 'LorryFreight', 'TaxAmount'],
+        where: { OrderNo: targetOrderNo },
+        attributes: ['OrderNo', 'ItemName', 'Qty', 'UnitRate', 'TotalAmount'],
+        order: [['DetailId', 'ASC']],
         raw: true
       });
 
-      unitRateMap = new Map(
-        poDetails.map(d => [`${d.OrderNo}::${d.ItemName}`, parseFloat(d.UnitRate) || 0])
-      );
+      // Sum total received quantities across ALL Gate Inwards for this OrderNo (all batches)
+      const giSums = await GateInwardDetail.findAll({
+        where: { OrderNo: targetOrderNo },
+        attributes: [
+          'ItemName',
+          [fn('SUM', col('ReceivedQty')), 'totalReceived']
+        ],
+        group: ['ItemName'],
+        raw: true
+      });
+      const receivedMap = {};
+      for (const row of giSums) {
+        receivedMap[row.ItemName] = parseFloat(row.totalReceived) || 0;
+      }
 
-      // Accumulate item-level LorryFreight and TaxAmount to VAT_CST
-      const extraLorryFreight = poDetails.reduce((sum, d) => sum + (parseFloat(d.LorryFreight) || 0), 0);
-      const extraTaxAmount = poDetails.reduce((sum, d) => sum + (parseFloat(d.TaxAmount) || 0), 0);
-
-      poTotals.LorryFreight = extraLorryFreight;
-      poTotals.VAT_CST += extraTaxAmount;
+      // Build complete item list for receipt: total received quantity across all batches
+      itemsForReceipt = poDetails.map(d => {
+        const qtyVal = receivedMap[d.ItemName] !== undefined ? receivedMap[d.ItemName] : (parseFloat(d.Qty) || 0);
+        const rateVal = parseFloat(d.UnitRate) || 0;
+        return {
+          ItemName: d.ItemName,
+          OrderNo: d.OrderNo,
+          PendingQty: 0,
+          ReceivedQty: qtyVal,
+          Qty: qtyVal,
+          UnitRate: rateVal,
+          TotalAmount: qtyVal * rateVal
+        };
+      });
+    } else {
+      itemsForReceipt = (gateInward.details || []).map(d => ({
+        ...d.toJSON(),
+        Qty: d.ReceivedQty || d.Qty || 0,
+        TotalAmount: (d.ReceivedQty || d.Qty || 0) * (d.UnitRate || 0)
+      }));
     }
-
-    const enrichedDetails = detailRows.map(d => ({
-      ...d,
-      UnitRate: unitRateMap.get(`${d.OrderNo}::${d.ItemName}`) || 0
-    }));
 
     res.json({
       success: true,
       data: {
         ...gateInward.toJSON(),
-        details: enrichedDetails,
+        details: itemsForReceipt,
         POTotals: poTotals
       }
     });
@@ -317,14 +543,44 @@ exports.createReceipt = async (req, res) => {
       });
     }
 
-    const existingReceiptForInward = await Receipt.findOne({
-      where: { GateInwardNo }
-    });
-    if (existingReceiptForInward) {
-      return res.status(400).json({
-        success: false,
-        message: 'This Gate Inward number is already used in a receipt'
+    if (gateInward.OrderNo) {
+      const allGIsInPO = await GateInward.findAll({
+        where: { OrderNo: gateInward.OrderNo },
+        attributes: ['InwardNo'],
+        raw: true
       });
+      const poInwardNos = allGIsInPO.map(g => g.InwardNo);
+
+      const existingReceiptForPO = await Receipt.findOne({
+        where: { GateInwardNo: { [Op.in]: poInwardNos } }
+      });
+      if (existingReceiptForPO) {
+        return res.status(400).json({
+          success: false,
+          message: `A Receipt (GRN-${String(existingReceiptForPO.GRNNo).padStart(3, '0')}) has already been created for Purchase Order #PO-${gateInward.OrderNo}. Only one receipt is allowed per purchase order.`
+        });
+      }
+    } else {
+      const existingReceiptForInward = await Receipt.findOne({
+        where: { GateInwardNo }
+      });
+      if (existingReceiptForInward) {
+        return res.status(400).json({
+          success: false,
+          message: 'This Gate Inward number is already used in a receipt'
+        });
+      }
+    }
+
+    // Validation: Only allow receipt if the Purchase Order is fully received (Status = 'Completed')
+    if (gateInward.OrderNo) {
+      const po = await PurchaseOrder.findByPk(gateInward.OrderNo, { raw: true });
+      if (po && po.Status !== 'Completed') {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot create receipt for PO #${gateInward.OrderNo}. All ordered quantities must be fully received before entering a receipt.`
+        });
+      }
     }
 
     const orderNos = [...new Set(items.map(item => item.OrderNo).filter(Boolean))];
@@ -336,8 +592,8 @@ exports.createReceipt = async (req, res) => {
       InwardDate: InwardDate || gateInward.InwardDate || new Date(),
       InvoiceNo: InvoiceNo ? InvoiceNo.trim() : gateInward.InvoiceNo,
       InvoiceDate: InvoiceDate || gateInward.InvoiceDate || null,
-      DCNo: DCNo ? DCNo.trim() : gateInward.DCNo,
-      DCDate: DCDate || gateInward.DCDate || null,
+      DCNo: DCNo ? DCNo.trim() : null,
+      DCDate: DCDate || null,
       FormType: FormType ? FormType.trim() : null,
       BillAmount: BillAmount || 0,
       Total: Total || 0,

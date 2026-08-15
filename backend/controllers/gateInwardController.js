@@ -207,8 +207,7 @@ exports.getGateInwardById = async (req, res) => {
 exports.createGateInward = async (req, res) => {
   try {
     const {
-      PartyName, InwardDate, InvoiceNo, InvoiceDate,
-      DCNo, DCDate, LRCNo, items
+      PartyName, InwardDate, InvoiceNo, InvoiceDate, items
     } = req.body;
 
     if (!PartyName || !items || items.length === 0) {
@@ -285,10 +284,7 @@ exports.createGateInward = async (req, res) => {
       PartyName: PartyName.trim(),
       InwardDate: InwardDate || new Date(),
       InvoiceNo: InvoiceNo ? InvoiceNo.trim() : null,
-      InvoiceDate: InvoiceDate || null,
-      DCNo: DCNo ? DCNo.trim() : null,
-      DCDate: DCDate || null,
-      LRCNo: LRCNo ? LRCNo.trim() : null
+      InvoiceDate: InvoiceDate || null
     });
 
     for (const item of items) {
@@ -326,8 +322,7 @@ exports.updateGateInward = async (req, res) => {
   try {
     const { inwardNo } = req.params;
     const {
-      PartyName, InwardDate, InvoiceNo, InvoiceDate,
-      DCNo, DCDate, LRCNo, items
+      OrderNo, PartyName, InwardDate, InvoiceNo, InvoiceDate, items
     } = req.body;
 
     if (items && items.length > 0) {
@@ -373,14 +368,13 @@ exports.updateGateInward = async (req, res) => {
       }
     }
 
+    const firstItemOrderNo = items && items.length > 0 ? items[0].OrderNo : null;
     await inward.update({
+      OrderNo: OrderNo || firstItemOrderNo || inward.OrderNo,
       PartyName: PartyName ? PartyName.trim() : inward.PartyName,
       InwardDate: InwardDate || inward.InwardDate,
       InvoiceNo: InvoiceNo ? InvoiceNo.trim() : inward.InvoiceNo,
-      InvoiceDate: InvoiceDate || inward.InvoiceDate,
-      DCNo: DCNo ? DCNo.trim() : inward.DCNo,
-      DCDate: DCDate || inward.DCDate,
-      LRCNo: LRCNo ? LRCNo.trim() : inward.LRCNo
+      InvoiceDate: InvoiceDate || inward.InvoiceDate
     });
 
     if (items && items.length > 0) {
@@ -481,6 +475,107 @@ exports.getParties = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching parties',
+      error: error.message
+    });
+  }
+};
+
+// Get purchase orders (Draft/Partial) for a specific party
+exports.getPurchaseOrdersByParty = async (req, res) => {
+  try {
+    const { partyName } = req.query;
+
+    if (!partyName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Party name is required'
+      });
+    }
+
+    const orders = await PurchaseOrder.findAll({
+      where: {
+        PartyName: partyName,
+        Status: { [Op.in]: ['Draft', 'Partial'] }
+      },
+      attributes: ['OrderNo', 'OrderDate', 'Total', 'GrandTotal', 'Status'],
+      order: [['OrderNo', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: orders
+    });
+  } catch (error) {
+    console.error('Error fetching purchase orders by party:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching purchase orders',
+      error: error.message
+    });
+  }
+};
+
+// Get items for a single purchase order with remaining pending qty
+exports.getItemsByOrder = async (req, res) => {
+  try {
+    const { orderNo } = req.query;
+
+    if (!orderNo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order number is required'
+      });
+    }
+
+    // Get all PO items for this specific order
+    const poItems = await PurchaseOrderDetail.findAll({
+      where: { OrderNo: orderNo },
+      attributes: ['ItemName', 'Qty', 'OrderNo', 'UnitRate'],
+      order: [['DetailId', 'ASC']],
+      raw: true
+    });
+
+    // Get total received qty per ItemName across all gate inwards for this order
+    const receivedRows = await GateInwardDetail.findAll({
+      where: { OrderNo: orderNo },
+      attributes: [
+        'ItemName',
+        [fn('SUM', col('ReceivedQty')), 'totalReceived']
+      ],
+      group: ['ItemName'],
+      raw: true
+    });
+
+    // Build lookup: "ItemName" -> totalReceived
+    const receivedMap = {};
+    for (const row of receivedRows) {
+      receivedMap[row.ItemName] = parseFloat(row.totalReceived) || 0;
+    }
+
+    // Calculate remaining pending qty for each item
+    const itemsWithPending = poItems
+      .map(item => {
+        const orderedQty = parseFloat(item.Qty) || 0;
+        const alreadyReceived = receivedMap[item.ItemName] || 0;
+        const pendingQty = orderedQty - alreadyReceived;
+        return {
+          ItemName: item.ItemName,
+          Qty: pendingQty,  // Remaining qty to be received
+          OrderNo: item.OrderNo,
+          UnitRate: item.UnitRate
+        };
+      })
+      .filter(item => item.Qty > 0);  // Only return items with pending qty
+
+    res.json({
+      success: true,
+      data: itemsWithPending
+    });
+  } catch (error) {
+    console.error('Error fetching items by order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching items by order',
       error: error.message
     });
   }

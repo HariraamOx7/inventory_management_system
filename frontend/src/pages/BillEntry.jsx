@@ -30,16 +30,16 @@ const initialFormState = {
   PartyBillNo: '',
   BillDate: new Date().toISOString().split('T')[0],
   PurchaseType: '',
-  BillAmount: 0,
-  TDS: 0,
+  BillAmount: '',
+  TDS: '',
   Narration: '',
   Total: 0,
-  Discount: 0,
-  GST: 0,
-  IGST: 0,
-  VAT_CST: 0,
-  P_F: 0,
-  LorryFreight: 0,
+  Discount: '',
+  GST: '',
+  IGST: '',
+  VAT_CST: '',
+  P_F: '',
+  LorryFreight: '',
   RoundOff: 0,
   TaxRndOff: 0,
   GrandTotal: 0
@@ -62,6 +62,7 @@ export default function BillEntry() {
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [isNewEntry, setIsNewEntry] = useState(false);
+  const [noRoundOff, setNoRoundOff] = useState(false);
 
   // Filters & Sorting state
   const [search, setSearch] = useState('');
@@ -154,6 +155,9 @@ export default function BillEntry() {
           });
           if (response.data?.success) {
             const receipt = response.data.data;
+            const isZeroRound = receipt.RoundOff !== undefined && receipt.RoundOff !== null && Math.abs(parseFloat(receipt.RoundOff) || 0) < 0.0001;
+            setNoRoundOff(isZeroRound);
+
             setFormData(prev => ({
               ...prev,
               GateInwardNo: receipt.GateInwardNo || prev.GateInwardNo,
@@ -219,7 +223,7 @@ export default function BillEntry() {
     const lorryFreight = parseFloat(formData.LorryFreight) || 0;
     const unroundedGrandTotal = total - discount + gst + igst + vatCst + pf + lorryFreight;
     const computedGrandTotal = Math.round(unroundedGrandTotal);
-    const computedRoundOff = parseFloat((computedGrandTotal - unroundedGrandTotal).toFixed(2));
+    const computedRoundOff = noRoundOff ? 0 : parseFloat((computedGrandTotal - unroundedGrandTotal).toFixed(2));
 
     setFormData(prev => {
       if (prev.GrandTotal === computedGrandTotal && prev.RoundOff === computedRoundOff && prev.BillAmount === computedGrandTotal) return prev;
@@ -230,7 +234,7 @@ export default function BillEntry() {
         BillAmount: computedGrandTotal
       };
     });
-  }, [formData.Total, formData.Discount, formData.GST, formData.IGST, formData.VAT_CST, formData.P_F, formData.LorryFreight]);
+  }, [formData.Total, formData.Discount, formData.GST, formData.IGST, formData.VAT_CST, formData.P_F, formData.LorryFreight, noRoundOff]);
 
   // Unique parties from existing bill entries (for filter dropdown)
   const uniqueBillParties = useMemo(() => {
@@ -287,6 +291,7 @@ export default function BillEntry() {
     setItems([]);
     setGateInwardsList([]);
     setGrnsList([]);
+    setNoRoundOff(false);
     // Refresh parties list and purchase types
     axios.get(`${API_URL}/bill-entries/available-parties`)
       .then(res => { if (res.data?.success) setParties((res.data.data || []).map(n => ({ name: n }))); })
@@ -300,6 +305,7 @@ export default function BillEntry() {
 
   const handleOpenEditDrawer = (bill) => {
     setIsNewEntry(false);
+    setNoRoundOff(bill.RoundOff !== undefined && bill.RoundOff !== null && Math.abs(parseFloat(bill.RoundOff) || 0) < 0.0001);
     setFormData({
       VoucherNo: bill.VoucherNo.toString(),
       GateInwardNo: bill.GateInwardNo || '',
@@ -684,63 +690,14 @@ export default function BillEntry() {
 
     // Totals row
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
     doc.text(fmt(totalDebit), col2X + 15, y, { align: 'right' });
     doc.text(fmt(totalCredit), col3X + 30, y, { align: 'right' });
     y += 3;
     drawLine(y);
-    y += 8;
+    y += 6;
 
-    // ORDER SUMMARY Section
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('ORDER SUMMARY', col1X, y);
-    y += 4;
-    drawLine(y);
-    y += 5;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Items Subtotal:', col1X, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Rs. ${fmt(totalAmount)}`, col3X + 30, y, { align: 'right' });
-    y += 5;
-
-    if (discountAmt > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.text('Total Discount:', col1X, y);
-      doc.text(`-Rs. ${fmt(discountAmt)}`, col3X + 30, y, { align: 'right' });
-      y += 5;
-    }
-
-    if (gstAmount > 0 || igstAmount > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.text('Tax (GST/IGST):', col1X, y);
-      doc.text(`+Rs. ${fmt(gstAmount + igstAmount)}`, col3X + 30, y, { align: 'right' });
-      y += 5;
-    }
-
-    if (pfAmt > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.text('P & F:', col1X, y);
-      doc.text(`+Rs. ${fmt(pfAmt)}`, col3X + 30, y, { align: 'right' });
-      y += 5;
-    }
-
-    if (lorryAmt > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.text('Lorry Freight:', col1X, y);
-      doc.text(`+Rs. ${fmt(lorryAmt)}`, col3X + 30, y, { align: 'right' });
-      y += 5;
-    }
-
-    doc.setFont('helvetica', 'normal');
-    doc.text('Round Off:', col1X, y);
-    const roundOffStr = roundOff > 0 ? `+${roundOff.toFixed(2)}` : roundOff.toFixed(2);
-    doc.text(roundOffStr, col3X + 30, y, { align: 'right' });
-    y += 5;
-
-    drawLine(y);
-    y += 4;
+    // Grand Total row below table
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('Grand Total:', col1X, y);
@@ -1204,6 +1161,21 @@ export default function BillEntry() {
 
                     {/* Financial Summary */}
                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Financial Summary</span>
+                        <button
+                          type="button"
+                          onClick={() => setNoRoundOff(prev => !prev)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${noRoundOff
+                            ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                          title={noRoundOff ? "Round off value is set to 0. Click to restore calculated round off." : "Click to set round off value to 0"}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${noRoundOff ? 'bg-amber-500' : 'bg-slate-400'}`}></span>
+                          {noRoundOff ? 'Zero Round Off (Active)' : 'Zero Round Off'}
+                        </button>
+                      </div>
                       <div className="flex items-center justify-between text-xs text-slate-600">
                         <span>Items Subtotal:</span>
                         <span className="font-bold text-slate-800">₹{(formData.Total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -1213,9 +1185,11 @@ export default function BillEntry() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">Discount (₹)</label>
                           <input
                             type="number"
-                            step="1" value={formData.Discount}
+                            step="any"
+                            value={formData.Discount || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, Discount: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setFormData({ ...formData, Discount: e.target.value })}
+                            placeholder="0.00"
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
                           />
                         </div>
@@ -1223,9 +1197,11 @@ export default function BillEntry() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">GST (₹)</label>
                           <input
                             type="number"
-                            step="1" value={formData.GST}
+                            step="any"
+                            value={formData.GST || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, GST: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setFormData({ ...formData, GST: e.target.value })}
+                            placeholder="0.00"
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
                           />
                         </div>

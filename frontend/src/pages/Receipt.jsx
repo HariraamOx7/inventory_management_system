@@ -21,6 +21,7 @@ const formatRoundOff = (val) => {
 
 const initialFormState = {
   GRNNo: '',
+  OrderNo: '',
   GateInwardNo: '',
   PartyName: '',
   InwardDate: new Date().toISOString().split('T')[0],
@@ -31,12 +32,12 @@ const initialFormState = {
   FormType: '',
   BillAmount: 0,
   Total: 0,
-  Discount: 0,
-  GST: 0,
-  IGST: 0,
-  VAT_CST: 0,
-  P_F: 0,
-  LorryFreight: 0,
+  Discount: '',
+  GST: '',
+  IGST: '',
+  VAT_CST: '',
+  P_F: '',
+  LorryFreight: '',
   RoundOff: 0,
   GrandTotal: 0
 };
@@ -45,7 +46,9 @@ export default function Receipt() {
   const showToast = useToastStore(state => state.showToast);
 
   const [formData, setFormData] = useState(initialFormState);
-  const [gateInwards, setGateInwards] = useState([]);
+  const [parties, setParties] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [linkedGateInwards, setLinkedGateInwards] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [receipts, setReceipts] = useState([]);
@@ -55,6 +58,7 @@ export default function Receipt() {
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [isNewEntry, setIsNewEntry] = useState(false);
+  const [noRoundOff, setNoRoundOff] = useState(false);
 
   // Filters & Sorting state
   const [search, setSearch] = useState('');
@@ -67,9 +71,9 @@ export default function Receipt() {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [grnRes, inwardsRes, receiptsRes] = await Promise.all([
+      const [grnRes, partiesRes, receiptsRes] = await Promise.all([
         axios.get(`${API_URL}/receipts/last-grn-no`).catch(() => ({ data: { success: false } })),
-        axios.get(`${API_URL}/receipts/available-gate-inwards`).catch(() => ({ data: { success: false } })),
+        axios.get(`${API_URL}/receipts/parties`).catch(() => ({ data: { success: false } })),
         axios.get(`${API_URL}/receipts`).catch(() => ({ data: { success: false } }))
       ]);
 
@@ -80,12 +84,12 @@ export default function Receipt() {
         }));
       }
 
-      if (inwardsRes.data?.success) {
-        setGateInwards(inwardsRes.data.data);
+      if (partiesRes.data?.success) {
+        setParties(partiesRes.data.data || []);
       }
 
       if (receiptsRes.data?.success) {
-        setReceipts(receiptsRes.data.data);
+        setReceipts(receiptsRes.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
@@ -98,57 +102,97 @@ export default function Receipt() {
     fetchInitialData();
   }, []);
 
-  // Fetch gate inward details when GateInwardNo changes in form (only when not editing an existing receipt)
-  useEffect(() => {
-    if (formData.GateInwardNo && !editingGRNNo) {
-      const fetchGateInwardDetails = async () => {
-        try {
-          const response = await axios.get(`${API_URL}/receipts/gate-inward-details`, {
-            params: { inwardNo: formData.GateInwardNo }
-          });
+  // Memoized options for fast, stable rendering
+  const partyOptions = useMemo(() => {
+    return parties.map(p => ({ value: p.name, label: p.name }));
+  }, [parties]);
 
-          if (response.data?.success) {
-            const gateInward = response.data.data;
-            const poTotals = gateInward.POTotals || { Discount: 0, GST: 0, IGST: 0, VAT_CST: 0, P_F: 0, RoundOff: 0 };
+  const purchaseOrderOptions = useMemo(() => {
+    return purchaseOrders.map(po => ({
+      value: po.OrderNo,
+      label: `PO-${po.OrderNo} (${po.OrderDate ? new Date(po.OrderDate).toLocaleDateString('en-GB') : ''}) - ₹${parseFloat(po.GrandTotal || 0).toLocaleString('en-IN')}`,
+      name: `PO-${po.OrderNo}`
+    }));
+  }, [purchaseOrders]);
 
-            const itemsWithUnitRate = (gateInward.details || []).map(detail => {
-              const qtyVal = detail.ReceivedQty !== undefined ? detail.ReceivedQty : (detail.Qty !== undefined ? detail.Qty : 0);
-              return {
-                ItemName: detail.ItemName,
-                PendingQty: detail.PendingQty || 0,
-                ReceivedQty: qtyVal,
-                Qty: qtyVal,
-                UnitRate: detail.UnitRate || 0,
-                OrderNo: detail.OrderNo
-              };
-            });
+  // Handle Party Selection (directly fetches POs without intermediate clearing flash)
+  const handlePartyChange = async (val) => {
+    setFormData(prev => ({
+      ...prev,
+      PartyName: val,
+      OrderNo: '',
+      GateInwardNo: '',
+      InvoiceNo: '',
+      InvoiceDate: ''
+    }));
+    setLinkedGateInwards([]);
+    setItems([]);
 
-            setItems(itemsWithUnitRate);
-
-            setFormData(prev => ({
-              ...prev,
-              PartyName: gateInward.PartyName,
-              InwardDate: gateInward.InwardDate ? new Date(gateInward.InwardDate).toISOString().split('T')[0] : prev.InwardDate,
-              InvoiceNo: gateInward.InvoiceNo || '',
-              InvoiceDate: gateInward.InvoiceDate ? new Date(gateInward.InvoiceDate).toISOString().split('T')[0] : prev.InvoiceDate,
-              DCNo: gateInward.DCNo || '',
-              DCDate: gateInward.DCDate ? new Date(gateInward.DCDate).toISOString().split('T')[0] : prev.DCDate,
-              Discount: parseFloat(poTotals.Discount) || 0,
-              GST: parseFloat(poTotals.GST) || 0,
-              IGST: parseFloat(poTotals.IGST) || 0,
-              VAT_CST: parseFloat(poTotals.VAT_CST) || 0,
-              P_F: parseFloat(poTotals.P_F) || 0,
-              LorryFreight: parseFloat(poTotals.LorryFreight) || 0
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching gate inward details:', error);
-        }
-      };
-
-      fetchGateInwardDetails();
+    if (!val) {
+      setPurchaseOrders([]);
+      return;
     }
-  }, [formData.GateInwardNo, editingGRNNo]);
+
+    try {
+      const res = await axios.get(`${API_URL}/receipts/available-purchase-orders`, {
+        params: { partyName: val }
+      });
+      if (res.data?.success) {
+        const pos = res.data.data || [];
+        setPurchaseOrders(pos);
+        // If there is exactly one completed PO for this party, automatically select it!
+        if (pos.length === 1) {
+          handleOrderChange(pos[0].OrderNo);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching available POs for receipt:', err);
+    }
+  };
+
+  // Handle PO Selection (fetches details and all linked gate inwards)
+  const handleOrderChange = async (orderNo) => {
+    setFormData(prev => ({ ...prev, OrderNo: orderNo }));
+
+    if (!orderNo) {
+      setLinkedGateInwards([]);
+      setItems([]);
+      return;
+    }
+
+    try {
+      const res = await axios.get(`${API_URL}/receipts/purchase-order-details`, {
+        params: { orderNo }
+      });
+
+      if (res.data?.success) {
+        const data = res.data.data;
+        const poTotals = data.POTotals || { Discount: 0, GST: 0, IGST: 0, VAT_CST: 0, P_F: 0, LorryFreight: 0, RoundOff: 0 };
+        const isZeroRound = poTotals.RoundOff !== undefined && poTotals.RoundOff !== null && Math.abs(parseFloat(poTotals.RoundOff) || 0) < 0.0001;
+        setNoRoundOff(isZeroRound);
+
+        setLinkedGateInwards(data.gateInwards || []);
+        setItems(data.details || []);
+
+        setFormData(prev => ({
+          ...prev,
+          OrderNo: orderNo,
+          GateInwardNo: data.GateInwardNo || prev.GateInwardNo,
+          InwardDate: data.InwardDate ? new Date(data.InwardDate).toISOString().split('T')[0] : prev.InwardDate,
+          InvoiceNo: data.InvoiceNo || prev.InvoiceNo,
+          InvoiceDate: data.InvoiceDate ? new Date(data.InvoiceDate).toISOString().split('T')[0] : prev.InvoiceDate,
+          Discount: parseFloat(poTotals.Discount) > 0 ? parseFloat(poTotals.Discount) : '',
+          GST: parseFloat(poTotals.GST) > 0 ? parseFloat(poTotals.GST) : '',
+          IGST: parseFloat(poTotals.IGST) > 0 ? parseFloat(poTotals.IGST) : '',
+          VAT_CST: parseFloat(poTotals.VAT_CST) > 0 ? parseFloat(poTotals.VAT_CST) : '',
+          P_F: parseFloat(poTotals.P_F) > 0 ? parseFloat(poTotals.P_F) : '',
+          LorryFreight: parseFloat(poTotals.LorryFreight) > 0 ? parseFloat(poTotals.LorryFreight) : ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching PO receipt details:', err);
+    }
+  };
 
   // Recalculate item totals
   useEffect(() => {
@@ -178,7 +222,7 @@ export default function Receipt() {
     const lorryFreight = parseFloat(formData.LorryFreight) || 0;
     const unroundedGrandTotal = total - discount + gst + igst + vatCst + pf + lorryFreight;
     const computedGrandTotal = Math.round(unroundedGrandTotal);
-    const computedRoundOff = parseFloat((computedGrandTotal - unroundedGrandTotal).toFixed(2));
+    const computedRoundOff = noRoundOff ? 0 : parseFloat((computedGrandTotal - unroundedGrandTotal).toFixed(2));
 
     setFormData(prev => {
       const prevGrand = parseFloat(prev.GrandTotal) || 0;
@@ -193,26 +237,16 @@ export default function Receipt() {
     formData.IGST,
     formData.VAT_CST,
     formData.P_F,
-    formData.LorryFreight
+    formData.LorryFreight,
+    noRoundOff
   ]);
 
   // Unique parties list
   const uniqueParties = useMemo(() => {
     const setP = new Set();
-    receipts.forEach(r => { if (r.PartyName) setP.add(r.PartyName); });
-    return Array.from(setP);
+    receipts.forEach(r => { if (r.PartyName) setP.add(r.PartyName.trim()); });
+    return Array.from(setP).sort();
   }, [receipts]);
-
-  const gateInwardParties = useMemo(() => {
-    const setP = new Set();
-    gateInwards.forEach(gi => { if (gi.PartyName) setP.add(gi.PartyName); });
-    return Array.from(setP);
-  }, [gateInwards]);
-
-  const filteredGateInwards = useMemo(() => {
-    if (!formData.PartyName) return gateInwards;
-    return gateInwards.filter(gi => gi.PartyName === formData.PartyName);
-  }, [gateInwards, formData.PartyName]);
 
   // Filtered and sorted receipts
   const filteredAndSortedReceipts = useMemo(() => {
@@ -259,6 +293,7 @@ export default function Receipt() {
     setEditingGRNNo(null);
     setFormData(initialFormState);
     setItems([]);
+    setNoRoundOff(false);
     fetchInitialData();
     setEditDrawerOpen(true);
     setTimeout(() => setIsDrawerVisible(true), 10);
@@ -266,15 +301,16 @@ export default function Receipt() {
 
   const handleOpenEditDrawer = (receipt) => {
     setIsNewEntry(false);
+    setNoRoundOff(receipt.RoundOff !== undefined && receipt.RoundOff !== null && Math.abs(parseFloat(receipt.RoundOff) || 0) < 0.0001);
+    const orderNo = (receipt.details && receipt.details[0]?.OrderNo) || receipt.OrderNo || '';
     setFormData({
       GRNNo: receipt.GRNNo.toString(),
+      OrderNo: orderNo,
       GateInwardNo: receipt.GateInwardNo,
       PartyName: receipt.PartyName,
       InwardDate: receipt.InwardDate ? new Date(receipt.InwardDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       InvoiceNo: receipt.InvoiceNo || '',
       InvoiceDate: receipt.InvoiceDate ? new Date(receipt.InvoiceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      DCNo: receipt.DCNo || '',
-      DCDate: receipt.DCDate ? new Date(receipt.DCDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       FormType: receipt.FormType || '',
       BillAmount: receipt.BillAmount || 0,
       Total: receipt.Total || 0,
@@ -283,6 +319,7 @@ export default function Receipt() {
       IGST: receipt.IGST || 0,
       VAT_CST: receipt.VAT_CST || 0,
       P_F: receipt.P_F || 0,
+      LorryFreight: receipt.LorryFreight || 0,
       RoundOff: receipt.RoundOff || 0,
       GrandTotal: receipt.GrandTotal || 0
     });
@@ -296,9 +333,20 @@ export default function Receipt() {
           ReceivedQty: qtyVal,
           Qty: qtyVal,
           UnitRate: detail.UnitRate || 0,
-          OrderNo: detail.OrderNo
+          OrderNo: detail.OrderNo || orderNo
         };
       }));
+    }
+
+    if (receipt.GateInwardNo) {
+      setLinkedGateInwards([{
+        InwardNo: receipt.GateInwardNo,
+        OrderNo: orderNo,
+        InwardDate: receipt.InwardDate,
+        InvoiceNo: receipt.InvoiceNo,
+        InvoiceDate: receipt.InvoiceDate,
+        details: receipt.details || []
+      }]);
     }
 
     setEditingGRNNo(receipt.GRNNo);
@@ -312,6 +360,8 @@ export default function Receipt() {
       setEditDrawerOpen(false);
       setEditingGRNNo(null);
       setFormData(initialFormState);
+      setPurchaseOrders([]);
+      setLinkedGateInwards([]);
       setItems([]);
     }, 300);
   };
@@ -321,9 +371,11 @@ export default function Receipt() {
     try {
       setLoading(true);
       await axios.delete(`${API_URL}/receipts/${grnNo}`);
+      showToast('Receipt deleted successfully!', 'success');
       fetchInitialData();
     } catch (error) {
       console.error('Error deleting receipt:', error);
+      showToast(error.response?.data?.message || 'Error deleting receipt', 'error');
     } finally {
       setLoading(false);
     }
@@ -331,8 +383,18 @@ export default function Receipt() {
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
-    if (!formData.GateInwardNo || !formData.PartyName || items.length === 0) {
-      alert('Please select a gate inward and ensure items are present');
+    if (!formData.PartyName) {
+      showToast('Please select a Party Name', 'error');
+      return;
+    }
+
+    if (!formData.OrderNo && !formData.GateInwardNo) {
+      showToast('Please select a Purchase Order', 'error');
+      return;
+    }
+
+    if (!items || items.length === 0) {
+      showToast('No items available for this receipt', 'error');
       return;
     }
 
@@ -345,7 +407,7 @@ export default function Receipt() {
           const rate = parseFloat(item.UnitRate) || 0;
           return {
             ItemName: item.ItemName,
-            OrderNo: item.OrderNo || null,
+            OrderNo: item.OrderNo || formData.OrderNo || null,
             Qty: qty,
             ReceivedQty: qty,
             UnitRate: rate,
@@ -356,6 +418,7 @@ export default function Receipt() {
 
       if (editingGRNNo) {
         await axios.put(`${API_URL}/receipts/${editingGRNNo}`, payload);
+        showToast('Receipt updated successfully!', 'success');
       } else {
         await axios.post(`${API_URL}/receipts`, payload);
         showToast('Receipt created successfully!', 'success');
@@ -365,7 +428,7 @@ export default function Receipt() {
       fetchInitialData();
     } catch (error) {
       console.error('Error saving receipt:', error);
-      alert('Error saving receipt');
+      showToast(error.response?.data?.message || 'Error saving receipt', 'error');
     } finally {
       setLoading(false);
     }
@@ -464,8 +527,11 @@ export default function Receipt() {
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3 pt-3 border-t border-slate-100">
                         <div>
-                          <span className="text-slate-500 text-xs block">Gate Inward</span>
-                          <span className="text-slate-700 font-medium">GI-{String(receipt.GateInwardNo).padStart(3, '0')}</span>
+                          <span className="text-slate-500 text-xs block">PO & Inward</span>
+                          <span className="text-slate-700 font-medium">
+                            {receipt.details?.[0]?.OrderNo ? `PO-${receipt.details[0].OrderNo}` : ''}
+                            {receipt.GateInwardNo ? ` (GI-${String(receipt.GateInwardNo).padStart(3, '0')})` : ''}
+                          </span>
                         </div>
                         <div>
                           <span className="text-slate-500 text-xs block">Inward Date</span>
@@ -625,14 +691,20 @@ export default function Receipt() {
                                 setFormData(prev => ({
                                   ...prev,
                                   PartyName: val,
-                                  GateInwardNo: ''
+                                  OrderNo: '',
+                                  GateInwardNo: '',
+                                  InvoiceNo: '',
+                                  InvoiceDate: ''
                                 }));
+                                setPurchaseOrders([]);
+                                setLinkedGateInwards([]);
                                 setItems([]);
                               }}
-                              options={gateInwardParties.map(party => ({
-                                value: party,
-                                label: party
+                              options={parties.map(p => ({
+                                value: p.name,
+                                label: p.name
                               }))}
+                              searchPlaceholder="Search party by name..."
                             />
                           ) : (
                             <div>
@@ -641,8 +713,7 @@ export default function Receipt() {
                                 type="text"
                                 value={formData.PartyName}
                                 disabled
-                                placeholder="Selected from Gate Inward"
-                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-semibold shadow-sm"
+                                className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-800 font-semibold shadow-sm cursor-not-allowed"
                               />
                             </div>
                           )}
@@ -651,32 +722,77 @@ export default function Receipt() {
                         <div>
                           {!isNewEntry ? (
                             <div>
-                              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Gate Inward No</label>
+                              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Purchase Order No</label>
                               <input
                                 type="text"
-                                value={`GI-${String(formData.GateInwardNo).padStart(3, '0')}`}
+                                value={formData.OrderNo ? `PO-${formData.OrderNo}` : (formData.GateInwardNo ? `GI-${formData.GateInwardNo}` : '-')}
                                 disabled
                                 className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-800 font-semibold shadow-sm cursor-not-allowed"
                               />
                             </div>
                           ) : (
-                            <CustomSelect
-                              label="Gate Inward No *"
-                              searchable
-                              placeholder={formData.PartyName ? 'Select gate inward no' : 'Select party name first'}
-                              value={formData.GateInwardNo}
-                              onChange={(val) => setFormData(prev => ({ ...prev, GateInwardNo: val }))}
-                              options={filteredGateInwards.map(gi => ({
-                                value: gi.InwardNo,
-                                label: `GI-${gi.InwardNo}`,
-                                name: `GI-${gi.InwardNo}`
-                              }))}
-                              searchPlaceholder="Search gate inward no..."
-                              disabled={!formData.PartyName}
-                            />
+                            <div>
+                              <CustomSelect
+                                label="Purchase Order No *"
+                                searchable
+                                placeholder={formData.PartyName ? (purchaseOrders.length > 0 ? 'Select purchase order' : 'No completed purchase orders available') : 'Select party name first'}
+                                value={formData.OrderNo}
+                                onChange={(val) => setFormData(prev => ({ ...prev, OrderNo: val }))}
+                                options={purchaseOrders.map(po => ({
+                                  value: po.OrderNo,
+                                  label: `PO-${po.OrderNo} (${po.OrderDate ? new Date(po.OrderDate).toLocaleDateString('en-GB') : ''}) - ₹${parseFloat(po.GrandTotal || 0).toLocaleString('en-IN')}`,
+                                  name: `PO-${po.OrderNo}`
+                                }))}
+                                searchPlaceholder="Search purchase order..."
+                                disabled={!formData.PartyName || purchaseOrders.length === 0}
+                              />
+                            </div>
                           )}
                         </div>
                       </div>
+
+                      {/* Linked Gate Inwards Section */}
+                      {linkedGateInwards.length > 0 && (
+                        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 space-y-3 pt-3">
+                          <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold uppercase tracking-wider text-blue-900">
+                                Linked Gate Inward Batches ({linkedGateInwards.length})
+                              </span>
+                              {formData.OrderNo && (
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-300">
+                                  PO-{formData.OrderNo}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                              ✓ 100% Ordered Qty Received
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {linkedGateInwards.map((gi) => (
+                              <div
+                                key={gi.InwardNo}
+                                className="bg-white rounded-lg p-2.5 border border-blue-100 shadow-xs flex flex-col justify-between space-y-1"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-blue-700 text-xs">
+                                    GI-{String(gi.InwardNo).padStart(3, '0')}
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 font-medium">
+                                    {gi.InwardDate ? new Date(gi.InwardDate).toLocaleDateString('en-GB') : '-'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-slate-600">
+                                  <span>Invoice: <strong className="text-slate-700">{gi.InvoiceNo || 'N/A'}</strong></span>
+                                  <span className="text-slate-500">{gi.details?.length || 0} item(s)</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Invoice Details Section */}
@@ -750,7 +866,7 @@ export default function Receipt() {
                                     <td className="py-2.5 px-3 text-right">
                                       <input
                                         type="number"
-                                        step="1" value={item.UnitRate}
+                                        step="any" value={item.UnitRate}
                                         onWheel={(e) => e.target.blur()}
                                         onChange={(e) => {
                                           const nextItems = [...items];
@@ -774,6 +890,21 @@ export default function Receipt() {
 
                     {/* Financial Summary */}
                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Financial Summary</span>
+                        <button
+                          type="button"
+                          onClick={() => setNoRoundOff(prev => !prev)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${noRoundOff
+                            ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                          title={noRoundOff ? "Round off value is set to 0. Click to restore calculated round off." : "Click to set round off value to 0"}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${noRoundOff ? 'bg-amber-500' : 'bg-slate-400'}`}></span>
+                          {noRoundOff ? 'Zero Round Off (Active)' : 'Zero Round Off'}
+                        </button>
+                      </div>
                       <div className="flex items-center justify-between text-xs text-slate-600">
                         <span>Items Subtotal:</span>
                         <span className="font-bold text-slate-800">₹{(formData.Total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -783,21 +914,47 @@ export default function Receipt() {
                           <label className="block text-xs font-medium text-slate-600 mb-1">Discount (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={formData.Discount}
+                            step="any"
+                            value={formData.Discount || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, Discount: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setFormData({ ...formData, Discount: e.target.value })}
+                            placeholder="0.00"
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">GST (₹)</label>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Total Tax / GST (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
-                            value={formData.GST}
+                            step="any"
+                            value={formData.GST || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, GST: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setFormData({ ...formData, GST: e.target.value })}
+                            placeholder="0.00"
+                            className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Packing & Forwarding (P&F) (₹)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.P_F || ''}
+                            onWheel={(e) => e.target.blur()}
+                            onChange={(e) => setFormData({ ...formData, P_F: e.target.value })}
+                            placeholder="0.00"
+                            className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Lorry Freight (₹)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.LorryFreight || ''}
+                            onWheel={(e) => e.target.blur()}
+                            onChange={(e) => setFormData({ ...formData, LorryFreight: e.target.value })}
+                            placeholder="0.00"
                             className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
                           />
                         </div>

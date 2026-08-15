@@ -438,7 +438,7 @@ export default function ItemIssue() {
                             <input
                               type='number'
                               onWheel={(e) => e.target.blur()}
-                              step='0.01'
+                              step='1'
                               min='0'
                               value={row.Qty}
                               onChange={(e) => handleItemRowChange(idx, 'Qty', e.target.value)}

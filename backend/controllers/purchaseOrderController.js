@@ -124,12 +124,13 @@ exports.getSuppliers = async (req, res) => {
       success: true,
       data: suppliers.map(s => ({
         AccCode: s.AccCode,
-        name: s.AccountName || '',
-        Place: s.Place || '',
-        PhNo: s.PhNo || '',
-        ContactPerson: s.ContactPerson || '',
-        GSTNo: s.GSTNo || '',
-        Address: s.Address || ''
+        name: (s.AccountName || '').trim(),
+        AccountName: (s.AccountName || '').trim(),
+        Place: (s.Place || '').trim(),
+        PhNo: (s.PhNo || '').trim(),
+        ContactPerson: (s.ContactPerson || '').trim(),
+        GSTNo: (s.GSTNo || '').trim(),
+        Address: (s.Address || '').trim()
       }))
     });
   } catch (error) {

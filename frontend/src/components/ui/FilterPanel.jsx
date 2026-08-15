@@ -24,7 +24,7 @@ export default function FilterPanel({
           className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
         />
         {search && (
-          <button 
+          <button
             onClick={() => onSearchChange('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
           >

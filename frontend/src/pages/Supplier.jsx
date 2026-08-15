@@ -18,8 +18,8 @@ const initialFormState = {
     Place: '',
     Address: '',
     DeliveryAddress: '',
-    OpeningCredit: 0,
-    OpeningDebit: 0,
+    OpeningCredit: '',
+    OpeningDebit: '',
     TINNo: '',
     CSTNo: '',
     PhNo: '',
@@ -404,7 +404,7 @@ export default function Supplier() {
                         value={data.OpeningCredit ?? 0}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter opening credit"
-                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
@@ -416,7 +416,7 @@ export default function Supplier() {
                         value={data.OpeningDebit ?? 0}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter opening debit"
-                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
             </div>

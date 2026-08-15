@@ -8,33 +8,51 @@ const GateInwardDetail = require('../models/GateInwardDetail');
 const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 
-// Get parties that have at least one un-billed GRN
+// Get parties that have created entry at Gate Inward AND Receipt, and not created Bill Entry
 exports.getAvailableParties = async (req, res) => {
   try {
-    // Get all GRN numbers that are already billed
-    const billed = await BillEntry.findAll({
-      attributes: ['GRNNo'],
-      group: ['GRNNo'],
+    // 1. Get all GRN numbers and Gate Inward numbers that are already billed
+    const billedBills = await BillEntry.findAll({
+      attributes: ['GRNNo', 'GateInwardNo'],
       raw: true
     });
-    const billedGRNs = billed.map(b => b.GRNNo).filter(Boolean);
+    const billedGRNs = billedBills.map(b => b.GRNNo).filter(Boolean);
+    const billedInwards = billedBills.map(b => b.GateInwardNo).filter(Boolean);
 
-    // Get distinct PartyNames from Receipts that have at least one unbilled GRN
-    const whereClause = billedGRNs.length > 0
-      ? { GRNNo: { [Op.notIn]: billedGRNs } }
-      : {};
+    // 2. Find receipts that have a valid GateInwardNo and are not already billed
+    const receiptWhere = {
+      GateInwardNo: { [Op.ne]: null }
+    };
+    if (billedGRNs.length > 0) {
+      receiptWhere.GRNNo = { [Op.notIn]: billedGRNs };
+    }
+    if (billedInwards.length > 0) {
+      receiptWhere.GateInwardNo = { [Op.and]: [{ [Op.ne]: null }, { [Op.notIn]: billedInwards }] };
+    }
 
     const receipts = await Receipt.findAll({
-      where: whereClause,
-      attributes: ['PartyName'],
-      group: ['PartyName'],
+      where: receiptWhere,
+      attributes: ['PartyName', 'GateInwardNo'],
       raw: true
     });
 
-    const parties = receipts
-      .map(r => r.PartyName)
-      .filter(Boolean)
-      .sort();
+    const inwardNos = [...new Set(receipts.map(r => r.GateInwardNo).filter(Boolean))];
+
+    // 3. Verify that the Gate Inward record actually exists in GateInward
+    let validInwardSet = new Set();
+    if (inwardNos.length > 0) {
+      const validInwards = await GateInward.findAll({
+        where: { InwardNo: { [Op.in]: inwardNos } },
+        attributes: ['InwardNo'],
+        raw: true
+      });
+      validInwardSet = new Set(validInwards.map(gi => gi.InwardNo));
+    }
+
+    // Filter receipts to only those with valid Gate Inwards
+    const validReceipts = receipts.filter(r => validInwardSet.has(r.GateInwardNo));
+
+    const parties = [...new Set(validReceipts.map(r => r.PartyName ? r.PartyName.trim() : '').filter(Boolean))].sort();
 
     res.json({ success: true, data: parties });
   } catch (error) {
@@ -47,7 +65,7 @@ exports.getAvailableParties = async (req, res) => {
   }
 };
 
-// Get available Gate Inwards for bill entry
+// Get available Gate Inwards for bill entry (must have a receipt and not already billed)
 exports.getAvailableGateInwards = async (req, res) => {
   try {
     const { partyName } = req.query;
@@ -59,20 +77,43 @@ exports.getAvailableGateInwards = async (req, res) => {
       });
     }
 
-    const usedVouchers = await BillEntry.findAll({
-      attributes: ['GateInwardNo'],
-      group: ['GateInwardNo'],
+    // 1. Get already billed GateInwardNos and GRNNos
+    const billedBills = await BillEntry.findAll({
+      attributes: ['GateInwardNo', 'GRNNo'],
       raw: true
     });
-    const usedInwardNos = usedVouchers.map(v => v.GateInwardNo).filter(Boolean);
+    const usedInwardNos = billedBills.map(v => v.GateInwardNo).filter(Boolean);
+    const billedGRNs = billedBills.map(v => v.GRNNo).filter(Boolean);
 
-    const whereClause = { PartyName: partyName.trim() };
+    // 2. Find receipts for this party that have a GateInwardNo and are not billed
+    const receiptWhere = {
+      PartyName: partyName.trim(),
+      GateInwardNo: { [Op.ne]: null }
+    };
+    if (billedGRNs.length > 0) {
+      receiptWhere.GRNNo = { [Op.notIn]: billedGRNs };
+    }
     if (usedInwardNos.length > 0) {
-      whereClause.InwardNo = { [Op.notIn]: usedInwardNos };
+      receiptWhere.GateInwardNo = { [Op.and]: [{ [Op.ne]: null }, { [Op.notIn]: usedInwardNos }] };
     }
 
+    const receipts = await Receipt.findAll({
+      where: receiptWhere,
+      attributes: ['GateInwardNo'],
+      raw: true
+    });
+    const candidateInwardNos = [...new Set(receipts.map(r => r.GateInwardNo).filter(Boolean))];
+
+    if (candidateInwardNos.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // 3. Find matching GateInward records
     const gateInwards = await GateInward.findAll({
-      where: whereClause,
+      where: {
+        InwardNo: { [Op.in]: candidateInwardNos },
+        PartyName: partyName.trim()
+      },
       attributes: ['InwardNo', 'InwardDate'],
       order: [['InwardNo', 'DESC']],
       raw: true
@@ -92,7 +133,7 @@ exports.getAvailableGateInwards = async (req, res) => {
   }
 };
 
-// Get available GRNs for party and selected gate inward
+// Get available GRNs for party and selected gate inward (must be linked to GateInward and not billed)
 exports.getAvailableGRNs = async (req, res) => {
   try {
     const { partyName, gateInwardNo } = req.query;
@@ -104,24 +145,46 @@ exports.getAvailableGRNs = async (req, res) => {
       });
     }
 
-    const receiptWhere = { PartyName: partyName };
-    if (gateInwardNo) receiptWhere.GateInwardNo = gateInwardNo;
+    const billed = await BillEntry.findAll({
+      attributes: ['GRNNo', 'GateInwardNo'],
+      raw: true
+    });
+    const billedGRNs = billed.map(b => b.GRNNo).filter(Boolean);
+    const billedInwards = billed.map(b => b.GateInwardNo).filter(Boolean);
+
+    const receiptWhere = {
+      PartyName: partyName.trim(),
+      GateInwardNo: { [Op.ne]: null }
+    };
+    if (gateInwardNo) {
+      receiptWhere.GateInwardNo = gateInwardNo;
+    } else if (billedInwards.length > 0) {
+      receiptWhere.GateInwardNo = { [Op.and]: [{ [Op.ne]: null }, { [Op.notIn]: billedInwards }] };
+    }
+
+    if (billedGRNs.length > 0) {
+      receiptWhere.GRNNo = { [Op.notIn]: billedGRNs };
+    }
 
     const receipts = await Receipt.findAll({
       where: receiptWhere,
-      attributes: ['GRNNo', 'InwardDate', 'InvoiceNo', 'BillAmount', 'GateInwardNo'],
+      attributes: ['GRNNo', 'InwardDate', 'InvoiceNo', 'BillAmount', 'GrandTotal', 'GateInwardNo'],
       order: [['GRNNo', 'DESC']],
       raw: true
     });
 
-    const billed = await BillEntry.findAll({
-      attributes: ['GRNNo'],
-      group: ['GRNNo'],
-      raw: true
-    });
-    const billedGRNs = billed.map(b => b.GRNNo);
+    // Verify GateInward exists for each receipt
+    const inwardNos = receipts.map(r => r.GateInwardNo).filter(Boolean);
+    const existingInwards = inwardNos.length > 0
+      ? await GateInward.findAll({
+          where: { InwardNo: { [Op.in]: inwardNos } },
+          attributes: ['InwardNo'],
+          raw: true
+        })
+      : [];
+    const validInwardSet = new Set(existingInwards.map(g => g.InwardNo));
 
-    const available = receipts.filter(r => !billedGRNs.includes(r.GRNNo));
+    const available = receipts.filter(r => validInwardSet.has(r.GateInwardNo));
 
     res.json({
       success: true,

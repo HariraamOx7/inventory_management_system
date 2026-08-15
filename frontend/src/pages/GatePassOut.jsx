@@ -430,7 +430,8 @@ export default function GatePassOut() {
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
-                    step="1" value={itemData.Qty}
+                    step="any"
+                    value={itemData.Qty}
                     onChange={(e) => setItemData({ ...itemData, Qty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />

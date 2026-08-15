@@ -8,6 +8,7 @@ export default function CustomSelect({
     placeholder = 'Select option',
     label,
     icon: Icon,
+    required = false,
     searchable = false,
     searchPlaceholder = 'Search...'
 }) {
@@ -43,15 +44,20 @@ export default function CustomSelect({
         String(opt.label || '').toLowerCase().includes(String(searchTerm || '').toLowerCase())
     );
 
+    const hasAsterisk = typeof label === 'string' && /\*\s*$/.test(label);
+    const cleanLabel = typeof label === 'string' ? label.replace(/\s*\*+\s*$/, '') : label;
+    const showRequired = required || hasAsterisk;
+
     return (
         <div className="relative w-full" ref={containerRef}>
             {label && (
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     {Icon && <Icon className="w-3.5 h-3.5 text-blue-500" />}
-                    {label}
+                    <span>{cleanLabel}</span>
+                    {showRequired && <span className="text-red-500 font-bold ml-0.5">*</span>}
                 </label>
             )}
-            
+
             {/* Trigger Button */}
             <button
                 type="button"
@@ -91,7 +97,7 @@ export default function CustomSelect({
                             )}
                         </div>
                     )}
-                    
+
                     <div className="overflow-y-auto custom-scrollbar py-1 flex-1">
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((opt) => {
@@ -104,9 +110,8 @@ export default function CustomSelect({
                                             onChange(opt.value);
                                             setIsOpen(false);
                                         }}
-                                        className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-slate-50 ${
-                                            isSelected ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700'
-                                        }`}
+                                        className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-slate-50 ${isSelected ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700'
+                                            }`}
                                     >
                                         {opt.label}
                                     </button>

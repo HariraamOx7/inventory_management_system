@@ -392,7 +392,8 @@ export default function GatePassIn() {
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
-                    step="1" value={itemData.PendingQty}
+                    step="any"
+                    value={itemData.PendingQty}
                     onChange={(e) => setItemData({ ...itemData, PendingQty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -403,7 +404,8 @@ export default function GatePassIn() {
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
-                    step="1" value={itemData.RecQty}
+                    step="any"
+                    value={itemData.RecQty}
                     onChange={(e) => setItemData({ ...itemData, RecQty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />

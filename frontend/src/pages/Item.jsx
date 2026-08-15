@@ -17,12 +17,12 @@ const initialFormState = {
     ItemName: '',
     Category: '',
     Commodity: '',
-    UnitRate: 0,
-    MinStockLevel: 0,
-    Quantity: 0,
-    OpeningQty: 0,
-    MaxStockLevel: 0,
-    OpenValue: 0,
+    UnitRate: '',
+    MinStockLevel: '',
+    Quantity: '',
+    OpeningQty: '',
+    MaxStockLevel: '',
+    OpenValue: '',
     Location: '',
     DepartmentId: '',
     HSNCode: '',
@@ -443,7 +443,7 @@ export default function Item() {
                         value={data.UnitRate}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter unit rate"
-                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
@@ -455,7 +455,7 @@ export default function Item() {
                         value={data.MinStockLevel}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter min stock level"
-                        step="1"
+                        step="any"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -471,7 +471,7 @@ export default function Item() {
                         value={data.Quantity}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter quantity"
-                        step="1"
+                        step="any"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -484,7 +484,7 @@ export default function Item() {
                         value={data.MaxStockLevel}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter max stock level"
-                        step="1"
+                        step="any"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -500,7 +500,7 @@ export default function Item() {
                         value={data.OpenValue}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter opening value"
-                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>

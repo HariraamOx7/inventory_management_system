@@ -31,18 +31,6 @@ GateInward.init({
     type: DataTypes.DATEONLY,
     allowNull: true
   },
-  DCNo: {
-    type: DataTypes.STRING(100),
-    allowNull: true
-  },
-  DCDate: {
-    type: DataTypes.DATEONLY,
-    allowNull: true
-  },
-  LRCNo: {
-    type: DataTypes.STRING(100),
-    allowNull: true
-  },
   Status: {
     type: DataTypes.STRING(50),
     defaultValue: 'Draft'

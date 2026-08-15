@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
 import axios from 'axios';
 import {
-  Plus, Edit2, Trash2, Save, X, ShoppingBag,
+  Plus, Edit2, Trash2, Save, X, ShoppingBag, Copy,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FileText, ChevronDown, ChevronUp
 } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -75,6 +75,8 @@ const initialHeadState = {
 const initialDetailState = {
   ItemName: '',
   Qty: '',
+  PerQty: '1',
+  UOM: '',
   UnitRate: '',
   TotalAmount: 0,
   DiscountPct: '',
@@ -114,10 +116,24 @@ export default function PurchaseOrder() {
   const [editingOrderNo, setEditingOrderNo] = useState(null);
   const [editingItemIndex, setEditingItemIndex] = useState(null);
 
+  // Add New Item (Items API) - Popup Modal States
+  const [showAddItemMasterModal, setShowAddItemMasterModal] = useState(false);
+  const [imDepartments, setImDepartments] = useState([]);
+  const [imSubHeads, setImSubHeads] = useState([]);
+  const [imUOMs, setImUOMs] = useState([]);
+  const [imSaving, setImSaving] = useState(false);
+  const initialImForm = {
+    ItemName: '', Category: '', Commodity: '', UnitRate: '',
+    MinStockLevel: '', Quantity: '', MaxStockLevel: '', OpenValue: '',
+    Location: '', DepartmentId: '', SubHeadCode: '', HSNCode: '', UOM: ''
+  };
+  const [imFormData, setImFormData] = useState(initialImForm);
+
   // Form States
   const [headData, setHeadData] = useState(initialHeadState);
   const [items, setItems] = useState([]);
   const [detailData, setDetailData] = useState(initialDetailState);
+  const [noRoundOff, setNoRoundOff] = useState(false);
 
   // Row Expand & View Modal State for Table
   const [expandedOrderNo, setExpandedOrderNo] = useState(null);
@@ -172,15 +188,100 @@ export default function PurchaseOrder() {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // ── Add New Item Popup Helpers (uses /api/items) ───────────────────────────
+  const imFetchDepartments = useCallback(async () => {
+    if (imDepartments.length > 0) return;
+    try {
+      const res = await axios.get(`${API_URL}/departments`);
+      if (res.data.success) setImDepartments(res.data.data);
+    } catch (e) { console.error(e); }
+  }, [imDepartments.length]);
+
+  const imFetchSubHeads = async (deptId) => {
+    try {
+      const res = await axios.get(`${API_URL}/sub-heads/by-department`, { params: { deptId } });
+      if (res.data.success) setImSubHeads(res.data.data);
+    } catch (e) { console.error(e); setImSubHeads([]); }
+  };
+
+  const imFetchUOMs = useCallback(async () => {
+    if (imUOMs.length > 0) return;
+    try {
+      const res = await axios.get(`${API_URL}/uoms`);
+      if (res.data.success) setImUOMs(res.data.data);
+    } catch (e) { console.error(e); }
+  }, [imUOMs.length]);
+
+  const handleOpenAddItemMasterModal = async () => {
+    setImFormData(initialImForm);
+    setImSubHeads([]);
+    await Promise.all([imFetchDepartments(), imFetchUOMs()]);
+    setShowAddItemMasterModal(true);
+  };
+
+  const handleImDeptChange = (e) => {
+    const deptId = e.target.value;
+    setImFormData(prev => ({ ...prev, DepartmentId: deptId, SubHeadCode: '' }));
+    setImSubHeads([]);
+    if (deptId) imFetchSubHeads(deptId);
+  };
+
+  const handleImFieldChange = (field) => (e) => {
+    setImFormData(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleImSave = async (e) => {
+    e.preventDefault();
+    if (!imFormData.ItemName || !imFormData.DepartmentId || !imFormData.SubHeadCode) {
+      showToast('Item Name, Department and Sub Head are required', 'error');
+      return;
+    }
+    try {
+      setImSaving(true);
+      const res = await axios.post(`${API_URL}/items`, {
+        ItemName: imFormData.ItemName,
+        Category: imFormData.Category || null,
+        Commodity: imFormData.Commodity || null,
+        UnitRate: parseFloat(imFormData.UnitRate) || 0,
+        MinStockLevel: parseFloat(imFormData.MinStockLevel) || 0,
+        Quantity: parseFloat(imFormData.Quantity) || 0,
+        OpeningQty: parseFloat(imFormData.Quantity) || 0,
+        MaxStockLevel: parseFloat(imFormData.MaxStockLevel) || 0,
+        OpenValue: parseFloat(imFormData.OpenValue) || 0,
+        Location: imFormData.Location || null,
+        DepartmentId: imFormData.DepartmentId,
+        HSNCode: imFormData.HSNCode || null,
+        SubHeadCode: imFormData.SubHeadCode,
+        UOM: imFormData.UOM || null
+      });
+      // Refresh PO items list so new item appears in search
+      const itemRes = await axios.get(`${API_URL}/purchase-orders/items`).catch(() => ({ data: { success: false } }));
+      if (itemRes.data?.success) setItemsList(itemRes.data.data);
+      // Auto-select in detail form
+      setDetailData(prev => ({ ...prev, ItemName: imFormData.ItemName, UnitRate: parseFloat(imFormData.UnitRate) || prev.UnitRate }));
+      showToast(`Item "${imFormData.ItemName}" added successfully`, 'success');
+      setShowAddItemMasterModal(false);
+    } catch (err) {
+      showToast('Error saving item: ' + (err.response?.data?.message || err.message), 'error');
+    } finally {
+      setImSaving(false);
+    }
+  };
+  // ──────────────────────────────────────────────────────────────────────────
+
   // Fetch Supplier Address & Place when PartyName changes in Drawer form
   useEffect(() => {
     if (headData.PartyName) {
-      const supplier = suppliers.find(s => s.name === headData.PartyName || s.AccountName === headData.PartyName);
+      const party = headData.PartyName.trim().toLowerCase();
+      const supplier = suppliers.find(s =>
+        (s.name && s.name.trim().toLowerCase() === party) ||
+        (s.AccountName && s.AccountName.trim().toLowerCase() === party)
+      );
       if (supplier) {
         setHeadData(prev => ({
           ...prev,
-          Address: supplier.Address || supplier.address || prev.Address,
-          Place: supplier.Place || supplier.place || prev.Place
+          Address: prev.Address || supplier.Address || supplier.address || '',
+          Place: prev.Place || supplier.Place || supplier.place || ''
         }));
       }
     }
@@ -247,7 +348,7 @@ export default function PurchaseOrder() {
     const lorryFreight = items.reduce((sum, i) => sum + (parseFloat(i.LorryFreight) || 0), 0);
     const unroundedGrandTotal = total - discount + gst + igst + pf + lorryFreight;
     const grandTotal = Math.round(unroundedGrandTotal);
-    const roundOff = parseFloat((grandTotal - unroundedGrandTotal).toFixed(2));
+    const roundOff = noRoundOff ? 0 : parseFloat((grandTotal - unroundedGrandTotal).toFixed(2));
 
     return {
       Total: total,
@@ -259,7 +360,7 @@ export default function PurchaseOrder() {
       RoundOff: roundOff,
       GrandTotal: grandTotal
     };
-  }, [items]);
+  }, [items, noRoundOff]);
 
   // Drawer Handlers
   const handleOpenAddDrawer = async () => {
@@ -267,6 +368,7 @@ export default function PurchaseOrder() {
     setEditingOrderNo(null);
     setEditingItemIndex(null);
     setItems([]);
+    setNoRoundOff(false);
     setDetailData(initialDetailState);
 
     let nextNo = '1';
@@ -292,6 +394,7 @@ export default function PurchaseOrder() {
     setIsNewEntry(false);
     setEditingOrderNo(order.OrderNo);
     setEditingItemIndex(null);
+    setNoRoundOff(Number(order.RoundOff) === 0);
     setHeadData({
       OrderNo: order.OrderNo.toString(),
       OrderDate: formatDateForInput(order.OrderDate),
@@ -308,11 +411,14 @@ export default function PurchaseOrder() {
     setItems((order.details || []).map(d => ({
       ItemName: d.ItemName,
       Qty: d.Qty || 0,
+      PerQty: d.PerQty || '1',
+      UOM: d.UOM || '',
       UnitRate: d.UnitRate || 0,
       TotalAmount: d.TotalAmount || 0,
       DiscountPct: d.DiscountPct || 0,
       DiscountAmt: d.DiscountAmt || 0,
       GSTType: d.GSTType || 'SGST+CGST',
+      GSTPct: d.GSTPct || (d.GSTType === 'IGST' ? (parseFloat(d.IGSTPct) || 0) : ((parseFloat(d.SGSTPct) || 0) + (parseFloat(d.CGSTPct) || 0))),
       SGSTPct: d.SGSTPct || 0,
       SGST: d.SGST || 0,
       CGSTPct: d.CGSTPct || 0,
@@ -331,6 +437,65 @@ export default function PurchaseOrder() {
     setTimeout(() => setIsDrawerVisible(true), 10);
   };
 
+  const handleDuplicatePO = async (order) => {
+    setIsNewEntry(true);
+    setEditingOrderNo(null);
+    setEditingItemIndex(null);
+    setNoRoundOff(Number(order.RoundOff) === 0);
+
+    let nextNo = '1';
+    try {
+      const res = await axios.get(`${API_URL}/purchase-orders/last-order-no`);
+      if (res.data?.success) {
+        nextNo = (Number(res.data.data.lastOrderNo) + 1).toString();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    setHeadData({
+      OrderNo: nextNo,
+      OrderDate: new Date().toISOString().split('T')[0],
+      PartyName: order.PartyName || '',
+      Address: order.Address || '',
+      Place: order.Place || '',
+      Remarks: order.Remarks || '',
+      RefNo: order.RefNo || '',
+      DutyWithoutPF: order.DutyWithoutPF || false,
+      VoltasFormat: order.VoltasFormat || false,
+      VatWithPF: order.VatWithPF || false
+    });
+
+    setItems((order.details || []).map(d => ({
+      ItemName: d.ItemName,
+      Qty: d.Qty || 0,
+      PerQty: d.PerQty || '1',
+      UOM: d.UOM || '',
+      UnitRate: d.UnitRate || 0,
+      TotalAmount: d.TotalAmount || 0,
+      DiscountPct: d.DiscountPct || 0,
+      DiscountAmt: d.DiscountAmt || 0,
+      GSTType: d.GSTType || 'SGST+CGST',
+      GSTPct: d.GSTPct || (d.GSTType === 'IGST' ? (parseFloat(d.IGSTPct) || 0) : ((parseFloat(d.SGSTPct) || 0) + (parseFloat(d.CGSTPct) || 0))),
+      SGSTPct: d.SGSTPct || 0,
+      SGST: d.SGST || 0,
+      CGSTPct: d.CGSTPct || 0,
+      CGST: d.CGST || 0,
+      IGSTPct: d.IGSTPct || 0,
+      IGST: d.IGST || 0,
+      PF_Pct: d.PF_Pct || 0,
+      PF_Amount: d.PF_Amount || 0,
+      LorryFreight: d.LorryFreight || 0,
+      GrandTotal: d.GrandTotal || 0,
+      MRS_No: d.MRS_No || ''
+    })));
+
+    setDetailData(initialDetailState);
+    setEditDrawerOpen(true);
+    setTimeout(() => setIsDrawerVisible(true), 10);
+    showToast(`PO #${order.OrderNo} details copied to new order #PO-${String(nextNo).padStart(3, '0')}`, 'info');
+  };
+
   const handleCloseEditDrawer = () => {
     setIsDrawerVisible(false);
     setTimeout(() => {
@@ -339,8 +504,33 @@ export default function PurchaseOrder() {
       setEditingItemIndex(null);
       setHeadData(initialHeadState);
       setItems([]);
+      setNoRoundOff(false);
     }, 300);
   };
+
+  // Copy previous item details
+  const handleCopyPreviousItemDetails = useCallback(() => {
+    if (items.length === 0) {
+      showToast('No previous item available to copy details from', 'warning');
+      return;
+    }
+    const targetItem = editingItemIndex !== null && editingItemIndex > 0
+      ? items[editingItemIndex - 1]
+      : items[items.length - 1];
+
+    setDetailData(curr => ({
+      ...curr,
+      DiscountPct: targetItem.DiscountPct !== undefined ? targetItem.DiscountPct : '',
+      GSTType: targetItem.GSTType || 'SGST+CGST',
+      SGSTPct: targetItem.SGSTPct !== undefined ? targetItem.SGSTPct : '',
+      CGSTPct: targetItem.CGSTPct !== undefined ? targetItem.CGSTPct : '',
+      IGSTPct: targetItem.IGSTPct !== undefined ? targetItem.IGSTPct : '',
+      PF_Amount: targetItem.PF_Amount !== undefined ? targetItem.PF_Amount : '',
+      LorryFreight: targetItem.LorryFreight !== undefined ? targetItem.LorryFreight : '',
+      MRS_No: targetItem.MRS_No || ''
+    }));
+    showToast('Copied previous item tax, freight & discount details', 'info');
+  }, [items, editingItemIndex, showToast]);
 
   // Add Item to Draft
   const handleAddItem = () => {
@@ -349,22 +539,33 @@ export default function PurchaseOrder() {
       return;
     }
 
+    const gstType = detailData.GSTType || 'SGST+CGST';
+    const sgstPct = parseFloat(detailData.SGSTPct) || 0;
+    const cgstPct = parseFloat(detailData.CGSTPct) || 0;
+    const igstPct = parseFloat(detailData.IGSTPct) || 0;
+    const totalGstPct = gstType === 'IGST' ? igstPct : (sgstPct + cgstPct);
+
     const newItem = {
       ...detailData,
       Qty: parseFloat(detailData.Qty) || 0,
+      PerQty: detailData.PerQty || '1',
+      UOM: detailData.UOM || '',
       UnitRate: resolveLineUnitRate(detailData),
       TotalAmount: parseFloat(detailData.TotalAmount) || 0,
       DiscountPct: parseFloat(detailData.DiscountPct) || 0,
       DiscountAmt: parseFloat(detailData.DiscountAmt) || 0,
-      SGSTPct: parseFloat(detailData.SGSTPct) || 0,
+      GSTType: gstType,
+      GSTPct: totalGstPct,
+      SGSTPct: sgstPct,
       SGST: parseFloat(detailData.SGST) || 0,
-      CGSTPct: parseFloat(detailData.CGSTPct) || 0,
+      CGSTPct: cgstPct,
       CGST: parseFloat(detailData.CGST) || 0,
-      IGSTPct: parseFloat(detailData.IGSTPct) || 0,
+      IGSTPct: igstPct,
       IGST: parseFloat(detailData.IGST) || 0,
       PF_Amount: parseFloat(detailData.PF_Amount) || 0,
       LorryFreight: parseFloat(detailData.LorryFreight) || 0,
-      GrandTotal: parseFloat(detailData.GrandTotal) || 0
+      GrandTotal: parseFloat(detailData.GrandTotal) || 0,
+      MRS_No: detailData.MRS_No || ''
     };
 
     setItems([...items, newItem]);
@@ -379,6 +580,8 @@ export default function PurchaseOrder() {
     setDetailData({
       ItemName: item.ItemName || '',
       Qty: item.Qty !== undefined ? item.Qty : '',
+      PerQty: item.PerQty || '1',
+      UOM: item.UOM || '',
       UnitRate: item.UnitRate !== undefined ? item.UnitRate : '',
       TotalAmount: item.TotalAmount || 0,
       DiscountPct: item.DiscountPct !== undefined ? item.DiscountPct : '',
@@ -409,22 +612,33 @@ export default function PurchaseOrder() {
       return;
     }
 
+    const gstType = detailData.GSTType || 'SGST+CGST';
+    const sgstPct = parseFloat(detailData.SGSTPct) || 0;
+    const cgstPct = parseFloat(detailData.CGSTPct) || 0;
+    const igstPct = parseFloat(detailData.IGSTPct) || 0;
+    const totalGstPct = gstType === 'IGST' ? igstPct : (sgstPct + cgstPct);
+
     const updatedItem = {
       ...detailData,
       Qty: parseFloat(detailData.Qty) || 0,
+      PerQty: detailData.PerQty || '1',
+      UOM: detailData.UOM || '',
       UnitRate: resolveLineUnitRate(detailData),
       TotalAmount: parseFloat(detailData.TotalAmount) || 0,
       DiscountPct: parseFloat(detailData.DiscountPct) || 0,
       DiscountAmt: parseFloat(detailData.DiscountAmt) || 0,
-      SGSTPct: parseFloat(detailData.SGSTPct) || 0,
+      GSTType: gstType,
+      GSTPct: totalGstPct,
+      SGSTPct: sgstPct,
       SGST: parseFloat(detailData.SGST) || 0,
-      CGSTPct: parseFloat(detailData.CGSTPct) || 0,
+      CGSTPct: cgstPct,
       CGST: parseFloat(detailData.CGST) || 0,
-      IGSTPct: parseFloat(detailData.IGSTPct) || 0,
+      IGSTPct: igstPct,
       IGST: parseFloat(detailData.IGST) || 0,
       PF_Amount: parseFloat(detailData.PF_Amount) || 0,
       LorryFreight: parseFloat(detailData.LorryFreight) || 0,
-      GrandTotal: parseFloat(detailData.GrandTotal) || 0
+      GrandTotal: parseFloat(detailData.GrandTotal) || 0,
+      MRS_No: detailData.MRS_No || ''
     };
 
     const newItems = [...items];
@@ -563,13 +777,16 @@ export default function PurchaseOrder() {
 
   // Supplier Options for SearchSelect
   const supplierOptions = useMemo(() =>
-    suppliers.map(s => ({
-      value: s.name || s.AccountName,
-      label: s.name || s.AccountName,
-      sub: s.Place ? `Place: ${s.Place}` : '',
-      Address: s.Address,
-      Place: s.Place
-    })),
+    suppliers.map(s => {
+      const name = (s.name || s.AccountName || '').trim();
+      return {
+        value: name,
+        label: name,
+        sub: s.Place ? `Place: ${s.Place}` : '',
+        Address: s.Address || s.address || '',
+        Place: s.Place || s.place || ''
+      };
+    }),
     [suppliers]
   );
 
@@ -578,8 +795,9 @@ export default function PurchaseOrder() {
     itemsList.map(i => ({
       value: i.ItemName,
       label: i.ItemName,
-      sub: i.UnitRate ? `Unit Rate: ₹${i.UnitRate}` : '',
-      UnitRate: i.UnitRate
+      sub: i.UnitRate ? `Unit Rate: ₹${i.UnitRate}${i.UOM ? ' | ' + i.UOM : ''}` : (i.UOM || ''),
+      UnitRate: i.UnitRate,
+      UOM: i.UOM || ''
     })),
     [itemsList]
   );
@@ -718,6 +936,15 @@ export default function PurchaseOrder() {
                         </td>
                         <td className="py-4 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleDuplicatePO(order)}
+                              className="px-3.5 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
+                              title="Duplicate / Copy Purchase Order"
+                            >
+                              <Copy size={14} />
+                              Copy
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleOpenEditDrawer(order)}
@@ -1049,6 +1276,19 @@ export default function PurchaseOrder() {
                 <button
                   type="button"
                   onClick={() => {
+                    const orderToCopy = viewOrderModal;
+                    setViewOrderModal(null);
+                    handleDuplicatePO(orderToCopy);
+                  }}
+                  className="px-4 py-2 bg-amber-500 text-white hover:bg-amber-600 rounded-xl font-medium text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Copy as New Order"
+                >
+                  <Copy size={14} />
+                  Copy Order
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     const orderToEdit = viewOrderModal;
                     setViewOrderModal(null);
                     handleOpenEditDrawer(orderToEdit);
@@ -1144,7 +1384,14 @@ export default function PurchaseOrder() {
                           required
                           options={supplierOptions}
                           value={headData.PartyName}
-                          onChange={(val) => setHeadData(prev => ({ ...prev, PartyName: val }))}
+                          onChange={(val, opt) => {
+                            setHeadData(prev => ({
+                              ...prev,
+                              PartyName: val,
+                              Address: opt?.Address !== undefined ? (opt.Address || '') : (opt?.address || prev.Address),
+                              Place: opt?.Place !== undefined ? (opt.Place || '') : (opt?.place || prev.Place)
+                            }));
+                          }}
                           placeholder="Search supplier or party..."
                         />
                       </div>
@@ -1203,11 +1450,28 @@ export default function PurchaseOrder() {
                       }`}>
                       <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 flex items-center justify-between">
                         <span>{editingItemIndex !== null ? `2. Edit Item #${editingItemIndex + 1}` : '2. Add Items to Order'}</span>
-                        {editingItemIndex !== null && (
-                          <span className="text-xs text-amber-700 font-semibold">
-                            Editing item details
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {items.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={handleCopyPreviousItemDetails}
+                              title="Copy tax, freight and discount from previous item"
+                              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+                            >
+                              <Copy size={12} />
+                              <span>Copy Previous</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={handleOpenAddItemMasterModal}
+                            title="Add new item to Item Master"
+                            className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
+                          >
+                            <Plus size={12} />
+                            New Item
+                          </button>
+                        </div>
                       </h4>
 
                       <div>
@@ -1219,7 +1483,8 @@ export default function PurchaseOrder() {
                             setDetailData(prev => ({
                               ...prev,
                               ItemName: val,
-                              UnitRate: opt?.UnitRate || prev.UnitRate
+                              UnitRate: opt?.UnitRate !== undefined && opt?.UnitRate !== null && opt?.UnitRate !== '' ? opt.UnitRate : prev.UnitRate,
+                              UOM: opt?.UOM || prev.UOM || ''
                             }));
                           }}
                           placeholder="Search item..."
@@ -1231,7 +1496,7 @@ export default function PurchaseOrder() {
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Qty *</label>
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             value={detailData.Qty}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setDetailData({ ...detailData, Qty: e.target.value })}
@@ -1244,7 +1509,8 @@ export default function PurchaseOrder() {
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Unit Rate (₹)</label>
                           <input
                             type="number"
-                            step="1" value={detailData.UnitRate}
+                            step="any"
+                            value={detailData.UnitRate}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setDetailData({ ...detailData, UnitRate: e.target.value })}
                             placeholder="0.00"
@@ -1256,7 +1522,7 @@ export default function PurchaseOrder() {
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Discount (%)</label>
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             value={detailData.DiscountPct}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setDetailData({ ...detailData, DiscountPct: e.target.value })}
@@ -1295,7 +1561,7 @@ export default function PurchaseOrder() {
                               <label className="block text-xs font-semibold text-slate-600 mb-1">SGST %</label>
                               <input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 value={detailData.SGSTPct}
                                 onWheel={(e) => e.target.blur()}
                                 onChange={(e) => setDetailData({ ...detailData, SGSTPct: e.target.value, CGSTPct: e.target.value })}
@@ -1307,7 +1573,7 @@ export default function PurchaseOrder() {
                               <label className="block text-xs font-semibold text-slate-600 mb-1">CGST %</label>
                               <input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 value={detailData.CGSTPct}
                                 onWheel={(e) => e.target.blur()}
                                 onChange={(e) => setDetailData({ ...detailData, CGSTPct: e.target.value })}
@@ -1321,7 +1587,7 @@ export default function PurchaseOrder() {
                             <label className="block text-xs font-semibold text-slate-600 mb-1">IGST %</label>
                             <input
                               type="number"
-                              step="0.01"
+                              step="1"
                               value={detailData.IGSTPct}
                               onWheel={(e) => e.target.blur()}
                               onChange={(e) => setDetailData({ ...detailData, IGSTPct: e.target.value })}
@@ -1335,7 +1601,7 @@ export default function PurchaseOrder() {
                           <label className="block text-xs font-semibold text-slate-600 mb-1">P & F (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             value={detailData.PF_Amount}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setDetailData({ ...detailData, PF_Amount: e.target.value })}
@@ -1350,7 +1616,7 @@ export default function PurchaseOrder() {
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Lorry Freight (₹)</label>
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             value={detailData.LorryFreight}
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setDetailData({ ...detailData, LorryFreight: e.target.value })}
@@ -1416,44 +1682,92 @@ export default function PurchaseOrder() {
                     {items.length > 0 && (
                       <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
                         <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            3. Added Items ({items.length})
-                          </h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                              3. Added Items ({items.length})
+                            </h4>
+
+                          </div>
+                          {items.length > 1 && (
+                            <span className="text-[11px] font-medium text-slate-500">
+                              Total Items: {items.reduce((sum, it) => sum + (parseFloat(it.Qty) || 0), 0)}
+                            </span>
+                          )}
                         </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs text-left border-collapse">
+                        <div className="overflow-x-auto max-w-full">
+                          <table className="min-w-full text-xs text-left border-collapse whitespace-nowrap">
                             <thead>
-                              <tr className="border-b border-slate-200 bg-white text-slate-500 font-semibold uppercase text-[11px]">
+                              <tr className="border-b border-slate-200 bg-slate-100/80 text-slate-600 font-bold uppercase text-[10.5px] tracking-wider">
                                 <th className="py-2.5 px-3 w-10 text-center">#</th>
-                                <th className="py-2.5 px-3">Item Name</th>
+                                <th className="py-2.5 px-3 min-w-[200px]">Item Name</th>
                                 <th className="py-2.5 px-3 text-right">Qty</th>
+                                <th className="py-2.5 px-3 text-center">Per Qty</th>
                                 <th className="py-2.5 px-3 text-right">Unit Rate (₹)</th>
                                 <th className="py-2.5 px-3 text-right">Discount</th>
-                                <th className="py-2.5 px-3 text-right">Tax (₹)</th>
-                                <th className="py-2.5 px-3 text-right">Lorry Freight</th>
-                                <th className="py-2.5 px-3">MRS No</th>
-                                <th className="py-2.5 px-3 text-right font-bold">Item Total (₹)</th>
-                                <th className="py-2.5 px-3 text-center">Action</th>
+                                <th className="py-2.5 px-3 text-right bg-slate-200/50">Total Amount (₹)</th>
+                                <th className="py-2.5 px-3 text-center">GST Type</th>
+                                <th className="py-2.5 px-3 text-right">GST %</th>
+                                <th className="py-2.5 px-3 text-right">SGST %</th>
+                                <th className="py-2.5 px-3 text-right">SGST (₹)</th>
+                                <th className="py-2.5 px-3 text-right">CGST %</th>
+                                <th className="py-2.5 px-3 text-right">CGST (₹)</th>
+                                <th className="py-2.5 px-3 text-right">IGST %</th>
+                                <th className="py-2.5 px-3 text-right">IGST (₹)</th>
+                                <th className="py-2.5 px-3 text-right">P & F (₹)</th>
+                                <th className="py-2.5 px-3 text-right">Lorry Freight (₹)</th>
+                                <th className="py-2.5 px-3 text-center">MRS No</th>
+                                <th className="py-2.5 px-3 text-right font-bold bg-emerald-50/60 text-emerald-800">Grand Total (₹)</th>
+                                <th className="py-2.5 px-3 text-center sticky right-0 bg-slate-100 shadow-xs">Action</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-slate-700">
                               {items.map((item, idx) => {
-                                const taxSum = (parseFloat(item.SGST) || 0) + (parseFloat(item.CGST) || 0) + (parseFloat(item.IGST) || 0);
                                 const isItemEditing = editingItemIndex === idx;
+                                const gstType = item.GSTType || 'SGST+CGST';
+                                const totalGstPct = gstType === 'IGST'
+                                  ? (parseFloat(item.IGSTPct) || 0)
+                                  : ((parseFloat(item.SGSTPct) || 0) + (parseFloat(item.CGSTPct) || 0));
+
                                 return (
-                                  <tr key={idx} className={`transition-colors ${isItemEditing ? 'bg-amber-50/80 border-l-4 border-l-amber-500' : 'hover:bg-slate-50'}`}>
-                                    <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
-                                    <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
-                                    <td className="py-2.5 px-3 text-right font-medium">{item.Qty}</td>
-                                    <td className="py-2.5 px-3 text-right">₹{formatRate(item.UnitRate)}</td>
-                                    <td className="py-2.5 px-3 text-right text-slate-500">₹{formatCurrency(item.DiscountAmt)}</td>
-                                    <td className="py-2.5 px-3 text-right text-slate-500">₹{formatCurrency(taxSum)}</td>
-                                    <td className="py-2.5 px-3 text-right text-slate-500">₹{formatCurrency(item.LorryFreight)}</td>
-                                    <td className="py-2.5 px-3 text-slate-500">{item.MRS_No || '-'}</td>
-                                    <td className="py-2.5 px-3 text-right font-bold text-slate-900">
+                                  <tr
+                                    key={idx}
+                                    className={`transition-colors ${isItemEditing
+                                      ? 'bg-amber-50/80 border-l-4 border-l-amber-500 font-medium'
+                                      : 'hover:bg-slate-50'
+                                      }`}
+                                  >
+                                    <td className="py-3 px-3.5 text-center text-slate-400 font-medium">{idx + 1}</td>
+                                    <td className="py-3 px-3.5 font-semibold text-slate-800">{item.ItemName}</td>
+                                    <td className="py-3 px-3.5 text-right font-bold text-slate-900">{item.Qty}</td>
+                                    <td className="py-3 px-3.5 text-center text-slate-500">{item.PerQty || item.UOM || '1'}</td>
+                                    <td className="py-3 px-3.5 text-right font-medium">₹{formatRate(item.UnitRate)}</td>
+                                    <td className="py-3 px-3.5 text-right text-slate-500">
+                                      {parseFloat(item.DiscountPct) > 0
+                                        ? `${item.DiscountPct}% (₹${formatCurrency(item.DiscountAmt)})`
+                                        : (parseFloat(item.DiscountAmt) > 0 ? `₹${formatCurrency(item.DiscountAmt)}` : '0')}
+                                    </td>
+                                    <td className="py-3 px-3.5 text-right font-bold text-slate-800 bg-slate-50/60">
+                                      ₹{formatCurrency(item.TotalAmount)}
+                                    </td>
+                                    <td className="py-3 px-3.5 text-center">
+                                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                        {gstType === 'SGST+CGST' ? 'GST [' + totalGstPct + '%]' : gstType}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-3.5 text-right font-semibold text-slate-700">{totalGstPct}</td>
+                                    <td className="py-3 px-3.5 text-right text-slate-600">{parseFloat(item.SGSTPct) || 0}</td>
+                                    <td className="py-3 px-3.5 text-right font-medium text-slate-700">₹{formatCurrency(item.SGST)}</td>
+                                    <td className="py-3 px-3.5 text-right text-slate-600">{parseFloat(item.CGSTPct) || 0}</td>
+                                    <td className="py-3 px-3.5 text-right font-medium text-slate-700">₹{formatCurrency(item.CGST)}</td>
+                                    <td className="py-3 px-3.5 text-right text-slate-600">{parseFloat(item.IGSTPct) || 0}</td>
+                                    <td className="py-3 px-3.5 text-right font-medium text-slate-700">₹{formatCurrency(item.IGST)}</td>
+                                    <td className="py-3 px-3.5 text-right text-slate-600">₹{formatCurrency(item.PF_Amount)}</td>
+                                    <td className="py-3 px-3.5 text-right text-slate-600">₹{formatCurrency(item.LorryFreight)}</td>
+                                    <td className="py-3 px-3.5 text-center text-slate-500">{item.MRS_No || '-'}</td>
+                                    <td className="py-3 px-3.5 text-right font-bold text-emerald-700 bg-emerald-50/40">
                                       ₹{formatCurrency(item.GrandTotal || item.TotalAmount)}
                                     </td>
-                                    <td className="py-2.5 px-3 text-center">
+                                    <td className="py-3 px-3.5 text-center sticky right-0 bg-white/95 backdrop-blur-xs shadow-xs z-10">
                                       <div className="flex items-center justify-center gap-1.5">
                                         <button
                                           type="button"
@@ -1489,9 +1803,23 @@ export default function PurchaseOrder() {
 
                     {/* Section 4: Financial Summary */}
                     <div className="bg-white rounded-xl p-5 border border-slate-200 space-y-3 shadow-xs">
-                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
-                        4. Order Summary
-                      </h4>
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                          4. Order Summary
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => setNoRoundOff(prev => !prev)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${noRoundOff
+                            ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-xs'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          title={noRoundOff ? "Round off value is set to 0. Click to restore calculated round off." : "Click to set round off value to 0"}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${noRoundOff ? 'bg-amber-500' : 'bg-slate-400'}`}></span>
+                          {noRoundOff ? 'Zero Round Off (Active)' : 'Zero Round Off'}
+                        </button>
+                      </div>
                       <div className="flex items-center justify-between text-xs text-slate-600">
                         <span>Items Subtotal:</span>
                         <span className="font-bold text-slate-800">₹{totals.Total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -1559,6 +1887,227 @@ export default function PurchaseOrder() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Add New Item – Popup Modal ────────────────────────────────────── */}
+        {showAddItemMasterModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Add New Item</h3>
+                  <p className="text-slate-500 text-xs mt-0.5">Fill in the details to add a new item to the system</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddItemMasterModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Scrollable Body */}
+              <form onSubmit={handleImSave} className="overflow-y-auto flex-1">
+                <div className="p-6 space-y-5">
+
+                  {/* Row 1: Department + Sub Head */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">DEPARTMENT *</label>
+                      <select
+                        value={imFormData.DepartmentId}
+                        onChange={handleImDeptChange}
+                        required
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700"
+                      >
+                        <option value="">Select Department</option>
+                        {imDepartments.map(d => (
+                          <option key={d.dept_id} value={d.dept_id}>{d.dept_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">SUB HEAD *</label>
+                      <select
+                        value={imFormData.SubHeadCode}
+                        onChange={handleImFieldChange('SubHeadCode')}
+                        required
+                        disabled={!imFormData.DepartmentId}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Select Sub Head</option>
+                        {imSubHeads.map(sh => (
+                          <option key={sh.code} value={sh.code}>{sh.code} - {sh.sub_group_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Item Name (full width) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Item Name *</label>
+                    <input
+                      type="text"
+                      value={imFormData.ItemName}
+                      onChange={handleImFieldChange('ItemName')}
+                      placeholder="Enter item name"
+                      required
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                    />
+                  </div>
+
+                  {/* Row 3: Category + Commodity */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
+                      <input
+                        type="text"
+                        value={imFormData.Category}
+                        onChange={handleImFieldChange('Category')}
+                        placeholder="Enter category"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Commodity</label>
+                      <input
+                        type="text"
+                        value={imFormData.Commodity}
+                        onChange={handleImFieldChange('Commodity')}
+                        placeholder="Enter commodity"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Unit Rate + Min Stock Level */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Unit Rate</label>
+                      <input
+                        type="number" step="1" onWheel={e => e.target.blur()}
+                        value={imFormData.UnitRate}
+                        onChange={handleImFieldChange('UnitRate')}
+                        placeholder="0"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Min. Stock Level</label>
+                      <input
+                        type="number" step="1" onWheel={e => e.target.blur()}
+                        value={imFormData.MinStockLevel}
+                        onChange={handleImFieldChange('MinStockLevel')}
+                        placeholder="0"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 5: Quantity + Max Stock Level */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Quantity</label>
+                      <input
+                        type="number" step="1" onWheel={e => e.target.blur()}
+                        value={imFormData.Quantity}
+                        onChange={handleImFieldChange('Quantity')}
+                        placeholder="0"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Max. Stock Level</label>
+                      <input
+                        type="number" step="1" onWheel={e => e.target.blur()}
+                        value={imFormData.MaxStockLevel}
+                        onChange={handleImFieldChange('MaxStockLevel')}
+                        placeholder="0"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 6: Opening Value + Location */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Opening Value</label>
+                      <input
+                        type="number" step="1" onWheel={e => e.target.blur()}
+                        value={imFormData.OpenValue}
+                        onChange={handleImFieldChange('OpenValue')}
+                        placeholder="0"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Location</label>
+                      <input
+                        type="text"
+                        value={imFormData.Location}
+                        onChange={handleImFieldChange('Location')}
+                        placeholder="Enter location"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 7: HSN Code + UOM */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">HSN Code</label>
+                      <input
+                        type="text"
+                        value={imFormData.HSNCode}
+                        onChange={handleImFieldChange('HSNCode')}
+                        placeholder="Enter HSN code"
+                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">UOM</label>
+                      <select
+                        value={imFormData.UOM}
+                        onChange={handleImFieldChange('UOM')}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700"
+                      >
+                        <option value="">Select UOM</option>
+                        {imUOMs.map(u => (
+                          <option key={u.id} value={u.uom}>{u.uom}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Sticky Footer */}
+                <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
+                  <button
+                    type="submit"
+                    disabled={imSaving || !imFormData.ItemName || !imFormData.DepartmentId || !imFormData.SubHeadCode}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    {imSaving ? (
+                      <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+                    ) : (
+                      <><Plus size={15} /> Add Item</>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddItemMasterModal(false)}
+                    className="px-6 py-2.5 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold text-sm transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

@@ -9,7 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const initialFormState = {
     ItemCode: '',
     ItemName: '',
-    UnitRate: 0,
+    UnitRate: '',
     Department: '',
     DepartmentId: '',
     SubHeadCode: '',
@@ -301,7 +301,7 @@ export default function ItemMaster() {
                         value={data.UnitRate}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter unit rate"
-                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 

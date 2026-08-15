@@ -15,13 +15,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const initialFormState = {
   InwardNo: '',
+  OrderNo: '',
   PartyName: '',
   InwardDate: new Date().toISOString().split('T')[0],
   InvoiceNo: '',
-  InvoiceDate: new Date().toISOString().split('T')[0],
-  DCNo: '',
-  DCDate: new Date().toISOString().split('T')[0],
-  LRCNo: ''
+  InvoiceDate: new Date().toISOString().split('T')[0]
 };
 
 const formatDateForInput = (dateStr) => {
@@ -47,6 +45,7 @@ export default function GateInward() {
 
   const [formData, setFormData] = useState(initialFormState);
   const [parties, setParties] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [gateInwards, setGateInwards] = useState([]);
@@ -100,34 +99,58 @@ export default function GateInward() {
     fetchInitialData();
   }, []);
 
-  // Fetch items when party is selected in form
+  // Fetch purchase orders when party is selected in form
   useEffect(() => {
     if (formData.PartyName && !editingInwardNo) {
-      const fetchPartyItems = async () => {
+      const fetchPartyPOs = async () => {
         try {
-          const response = await axios.get(`${API_URL}/gate-inwards/items-by-party`, {
+          const response = await axios.get(`${API_URL}/gate-inwards/purchase-orders-by-party`, {
             params: { partyName: formData.PartyName }
           });
 
           if (response.data?.success) {
-            const itemsWithReceivedQty = response.data.data.map(item => ({
+            setPurchaseOrders(response.data.data || []);
+          }
+        } catch (error) {
+          console.error('Error fetching party purchase orders:', error);
+        }
+      };
+
+      fetchPartyPOs();
+    } else if (!editingInwardNo) {
+      setPurchaseOrders([]);
+      setItems([]);
+    }
+  }, [formData.PartyName, editingInwardNo]);
+
+  // Fetch items when orderNo is selected
+  useEffect(() => {
+    if (formData.OrderNo && !editingInwardNo) {
+      const fetchOrderItems = async () => {
+        try {
+          const response = await axios.get(`${API_URL}/gate-inwards/items-by-order`, {
+            params: { orderNo: formData.OrderNo }
+          });
+
+          if (response.data?.success) {
+            const itemsWithReceivedQty = (response.data.data || []).map(item => ({
               ItemName: item.ItemName,
-              OrderNo: item.OrderNo,
+              OrderNo: item.OrderNo || formData.OrderNo,
               PendingQty: item.Qty,
-              ReceivedQty: 0
+              ReceivedQty: ''
             }));
             setItems(itemsWithReceivedQty);
           }
         } catch (error) {
-          console.error('Error fetching party items:', error);
+          console.error('Error fetching order items:', error);
         }
       };
 
-      fetchPartyItems();
+      fetchOrderItems();
     } else if (!editingInwardNo) {
       setItems([]);
     }
-  }, [formData.PartyName, editingInwardNo]);
+  }, [formData.OrderNo, editingInwardNo]);
 
   // Filtered and Sorted list
   const filteredAndSortedInwards = useMemo(() => {
@@ -178,21 +201,20 @@ export default function GateInward() {
   const handleOpenEditDrawer = (inward) => {
     setIsNewEntry(false);
     setEditingInwardNo(inward.InwardNo);
+    const orderNo = inward.OrderNo || (inward.details && inward.details[0]?.OrderNo) || '';
     setFormData({
       InwardNo: inward.InwardNo,
+      OrderNo: orderNo,
       PartyName: inward.PartyName || '',
       InwardDate: formatDateForInput(inward.InwardDate) || new Date().toISOString().split('T')[0],
       InvoiceNo: inward.InvoiceNo || '',
-      InvoiceDate: formatDateForInput(inward.InvoiceDate),
-      DCNo: inward.DCNo || '',
-      DCDate: formatDateForInput(inward.DCDate),
-      LRCNo: inward.LRCNo || ''
+      InvoiceDate: formatDateForInput(inward.InvoiceDate)
     });
 
     if (inward.details) {
       setItems(inward.details.map(d => ({
         ItemName: d.ItemName,
-        OrderNo: d.OrderNo,
+        OrderNo: d.OrderNo || orderNo,
         PendingQty: d.PendingQty || 0,
         ReceivedQty: d.ReceivedQty || 0
       })));
@@ -210,6 +232,7 @@ export default function GateInward() {
       setEditDrawerOpen(false);
       setEditingInwardNo(null);
       setFormData(initialFormState);
+      setPurchaseOrders([]);
       setItems([]);
       setInvoiceDuplicateWarning(null);
     }, 300);
@@ -274,8 +297,13 @@ export default function GateInward() {
       return;
     }
 
+    if (!formData.OrderNo) {
+      showToast('Please select a Purchase Order', 'error');
+      return;
+    }
+
     if (!items || items.length === 0) {
-      showToast('No items available for selected party', 'error');
+      showToast('No items available for selected purchase order', 'error');
       return;
     }
 
@@ -294,7 +322,10 @@ export default function GateInward() {
       setLoading(true);
       const payload = {
         ...formData,
-        items
+        items: items.map(item => ({
+          ...item,
+          OrderNo: item.OrderNo || formData.OrderNo
+        }))
       };
 
       if (editingInwardNo) {
@@ -430,6 +461,11 @@ export default function GateInward() {
                         <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                           GI-{String(inward.InwardNo).padStart(3, '0')}
                         </span>
+                        {inward.OrderNo && (
+                          <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-full">
+                            PO-{inward.OrderNo}
+                          </span>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3">
                         <div>
@@ -444,12 +480,10 @@ export default function GateInward() {
                             <span className="text-slate-700 font-medium">{inward.InvoiceNo}</span>
                           </div>
                         )}
-                        {inward.DCNo && (
-                          <div>
-                            <span className="text-slate-500">DC No:</span>{' '}
-                            <span className="text-slate-700 font-medium">{inward.DCNo}</span>
-                          </div>
-                        )}
+                        <div>
+                          <span className="text-slate-500">Purchase Order:</span>{' '}
+                          <span className="text-slate-700 font-medium">{inward.OrderNo ? `PO-${inward.OrderNo}` : '-'}</span>
+                        </div>
                         <div>
                           <span className="text-slate-500">Items:</span>{' '}
                           <span className="text-slate-700 font-medium">{inward.details?.length || 0} items</span>
@@ -596,28 +630,62 @@ export default function GateInward() {
                       </div>
                     </div>
 
-                    <div>
-                      {!isNewEntry ? (
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">Party Name</label>
-                          <input
-                            type="text"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        {!isNewEntry ? (
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Party Name</label>
+                            <input
+                              type="text"
+                              value={formData.PartyName}
+                              disabled
+                              className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                            />
+                          </div>
+                        ) : (
+                          <CustomSelect
+                            label="Party Name *"
+                            searchable
+                            options={parties.map(p => ({ value: p.name, label: p.name }))}
                             value={formData.PartyName}
-                            disabled
-                            className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                            onChange={(val) => {
+                              setFormData(prev => ({ ...prev, PartyName: val, OrderNo: '' }));
+                              setItems([]);
+                            }}
+                            placeholder="Select party name"
+                            searchPlaceholder="Search party by name..."
                           />
-                        </div>
-                      ) : (
-                        <CustomSelect
-                          label="Party Name *"
-                          searchable
-                          options={parties.map(p => ({ value: p.name, label: p.name }))}
-                          value={formData.PartyName}
-                          onChange={(val) => setFormData(prev => ({ ...prev, PartyName: val }))}
-                          placeholder="Select party name"
-                          searchPlaceholder="Search party by name..."
-                        />
-                      )}
+                        )}
+                      </div>
+
+                      <div>
+                        {!isNewEntry ? (
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Purchase Order No</label>
+                            <input
+                              type="text"
+                              value={formData.OrderNo ? `PO-${formData.OrderNo}` : '-'}
+                              disabled
+                              className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                            />
+                          </div>
+                        ) : (
+                          <CustomSelect
+                            label="Purchase Order No *"
+                            searchable
+                            options={purchaseOrders.map(po => ({
+                              value: po.OrderNo,
+                              label: `PO-${po.OrderNo} (${po.OrderDate ? new Date(po.OrderDate).toLocaleDateString('en-GB') : ''}) - ₹${parseFloat(po.GrandTotal || 0).toLocaleString('en-IN')}`,
+                              name: `PO-${po.OrderNo}`
+                            }))}
+                            value={formData.OrderNo}
+                            onChange={(val) => setFormData(prev => ({ ...prev, OrderNo: val }))}
+                            placeholder={formData.PartyName ? (purchaseOrders.length > 0 ? "Select purchase order" : "No pending POs found") : "Select party name first"}
+                            searchPlaceholder="Search purchase order..."
+                            disabled={!formData.PartyName}
+                          />
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -667,39 +735,6 @@ export default function GateInward() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">DC No</label>
-                        <input
-                          type="text"
-                          value={formData.DCNo}
-                          onChange={(e) => setFormData({ ...formData, DCNo: e.target.value })}
-                          placeholder="Enter DC No"
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">DC Date</label>
-                        <input
-                          type="date"
-                          value={formData.DCDate}
-                          onChange={(e) => setFormData({ ...formData, DCDate: e.target.value })}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">LRC No</label>
-                      <input
-                        type="text"
-                        value={formData.LRCNo}
-                        onChange={(e) => setFormData({ ...formData, LRCNo: e.target.value })}
-                        placeholder="Enter LRC No"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
                     {/* Items Section Table */}
                     <div className="border border-slate-200 rounded-xl overflow-hidden mt-6 shadow-sm">
                       <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -731,7 +766,7 @@ export default function GateInward() {
                                   <td className="py-3.5 px-4 text-right">
                                     <input
                                       type="number"
-                                      step="1" value={item.ReceivedQty}
+                                      step="any" value={item.ReceivedQty}
                                       onWheel={(e) => e.target.blur()}
                                       onChange={(e) => {
                                         const enteredValue = e.target.value;
@@ -740,9 +775,9 @@ export default function GateInward() {
 
                                         const updated = [...items];
                                         if (enteredValue === '') {
-                                          updated[idx].ReceivedQty = 0;
+                                          updated[idx].ReceivedQty = '';
                                         } else if (Number.isNaN(parsedValue) || parsedValue < 0) {
-                                          updated[idx].ReceivedQty = 0;
+                                          updated[idx].ReceivedQty = '';
                                         } else if (parsedValue > pendingQty) {
                                           updated[idx].ReceivedQty = pendingQty;
                                           showToast(`Received quantity for ${item.ItemName} cannot exceed pending qty`, 'warning');
