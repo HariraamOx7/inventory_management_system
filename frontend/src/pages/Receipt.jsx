@@ -1,9 +1,9 @@
 // frontend/src/pages/Receipt.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import axios from 'axios';
 import {
   Plus, Edit2, Trash2, Save, X, Receipt as ReceiptIcon, ArrowUpDown, FileText,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Inbox
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Inbox, Layers
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import CustomSelect from '../components/CustomSelect';
@@ -53,6 +53,7 @@ export default function Receipt() {
   const [loading, setLoading] = useState(false);
   const [receipts, setReceipts] = useState([]);
   const [editingGRNNo, setEditingGRNNo] = useState(null);
+  const [expandedGRNNo, setExpandedGRNNo] = useState(null);
 
   // Slide-over Drawer states (Matching Item Master style)
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -334,7 +335,17 @@ export default function Receipt() {
       }));
     }
 
-    if (receipt.GateInwardNo) {
+    if (receipt.gateInwards && receipt.gateInwards.length > 0) {
+      setLinkedGateInwards(receipt.gateInwards);
+    } else if (orderNo) {
+      axios.get(`${API_URL}/receipts/purchase-order-details`, { params: { orderNo } })
+        .then(res => {
+          if (res.data?.success && res.data.data.gateInwards) {
+            setLinkedGateInwards(res.data.data.gateInwards);
+          }
+        })
+        .catch(err => console.error('Error fetching PO details on edit:', err));
+    } else if (receipt.GateInwardNo) {
       setLinkedGateInwards([{
         InwardNo: receipt.GateInwardNo,
         OrderNo: orderNo,
@@ -495,8 +506,8 @@ export default function Receipt() {
           ]}
         />
 
-        {/* Receipts List Card (Item Master Row Cards Layout & Colors) */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+        {/* Main Data Table (Matching Purchase Order Table Layout) */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-slate-700">All Receipts (GRN)</h2>
             <span className="text-xs font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">
@@ -504,92 +515,237 @@ export default function Receipt() {
             </span>
           </div>
 
-          <div className="divide-y divide-slate-100">
-            {paginatedReceipts.map((receipt) => (
-              <div
-                key={receipt.GRNNo}
-                className="p-6 hover:bg-slate-50 transition-colors duration-200"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-slate-800 text-lg">
-                          {receipt.PartyName}
-                        </h3>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="py-4 px-3 w-12 text-center"></th>
+                  <th className="py-4 px-4 whitespace-nowrap">GRN No</th>
+                  <th className="py-4 px-4">Party Name</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Purchase Order No</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Invoice No</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Invoice Date</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Inward Date</th>
+                  <th className="py-4 px-4 text-center whitespace-nowrap">Batches</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">Amount (₹)</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {paginatedReceipts.map((receipt) => {
+                  const isExpanded = expandedGRNNo === receipt.GRNNo;
+                  const poNo = (receipt.details && receipt.details[0]?.OrderNo) || receipt.OrderNo || '';
+                  const batchCount = receipt.gateInwards ? receipt.gateInwards.length : (receipt.GateInwardNo ? 1 : 0);
+
+                  return (
+                    <Fragment key={receipt.GRNNo}>
+                      <tr className="hover:bg-slate-50/60 transition-colors group">
+                        <td className="py-4 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedGRNNo(isExpanded ? null : receipt.GRNNo)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            title={isExpanded ? "Collapse gate inward batches & details" : "Expand gate inward batches & details"}
+                          >
+                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </td>
+                        <td className="py-4 px-4 font-bold text-slate-900 whitespace-nowrap">
                           GRN-{String(receipt.GRNNo).padStart(3, '0')}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3 pt-3 border-t border-slate-100">
-                        <div>
-                          <span className="text-slate-500 text-xs block">PO & Inward</span>
-                          <span className="text-slate-700 font-medium">
-                            {receipt.details?.[0]?.OrderNo ? `PO-${receipt.details[0].OrderNo}` : ''}
-                            {receipt.GateInwardNo ? ` (GI-${String(receipt.GateInwardNo).padStart(3, '0')})` : ''}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-xs block">Inward Date</span>
-                          <span className="text-slate-700 font-medium">
-                            {receipt.InwardDate ? new Date(receipt.InwardDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-xs block">Invoice No & Date</span>
-                          <span className="text-slate-800 font-medium">
-                            {receipt.InvoiceNo ? (
-                              <>
-                                <span className="font-semibold text-blue-700">{receipt.InvoiceNo}</span>
-                                {receipt.InvoiceDate && (
-                                  <span className="text-xs text-slate-500 block">
-                                    {new Date(receipt.InvoiceDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-slate-400">-</span>
-                            )}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-xs block">Grand Total</span>
-                          <span className="text-emerald-600 font-bold text-base">₹{(receipt.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="font-semibold text-slate-800">{receipt.PartyName}</div>
+                        </td>
+                        <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">
+                          {poNo ? `PO-${String(poNo).padStart(3, '0')}` : <span className="text-slate-400">-</span>}
+                        </td>
+                        <td className="py-4 px-4 font-medium text-slate-700 whitespace-nowrap">
+                          {receipt.InvoiceNo ? receipt.InvoiceNo : <span className="text-slate-400">-</span>}
+                        </td>
+                        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
+                          {receipt.InvoiceDate ? new Date(receipt.InvoiceDate).toLocaleDateString('en-GB') : '-'}
+                        </td>
+                        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
+                          {receipt.InwardDate ? new Date(receipt.InwardDate).toLocaleDateString('en-GB') : '-'}
+                        </td>
+                        <td className="py-4 px-4 text-center font-medium text-slate-600 whitespace-nowrap">
+                          {batchCount} {batchCount === 1 ? 'batch' : 'batches'}
+                        </td>
+                        <td className="py-4 px-4 text-right font-bold text-emerald-600 whitespace-nowrap">
+                          ₹{(receipt.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-4 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditDrawer(receipt)}
+                              className="px-3.5 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
+                              title="Edit Receipt"
+                            >
+                              <Edit2 size={14} />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(receipt.GRNNo)}
+                              className="px-3.5 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
+                              title="Delete Receipt"
+                            >
+                              <Trash2 size={14} />
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
 
-                  {/* Action Buttons (Matching Item Master Royal Blue & Red colors and sizes) */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleOpenEditDrawer(receipt)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-md shadow-blue-500/30 flex items-center gap-2 font-medium text-sm cursor-pointer"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(receipt.GRNNo)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/30 flex items-center gap-2 font-medium text-sm cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                      {/* Expanded Sub-table for Gate Inwards and Received Items */}
+                      {isExpanded && (
+                        <tr className="bg-slate-50/90 border-b border-slate-200">
+                          <td colSpan={10} className="p-4">
+                            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-4">
+                              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
 
-            {paginatedReceipts.length === 0 && (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ReceiptIcon className="w-8 h-8 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-600 mb-2">No Receipts found</h3>
-                <p className="text-slate-500">Try adjusting your search query or add a new GRN entry</p>
-              </div>
-            )}
+                                  Gate Inwards & Items for GRN-{String(receipt.GRNNo).padStart(3, '0')} {poNo ? `(PO-${poNo})` : ''}
+                                </h4>
+
+                              </div>
+
+                              {/* Gate Inward Batches Table (Line-wise) */}
+                              {receipt.gateInwards && receipt.gateInwards.length > 0 ? (
+                                <div className="space-y-2">
+                                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                    Number of Gate Inwards ({receipt.gateInwards.length})
+                                  </div>
+                                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table className="w-full text-xs text-left border-collapse">
+                                      <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                                          <th className="py-2.5 px-3 whitespace-nowrap">Inward No</th>
+                                          <th className="py-2.5 px-3 whitespace-nowrap">Inward Date</th>
+                                          <th className="py-2.5 px-3 whitespace-nowrap">Invoice No</th>
+                                          <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
+                                          <th className="py-2.5 px-3">Received Items in Batch</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+                                        {receipt.gateInwards.map((gi) => (
+                                          <tr key={gi.InwardNo} className="hover:bg-slate-50/70">
+                                            <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">
+                                              GI-{String(gi.InwardNo).padStart(3, '0')}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
+                                              {gi.InwardDate ? new Date(gi.InwardDate).toLocaleDateString('en-GB') : '-'}
+                                            </td>
+                                            <td className="py-2.5 px-3 font-medium text-slate-800 whitespace-nowrap">
+                                              {gi.InvoiceNo || '-'}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
+                                              {gi.InvoiceDate ? new Date(gi.InvoiceDate).toLocaleDateString('en-GB') : '-'}
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                              {gi.details && gi.details.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                  {gi.details.map((d, dIdx) => (
+                                                    <span key={dIdx} className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-700 text-xs">
+                                                      <span className="font-medium text-slate-800">{d.ItemName}:</span>
+                                                      <span className="font-semibold text-slate-900">{d.ReceivedQty ?? d.Qty} units</span>
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <span className="text-slate-400 italic">No item details recorded</span>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ) : (
+                                receipt.GateInwardNo && (
+                                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+                                    <span>Gate Inward: <strong className="text-slate-800 font-semibold">GI-{String(receipt.GateInwardNo).padStart(3, '0')}</strong></span>
+                                    <span>Inward Date: <strong className="text-slate-700">{receipt.InwardDate ? new Date(receipt.InwardDate).toLocaleDateString('en-GB') : '-'}</strong></span>
+                                    <span>Invoice: <strong className="text-slate-700">{receipt.InvoiceNo || 'N/A'}</strong></span>
+                                  </div>
+                                )
+                              )}
+
+                              {/* Consolidated Received Items Table */}
+                              <div className="space-y-2 pt-2 border-t border-slate-100">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                  Receipt Items Summary ({receipt.details?.length || 0})
+                                </div>
+                                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                                  <table className="w-full text-xs text-left border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                                        <th className="py-2.5 px-3">Item Name</th>
+                                        <th className="py-2.5 px-3 whitespace-nowrap">Order No</th>
+                                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Received Qty</th>
+                                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Unit Rate (₹)</th>
+                                        <th className="py-2.5 px-3 text-right font-bold whitespace-nowrap">Item Total (₹)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                                      {(receipt.details || []).map((item, idx) => {
+                                        const qty = parseFloat(item.ReceivedQty !== undefined ? item.ReceivedQty : item.Qty) || 0;
+                                        const rate = parseFloat(item.UnitRate) || 0;
+                                        const itemTotal = qty * rate;
+                                        return (
+                                          <tr key={idx} className="hover:bg-slate-50">
+                                            <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
+                                            <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
+                                            <td className="py-2.5 px-3 text-slate-600">{item.OrderNo ? `PO-${item.OrderNo}` : '-'}</td>
+                                            <td className="py-2.5 px-3 text-right font-semibold text-slate-800">{qty}</td>
+                                            <td className="py-2.5 px-3 text-right">₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                            <td className="py-2.5 px-3 text-right font-bold text-slate-900">₹{itemTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+
+                              {/* Financial Summary */}
+                              <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs">
+                                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-slate-600">
+                                  <span>Subtotal: <strong className="text-slate-800 font-semibold">₹{(receipt.Total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                                  {parseFloat(receipt.Discount) > 0 && <span>Discount: <strong className="text-slate-800 font-semibold">-₹{parseFloat(receipt.Discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                                  {parseFloat(receipt.GST) > 0 && <span>Tax (GST): <strong className="text-slate-800 font-semibold">+₹{parseFloat(receipt.GST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                                  {parseFloat(receipt.P_F) > 0 && <span>P&F: <strong className="text-slate-800 font-semibold">+₹{parseFloat(receipt.P_F).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                                  {parseFloat(receipt.LorryFreight) > 0 && <span>Freight: <strong className="text-slate-800 font-semibold">+₹{parseFloat(receipt.LorryFreight).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                                  <span>Round Off: <strong className="text-slate-700">{formatRoundOff(receipt.RoundOff)}</strong></span>
+                                </div>
+                                <div className="text-sm font-bold text-emerald-600">
+                                  Grand Total: ₹{(receipt.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+
+                {paginatedReceipts.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="p-12 text-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <ReceiptIcon className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-600 mb-2">No Receipts found</h3>
+                      <p className="text-slate-500">Try adjusting your search query or add a new GRN entry</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination Bar */}

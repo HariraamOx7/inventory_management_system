@@ -496,7 +496,7 @@ exports.getGateInwardItems = async (req, res) => {
   }
 };
 
-// Get all receipts
+// Get all receipts (attaching all linked Gate Inwards for each PO)
 exports.getReceipts = async (req, res) => {
   try {
     const receipts = await Receipt.findAll({
@@ -504,9 +504,59 @@ exports.getReceipts = async (req, res) => {
       order: [['GRNNo', 'DESC']]
     });
 
+    // Collect all OrderNos and GateInwardNos
+    const orderNos = new Set();
+    const inwardNos = new Set();
+    for (const r of receipts) {
+      if (r.GateInwardNo) inwardNos.add(r.GateInwardNo);
+      for (const d of r.details || []) {
+        if (d.OrderNo) orderNos.add(d.OrderNo);
+      }
+    }
+
+    // Fetch gate inwards for these POs and InwardNos
+    const orConditions = [];
+    if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
+    if (inwardNos.size > 0) orConditions.push({ InwardNo: { [Op.in]: Array.from(inwardNos) } });
+
+    const gateInwards = orConditions.length > 0
+      ? await GateInward.findAll({
+          where: { [Op.or]: orConditions },
+          include: [{ model: GateInwardDetail, as: 'details' }],
+          order: [['InwardNo', 'ASC']]
+        })
+      : [];
+
+    // Map gate inwards by OrderNo and by InwardNo
+    const giByOrder = new Map();
+    const giByInward = new Map();
+    for (const gi of gateInwards) {
+      const json = gi.toJSON();
+      if (gi.OrderNo) {
+        if (!giByOrder.has(gi.OrderNo)) giByOrder.set(gi.OrderNo, []);
+        giByOrder.get(gi.OrderNo).push(json);
+      }
+      giByInward.set(gi.InwardNo, json);
+    }
+
+    const result = receipts.map(r => {
+      const rJson = r.toJSON();
+      const rOrderNo = (rJson.details && rJson.details[0]?.OrderNo) || null;
+      let linkedGIs = [];
+      if (rOrderNo && giByOrder.has(rOrderNo)) {
+        linkedGIs = giByOrder.get(rOrderNo);
+      } else if (rJson.GateInwardNo && giByInward.has(rJson.GateInwardNo)) {
+        linkedGIs = [giByInward.get(rJson.GateInwardNo)];
+      }
+      return {
+        ...rJson,
+        gateInwards: linkedGIs
+      };
+    });
+
     res.json({
       success: true,
-      data: receipts
+      data: result
     });
   } catch (error) {
     console.error('Error fetching receipts:', error);
