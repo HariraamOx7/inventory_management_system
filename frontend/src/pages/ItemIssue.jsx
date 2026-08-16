@@ -972,18 +972,16 @@ export default function ItemIssue() {
           <div className="fixed inset-0 z-50 overflow-hidden">
             {/* Backdrop */}
             <div
-              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 ${
-                isDrawerVisible ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+                }`}
               onClick={handleCloseDrawer}
             />
 
             {/* Slide-over Container */}
             <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
               <div
-                className={`w-screen max-w-3xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
-                  isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
-                }`}
+                className={`w-screen max-w-3xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
+                  }`}
               >
                 {/* Drawer Header */}
                 <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
@@ -1232,13 +1230,12 @@ export default function ItemIssue() {
                               return (
                                 <tr
                                   key={item.ItemCode || item.ItemName}
-                                  className={`transition-colors ${
-                                    isSelected
-                                      ? 'bg-blue-50/40'
-                                      : isInvalidQty
+                                  className={`transition-colors ${isSelected
+                                    ? 'bg-blue-50/40'
+                                    : isInvalidQty
                                       ? 'bg-red-50/40'
                                       : 'hover:bg-slate-50/60'
-                                  }`}
+                                    }`}
                                 >
                                   {/* Item Details */}
                                   <td className="py-3 px-4 font-medium text-slate-800">
@@ -1276,13 +1273,12 @@ export default function ItemIssue() {
                                           )
                                         }
                                         placeholder="0"
-                                        className={`w-32 px-2.5 py-1.5 border rounded-lg text-sm font-semibold focus:outline-none transition-all ${
-                                          isInvalidQty
-                                            ? 'border-red-500 bg-red-50 text-red-900 focus:ring-2 focus:ring-red-400'
-                                            : isSelected
+                                        className={`w-32 px-2.5 py-1.5 border rounded-lg text-sm font-semibold focus:outline-none transition-all ${isInvalidQty
+                                          ? 'border-red-500 bg-red-50 text-red-900 focus:ring-2 focus:ring-red-400'
+                                          : isSelected
                                             ? 'border-blue-500 bg-blue-50/60 text-blue-900 focus:ring-2 focus:ring-blue-400'
                                             : 'border-slate-300 bg-white text-slate-800 focus:ring-2 focus:ring-blue-400'
-                                        }`}
+                                          }`}
                                       />
                                       {isInvalidQty && (
                                         <p className="text-[11px] text-red-600 font-medium flex items-center gap-1">

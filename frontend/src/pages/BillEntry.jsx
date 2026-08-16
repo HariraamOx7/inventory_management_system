@@ -762,8 +762,8 @@ export default function BillEntry() {
     y += 8;
 
     // Signature line
-    
-    
+
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Prepared', margin + 10, y);
