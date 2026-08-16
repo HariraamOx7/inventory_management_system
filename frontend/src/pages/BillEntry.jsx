@@ -179,12 +179,22 @@ export default function BillEntry() {
             if (details.length > 0) {
               setItems(details.map(d => {
                 const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
+                const rateVal = parseFloat(d.UnitRate) || 0;
                 return {
                   ItemName: d.ItemName,
                   ReceivedQty: qtyVal,
                   Qty: qtyVal,
-                  UnitRate: d.UnitRate || 0,
-                  OrderNo: d.OrderNo
+                  UnitRate: rateVal,
+                  OrderNo: d.OrderNo,
+                  GRNNo: d.GRNNo || receipt.GRNNo,
+                  DiscountAmt: parseFloat(d.DiscountAmt) || 0,
+                  DiscountPct: parseFloat(d.DiscountPct) || 0,
+                  GSTType: d.GSTType || (d.GSTPct ? `GST [${d.GSTPct} %]` : 'GST [0 %]'),
+                  GSTPct: parseFloat(d.GSTPct) || 0,
+                  SGSTPct: parseFloat(d.SGSTPct) || 0,
+                  CGSTPct: parseFloat(d.CGSTPct) || 0,
+                  IGSTPct: parseFloat(d.IGSTPct) || 0,
+                  TotalAmount: d.TotalAmount !== undefined ? parseFloat(d.TotalAmount) : (qtyVal * rateVal)
                 };
               }));
             }
@@ -303,7 +313,7 @@ export default function BillEntry() {
     setTimeout(() => setIsDrawerVisible(true), 10);
   };
 
-  const handleOpenEditDrawer = (bill) => {
+  const handleOpenEditDrawer = async (bill) => {
     setIsNewEntry(false);
     setNoRoundOff(bill.RoundOff !== undefined && bill.RoundOff !== null && Math.abs(parseFloat(bill.RoundOff) || 0) < 0.0001);
     setFormData({
@@ -330,24 +340,57 @@ export default function BillEntry() {
     });
 
     const details = bill.details || bill.BillEntryDetails || [];
-    if (details.length > 0) {
-      setItems(details.map(d => {
-        const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
-        return {
-          ItemName: d.ItemName,
-          ReceivedQty: qtyVal,
-          Qty: qtyVal,
-          UnitRate: d.UnitRate || 0,
-          OrderNo: d.OrderNo
-        };
-      }));
-    } else {
-      setItems([]);
-    }
+    const mappedItems = details.map(d => {
+      const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
+      const rateVal = parseFloat(d.UnitRate) || 0;
+      return {
+        ItemName: d.ItemName,
+        ReceivedQty: qtyVal,
+        Qty: qtyVal,
+        UnitRate: rateVal,
+        OrderNo: d.OrderNo,
+        GRNNo: d.GRNNo || bill.GRNNo,
+        DiscountAmt: parseFloat(d.DiscountAmt) || 0,
+        GSTType: d.GSTType || (d.GSTPct ? `GST [${d.GSTPct} %]` : ''),
+        GSTPct: parseFloat(d.GSTPct) || 0,
+        TotalAmount: d.TotalAmount !== undefined ? parseFloat(d.TotalAmount) : (qtyVal * rateVal)
+      };
+    });
+    setItems(mappedItems);
 
     setEditingVoucherNo(bill.VoucherNo);
     setEditDrawerOpen(true);
     setTimeout(() => setIsDrawerVisible(true), 10);
+
+    // Enrich with GRN item details if available
+    if (bill.GRNNo) {
+      try {
+        const res = await axios.get(`${API_URL}/bill-entries/grn-details`, {
+          params: { grnNo: bill.GRNNo }
+        });
+        if (res.data?.success && res.data?.data?.details) {
+          const grnItemMap = {};
+          res.data.data.details.forEach(gd => {
+            grnItemMap[gd.ItemName] = gd;
+          });
+          setItems(prev => prev.map(item => {
+            const gd = grnItemMap[item.ItemName];
+            if (gd) {
+              return {
+                ...item,
+                GRNNo: item.GRNNo || gd.GRNNo || bill.GRNNo,
+                DiscountAmt: gd.DiscountAmt || item.DiscountAmt || 0,
+                GSTType: gd.GSTType || item.GSTType,
+                GSTPct: gd.GSTPct !== undefined ? gd.GSTPct : item.GSTPct
+              };
+            }
+            return item;
+          }));
+        }
+      } catch (err) {
+        console.error('Error enriching edit drawer items:', err);
+      }
+    }
   };
 
   const handleCloseEditDrawer = () => {
@@ -566,64 +609,73 @@ export default function BillEntry() {
     let totalDebit = 0;
     let totalCredit = 0;
 
-    // GST entries (SGST and CGST)
-    const gstAmount = parseFloat(bill.GST) || 0;
-    const itemsTotal = parseFloat(bill.Total) || 0;
+    const totalAmount = parseFloat(bill.Total) || 0;
     const discountAmt = parseFloat(bill.Discount) || 0;
     const pfAmt = parseFloat(bill.P_F) || 0;
     const lorryAmt = parseFloat(bill.LorryFreight) || 0;
-    const baseForGst = itemsTotal - discountAmt + pfAmt + lorryAmt;
-
-    if (gstAmount > 0) {
-      const sgstAmt = bill.SGSTAmount || parseFloat((gstAmount / 2).toFixed(2));
-      const cgstAmt = bill.CGSTAmount || parseFloat((gstAmount / 2).toFixed(2));
-      let sgstPct = parseFloat(bill.SGSTPct) || 0;
-      let cgstPct = parseFloat(bill.CGSTPct) || 0;
-
-      if (!sgstPct && baseForGst > 0) {
-        sgstPct = parseFloat(((sgstAmt / baseForGst) * 100).toFixed(2));
-      }
-      if (!cgstPct && baseForGst > 0) {
-        cgstPct = parseFloat(((cgstAmt / baseForGst) * 100).toFixed(2));
-      }
-
-      const sgstStr = sgstPct > 0 ? ` ${sgstPct}%` : '';
-      const cgstStr = cgstPct > 0 ? ` ${cgstPct}%` : '';
-
-      const sgstLabel = `INPUT SGST${sgstStr}`;
-      const cgstLabel = `INPUT CGST${cgstStr}`;
-
-      doc.text(sgstLabel, col1X + 12, y);
-      doc.text(fmt(sgstAmt), col2X + 15, y, { align: 'right' });
-      totalDebit += sgstAmt;
-      y += 5;
-
-      doc.text(cgstLabel, col1X + 12, y);
-      doc.text(fmt(cgstAmt), col2X + 15, y, { align: 'right' });
-      totalDebit += cgstAmt;
-      y += 5;
-    }
-
-    // IGST entry
+    const vatCstAmt = parseFloat(bill.VAT_CST) || 0;
+    const gstAmount = parseFloat(bill.GST) || 0;
     const igstAmount = parseFloat(bill.IGST) || 0;
-    if (igstAmount > 0) {
-      let igstPct = parseFloat(bill.IGSTPct) || 0;
-      if (!igstPct && baseForGst > 0) {
-        igstPct = parseFloat(((igstAmount / baseForGst) * 100).toFixed(2));
+    const baseForGst = totalAmount - discountAmt + pfAmt + lorryAmt;
+
+    // GST entries (Iterate over grouped tax breakdown if available)
+    if (bill.taxBreakdown && bill.taxBreakdown.length > 0) {
+      bill.taxBreakdown.forEach(t => {
+        const amt = parseFloat(t.amount) || 0;
+        if (amt > 0) {
+          doc.text(t.label, col1X + 12, y);
+          doc.text(fmt(amt), col2X + 15, y, { align: 'right' });
+          totalDebit += amt;
+          y += 5;
+        }
+      });
+    } else {
+      if (gstAmount > 0) {
+        const sgstAmt = bill.SGSTAmount || parseFloat((gstAmount / 2).toFixed(2));
+        const cgstAmt = bill.CGSTAmount || parseFloat((gstAmount / 2).toFixed(2));
+        let sgstPct = parseFloat(bill.SGSTPct) || 0;
+        let cgstPct = parseFloat(bill.CGSTPct) || 0;
+
+        if (!sgstPct && baseForGst > 0) {
+          sgstPct = parseFloat(((sgstAmt / baseForGst) * 100).toFixed(2));
+        }
+        if (!cgstPct && baseForGst > 0) {
+          cgstPct = parseFloat(((cgstAmt / baseForGst) * 100).toFixed(2));
+        }
+
+        const sgstStr = sgstPct > 0 ? ` ${sgstPct % 1 === 0 ? sgstPct.toFixed(0) : sgstPct.toFixed(2)}%` : '';
+        const cgstStr = cgstPct > 0 ? ` ${cgstPct % 1 === 0 ? cgstPct.toFixed(0) : cgstPct.toFixed(2)}%` : '';
+
+        const sgstLabel = `INPUT SGST${sgstStr}`;
+        const cgstLabel = `INPUT CGST${cgstStr}`;
+
+        doc.text(sgstLabel, col1X + 12, y);
+        doc.text(fmt(sgstAmt), col2X + 15, y, { align: 'right' });
+        totalDebit += sgstAmt;
+        y += 5;
+
+        doc.text(cgstLabel, col1X + 12, y);
+        doc.text(fmt(cgstAmt), col2X + 15, y, { align: 'right' });
+        totalDebit += cgstAmt;
+        y += 5;
       }
-      const igstStr = igstPct > 0 ? ` ${igstPct}%` : '';
-      const igstLabel = `INPUT IGST${igstStr}`;
-      doc.text(igstLabel, col1X + 12, y);
-      doc.text(fmt(igstAmount), col2X + 15, y, { align: 'right' });
-      totalDebit += igstAmount;
-      y += 5;
+
+      // IGST entry
+      if (igstAmount > 0) {
+        let igstPct = parseFloat(bill.IGSTPct) || 0;
+        if (!igstPct && baseForGst > 0) {
+          igstPct = parseFloat(((igstAmount / baseForGst) * 100).toFixed(2));
+        }
+        const igstStr = igstPct > 0 ? ` ${igstPct % 1 === 0 ? igstPct.toFixed(0) : igstPct.toFixed(2)}%` : '';
+        const igstLabel = `INPUT IGST${igstStr}`;
+        doc.text(igstLabel, col1X + 12, y);
+        doc.text(fmt(igstAmount), col2X + 15, y, { align: 'right' });
+        totalDebit += igstAmount;
+        y += 5;
+      }
     }
 
-
-    const purchaseLabel = bill.PurchaseType
-      ? bill.PurchaseType.toUpperCase()
-      : 'PURCHASE OF MATERIALS';
-    const totalAmount = parseFloat(bill.Total) || 0;
+    const purchaseLabel = bill.PurchaseAccountName || bill.PurchaseType || 'PURCHASE OF MATERIALS';
     doc.text(purchaseLabel, col1X + 12, y);
     doc.text(fmt(totalAmount), col2X + 15, y, { align: 'right' });
     totalDebit += totalAmount;
@@ -638,7 +690,6 @@ export default function BillEntry() {
     }
 
     // VAT/CST
-    const vatCstAmt = parseFloat(bill.VAT_CST) || 0;
     if (vatCstAmt > 0) {
       doc.text('VAT / CST', col1X + 12, y);
       doc.text(fmt(vatCstAmt), col2X + 15, y, { align: 'right' });
@@ -672,6 +723,7 @@ export default function BillEntry() {
       if (roundOff > 0) {
         doc.text(fmt(roundOff), col2X + 15, y, { align: 'right' });
         totalDebit += roundOff;
+
       } else {
         doc.text(fmt(Math.abs(roundOff)), col3X + 30, y, { align: 'right' });
         totalCredit += Math.abs(roundOff);
@@ -697,12 +749,6 @@ export default function BillEntry() {
     drawLine(y);
     y += 6;
 
-    // Grand Total row below table
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Grand Total:', col1X, y);
-    doc.text(`Rs. ${fmt(grandTotal)}`, col3X + 30, y, { align: 'right' });
-    y += 8;
 
     // Narration
     doc.setFont('helvetica', 'normal');
@@ -716,8 +762,8 @@ export default function BillEntry() {
     y += 8;
 
     // Signature line
-    drawLine(y);
-    y += 8;
+    
+    
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Prepared', margin + 10, y);
@@ -1124,7 +1170,7 @@ export default function BillEntry() {
                     {/* Items List Table */}
                     {items.length > 0 && (
                       <div className="border border-slate-200 rounded-xl overflow-hidden mt-4">
-                        <div className="p-3 bg-slate-50 border-b border-slate-200">
+                        <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                           <h4 className="text-sm font-semibold text-slate-700">Billed Items ({items.length})</h4>
                         </div>
                         <div className="overflow-x-auto">
@@ -1132,8 +1178,12 @@ export default function BillEntry() {
                             <thead>
                               <tr className="border-b border-slate-200 bg-white text-slate-500 font-semibold uppercase text-[11px]">
                                 <th className="py-2.5 px-3">Item Name</th>
+                                <th className="py-2.5 px-3">GRN No</th>
                                 <th className="py-2.5 px-3 text-right">Qty</th>
                                 <th className="py-2.5 px-3 text-right">Unit Rate (₹)</th>
+                                <th className="py-2.5 px-3 text-right">Discount (₹)</th>
+                                <th className="py-2.5 px-3 text-center">GST Type</th>
+                                <th className="py-2.5 px-3 text-center">GST %</th>
                                 <th className="py-2.5 px-3 text-right font-bold">Total Amount (₹)</th>
                               </tr>
                             </thead>
@@ -1142,11 +1192,20 @@ export default function BillEntry() {
                                 const qty = parseFloat(item.ReceivedQty ?? item.Qty) || 0;
                                 const rate = parseFloat(item.UnitRate) || 0;
                                 const rowTotal = qty * rate;
+                                const grnDisplay = item.GRNNo ? `GRN-${item.GRNNo}` : (formData.GRNNo ? `GRN-${formData.GRNNo}` : '—');
+                                const gstTypeDisplay = item.GSTType || (item.GSTPct ? `GST [${item.GSTPct} %]` : '—');
+                                const gstPctDisplay = item.GSTPct !== undefined && item.GSTPct !== null ? `${item.GSTPct}%` : '—';
+                                const discDisplay = parseFloat(item.DiscountAmt) > 0 ? `₹${parseFloat(item.DiscountAmt).toFixed(2)}` : '0';
+
                                 return (
                                   <tr key={idx} className="hover:bg-slate-50">
                                     <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
+                                    <td className="py-2.5 px-3 text-slate-600 font-mono text-[11px]">{grnDisplay}</td>
                                     <td className="py-2.5 px-3 text-right font-medium">{qty}</td>
                                     <td className="py-2.5 px-3 text-right font-medium">₹{rate.toFixed(2)}</td>
+                                    <td className="py-2.5 px-3 text-right text-slate-600">{discDisplay}</td>
+                                    <td className="py-2.5 px-3 text-center text-slate-700 font-medium">{gstTypeDisplay}</td>
+                                    <td className="py-2.5 px-3 text-center text-slate-800 font-semibold">{gstPctDisplay}</td>
                                     <td className="py-2.5 px-3 text-right font-bold text-slate-900">
                                       ₹{rowTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>

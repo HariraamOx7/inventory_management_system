@@ -1,12 +1,15 @@
 const { Op } = require('sequelize');
-const BillEntry = require('../models/BillEntry');
-const BillEntryDetail = require('../models/BillEntryDetail');
-const Receipt = require('../models/Receipt');
-const ReceiptDetail = require('../models/ReceiptDetail');
-const GateInward = require('../models/GateInward');
-const GateInwardDetail = require('../models/GateInwardDetail');
-const PurchaseOrder = require('../models/PurchaseOrder');
-const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
+const {
+  BillEntry,
+  BillEntryDetail,
+  Receipt,
+  ReceiptDetail,
+  GateInward,
+  GateInwardDetail,
+  PurchaseOrder,
+  PurchaseOrderDetail,
+  PurchaseType
+} = require('../models/index');
 
 // Get parties that have created entry at Gate Inward AND Receipt, and not created Bill Entry
 exports.getAvailableParties = async (req, res) => {
@@ -223,9 +226,53 @@ exports.getGRNDetails = async (req, res) => {
       });
     }
 
+    const receiptData = receipt.toJSON();
+    const details = receiptData.details || [];
+
+    // Collect all potential OrderNos
+    const orderNos = new Set();
+    details.forEach(d => { if (d.OrderNo) orderNos.add(d.OrderNo); });
+    if (receiptData.GateInwardNo) {
+      const gi = await GateInward.findByPk(receiptData.GateInwardNo, { raw: true });
+      if (gi && gi.OrderNo) orderNos.add(gi.OrderNo);
+    }
+
+    let poDetails = [];
+    if (orderNos.size > 0) {
+      poDetails = await PurchaseOrderDetail.findAll({
+        where: { OrderNo: { [Op.in]: Array.from(orderNos) } },
+        raw: true
+      });
+    }
+
+    const poMap = {};
+    poDetails.forEach(poD => {
+      poMap[`${poD.OrderNo}_${poD.ItemName}`] = poD;
+      if (!poMap[poD.ItemName]) poMap[poD.ItemName] = poD;
+    });
+
+    receiptData.details = details.map(d => {
+      const poD = poMap[`${d.OrderNo}_${d.ItemName}`] || poMap[d.ItemName] || {};
+      const gstPct = parseFloat(poD.GSTPct) ||
+        ((parseFloat(poD.SGSTPct) || 0) + (parseFloat(poD.CGSTPct) || 0)) ||
+        (parseFloat(poD.IGSTPct) || 0);
+      const isIGST = (parseFloat(poD.IGSTPct) || 0) > 0 || (parseFloat(poD.IGST) || 0) > 0;
+      return {
+        ...d,
+        GRNNo: receiptData.GRNNo,
+        GSTType: poD.GSTType || (isIGST ? `IGST [${gstPct} %]` : (gstPct > 0 ? `GST [${gstPct} %]` : 'GST [0 %]')),
+        GSTPct: gstPct,
+        SGSTPct: parseFloat(poD.SGSTPct) || (isIGST ? 0 : (gstPct > 0 ? gstPct / 2 : 0)),
+        CGSTPct: parseFloat(poD.CGSTPct) || (isIGST ? 0 : (gstPct > 0 ? gstPct / 2 : 0)),
+        IGSTPct: parseFloat(poD.IGSTPct) || (isIGST ? gstPct : 0),
+        DiscountAmt: parseFloat(poD.DiscountAmt) || 0,
+        DiscountPct: parseFloat(poD.DiscountPct) || 0
+      };
+    });
+
     res.json({
       success: true,
-      data: receipt
+      data: receiptData
     });
   } catch (error) {
     console.error('Error fetching GRN details:', error);
@@ -574,7 +621,7 @@ exports.getBillEntriesByParty = async (req, res) => {
   }
 };
 
-// Get bill entry print data with SGST/CGST % from Purchase Order
+// Get bill entry print data with grouped SGST/CGST/IGST % from Purchase Order
 exports.getPrintData = async (req, res) => {
   try {
     const { voucherNo } = req.params;
@@ -590,60 +637,201 @@ exports.getPrintData = async (req, res) => {
       });
     }
 
-    // Collect unique OrderNos from bill details
-    const orderNos = [...new Set(
-      (billEntry.details || [])
-        .map(d => d.OrderNo)
-        .filter(Boolean)
-    )];
+    const billData = billEntry.toJSON();
+    const items = billData.details || [];
 
-    // Fetch SGST/CGST/IGST percentages from PurchaseOrderDetail
-    let sgstPct = 0, cgstPct = 0, igstPct = 0;
-    if (orderNos.length > 0) {
-      const poDetails = await PurchaseOrderDetail.findAll({
-        where: { OrderNo: { [Op.in]: orderNos } },
-        attributes: ['SGSTPct', 'CGSTPct', 'IGSTPct'],
+    // Collect all unique OrderNos (from BillEntryDetail, GateInward, Receipt)
+    const orderNos = new Set();
+    items.forEach(d => { if (d.OrderNo) orderNos.add(d.OrderNo); });
+
+    if (billData.GateInwardNo) {
+      const gi = await GateInward.findByPk(billData.GateInwardNo, { raw: true });
+      if (gi && gi.OrderNo) orderNos.add(gi.OrderNo);
+    }
+    if (billData.GRNNo) {
+      const rcptDetails = await ReceiptDetail.findAll({
+        where: { GRNNo: billData.GRNNo },
+        attributes: ['OrderNo'],
         raw: true
       });
+      rcptDetails.forEach(rd => { if (rd.OrderNo) orderNos.add(rd.OrderNo); });
+    }
 
-      if (poDetails.length > 0) {
-        // Use the first non-zero percentage found
-        const detail = poDetails.find(d =>
-          (parseFloat(d.SGSTPct) || 0) > 0 ||
-          (parseFloat(d.CGSTPct) || 0) > 0 ||
-          (parseFloat(d.IGSTPct) || 0) > 0
-        ) || poDetails[0];
-        sgstPct = parseFloat(detail.SGSTPct) || 0;
-        cgstPct = parseFloat(detail.CGSTPct) || 0;
-        igstPct = parseFloat(detail.IGSTPct) || 0;
+    // Fetch PO details
+    let poDetails = [];
+    if (orderNos.size > 0) {
+      poDetails = await PurchaseOrderDetail.findAll({
+        where: { OrderNo: { [Op.in]: Array.from(orderNos) } },
+        raw: true
+      });
+    } else if (billData.PartyName) {
+      // Fallback: search by PartyName's POs
+      const partyPOs = await PurchaseOrder.findAll({
+        where: { PartyName: billData.PartyName.trim() },
+        attributes: ['OrderNo'],
+        raw: true
+      });
+      const partyOrderNos = partyPOs.map(p => p.OrderNo);
+      if (partyOrderNos.length > 0) {
+        poDetails = await PurchaseOrderDetail.findAll({
+          where: { OrderNo: { [Op.in]: partyOrderNos } },
+          raw: true
+        });
       }
     }
 
-    const billData = billEntry.toJSON();
+    const poMap = {};
+    poDetails.forEach(poD => {
+      poMap[`${poD.OrderNo}_${poD.ItemName}`] = poD;
+      if (!poMap[poD.ItemName]) poMap[poD.ItemName] = poD;
+    });
+
+    // Lookup PurchaseType description/ledger
+    let purchaseTypeObj = null;
+    if (billData.PurchaseType) {
+      purchaseTypeObj = await PurchaseType.findOne({
+        where: { PurchaseType: billData.PurchaseType.trim() },
+        raw: true
+      });
+    }
+    billData.PurchaseAccountName = purchaseTypeObj?.Description || purchaseTypeObj?.PurchaseType || billData.PurchaseType || 'PURCHASE OF MATERIALS';
 
     const totalAmount = parseFloat(billData.Total) || 0;
     const discountAmount = parseFloat(billData.Discount) || 0;
     const pfAmount = parseFloat(billData.P_F) || 0;
     const lorryFreightAmount = parseFloat(billData.LorryFreight) || 0;
     const taxableBase = totalAmount - discountAmount + pfAmount + lorryFreightAmount;
-
     const gstAmount = parseFloat(billData.GST) || 0;
     const igstAmount = parseFloat(billData.IGST) || 0;
 
-    // Fallback: Calculate percentages from amounts if missing
-    if (gstAmount > 0 && taxableBase > 0) {
-      if (!sgstPct) sgstPct = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
-      if (!cgstPct) cgstPct = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
+    // Group items by GST rate
+    const gstBuckets = {};
+
+    items.forEach(item => {
+      const poD = poMap[`${item.OrderNo}_${item.ItemName}`] || poMap[item.ItemName] || {};
+      const qty = parseFloat(item.Qty) || 0;
+      const unitRate = parseFloat(item.UnitRate) || 0;
+      const lineGross = qty * unitRate;
+      const lineDiscount = parseFloat(poD.DiscountAmt) || 0;
+      const lineBase = lineGross - lineDiscount;
+
+      const isIGST = (parseFloat(poD.IGSTPct) || 0) > 0 || (parseFloat(poD.IGST) || 0) > 0 || (igstAmount > 0 && gstAmount === 0);
+
+      if (isIGST) {
+        let igstPct = parseFloat(poD.IGSTPct) || parseFloat(poD.GSTPct) || 0;
+        if (!igstPct && igstAmount > 0 && taxableBase > 0) {
+          igstPct = parseFloat(((igstAmount / taxableBase) * 100).toFixed(2));
+        }
+        const key = `IGST_${igstPct}`;
+        if (!gstBuckets[key]) {
+          gstBuckets[key] = {
+            type: 'IGST',
+            rate: igstPct,
+            base: 0,
+            taxAmt: 0
+          };
+        }
+        gstBuckets[key].base += lineBase;
+        gstBuckets[key].taxAmt += parseFloat(poD.IGST) || (lineBase * (igstPct / 100));
+      } else {
+        let sgstPct = parseFloat(poD.SGSTPct) || 0;
+        let cgstPct = parseFloat(poD.CGSTPct) || 0;
+        if (!sgstPct && !cgstPct && poD.GSTPct) {
+          sgstPct = parseFloat(poD.GSTPct) / 2;
+          cgstPct = parseFloat(poD.GSTPct) / 2;
+        }
+        if (!sgstPct && !cgstPct && gstAmount > 0 && taxableBase > 0) {
+          const autoRate = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
+          sgstPct = autoRate;
+          cgstPct = autoRate;
+        }
+        const key = `SGST_${sgstPct}`;
+        if (!gstBuckets[key]) {
+          gstBuckets[key] = {
+            type: 'SGST_CGST',
+            rate: sgstPct,
+            cgstRate: cgstPct || sgstPct,
+            base: 0,
+            sgstAmt: 0,
+            cgstAmt: 0
+          };
+        }
+        gstBuckets[key].base += lineBase;
+        gstBuckets[key].sgstAmt += parseFloat(poD.SGST) || (lineBase * (sgstPct / 100));
+        gstBuckets[key].cgstAmt += parseFloat(poD.CGST) || (lineBase * (cgstPct / 100));
+      }
+    });
+
+    // Fallback if no buckets populated from items
+    if (Object.keys(gstBuckets).length === 0) {
+      if (gstAmount > 0 && taxableBase > 0) {
+        const autoRate = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
+        gstBuckets[`SGST_${autoRate}`] = {
+          type: 'SGST_CGST',
+          rate: autoRate,
+          cgstRate: autoRate,
+          base: taxableBase,
+          sgstAmt: gstAmount / 2,
+          cgstAmt: gstAmount / 2
+        };
+      }
+      if (igstAmount > 0 && taxableBase > 0) {
+        const autoRate = parseFloat(((igstAmount / taxableBase) * 100).toFixed(2));
+        gstBuckets[`IGST_${autoRate}`] = {
+          type: 'IGST',
+          rate: autoRate,
+          base: taxableBase,
+          taxAmt: igstAmount
+        };
+      }
     }
 
-    if (igstAmount > 0 && taxableBase > 0) {
-      if (!igstPct) igstPct = parseFloat(((igstAmount / taxableBase) * 100).toFixed(2));
-    }
+    const taxBreakdown = [];
+    const sgstKeys = Object.keys(gstBuckets)
+      .filter(k => gstBuckets[k].type === 'SGST_CGST' && gstBuckets[k].rate > 0)
+      .sort((a, b) => gstBuckets[a].rate - gstBuckets[b].rate);
+    const igstKeys = Object.keys(gstBuckets)
+      .filter(k => gstBuckets[k].type === 'IGST' && gstBuckets[k].rate > 0)
+      .sort((a, b) => gstBuckets[a].rate - gstBuckets[b].rate);
 
-    billData.SGSTPct = sgstPct;
-    billData.CGSTPct = cgstPct;
-    billData.IGSTPct = igstPct;
-    // Calculate SGST and CGST amounts (split GST 50/50)
+    sgstKeys.forEach(k => {
+      const b = gstBuckets[k];
+      const rateStr = b.rate % 1 === 0 ? b.rate.toFixed(0) : parseFloat(b.rate.toFixed(2));
+      const sgstAmt = parseFloat(b.sgstAmt.toFixed(2));
+      const cgstAmt = parseFloat(b.cgstAmt.toFixed(2));
+      taxBreakdown.push({
+        type: 'SGST',
+        rate: b.rate,
+        label: `INPUT SGST ${rateStr}%`,
+        amount: sgstAmt
+      });
+      taxBreakdown.push({
+        type: 'CGST',
+        rate: b.cgstRate || b.rate,
+        label: `INPUT CGST ${rateStr}%`,
+        amount: cgstAmt
+      });
+    });
+
+    igstKeys.forEach(k => {
+      const b = gstBuckets[k];
+      const rateStr = b.rate % 1 === 0 ? b.rate.toFixed(0) : parseFloat(b.rate.toFixed(2));
+      const taxAmt = parseFloat(b.taxAmt.toFixed(2));
+      taxBreakdown.push({
+        type: 'IGST',
+        rate: b.rate,
+        label: `INPUT IGST ${rateStr}%`,
+        amount: taxAmt
+      });
+    });
+
+    billData.taxBreakdown = taxBreakdown;
+    // Set top percentage for backwards compatibility
+    const firstSgst = taxBreakdown.find(t => t.type === 'SGST');
+    const firstIgst = taxBreakdown.find(t => t.type === 'IGST');
+    billData.SGSTPct = firstSgst ? firstSgst.rate : 0;
+    billData.CGSTPct = firstSgst ? firstSgst.rate : 0;
+    billData.IGSTPct = firstIgst ? firstIgst.rate : 0;
     billData.SGSTAmount = parseFloat((gstAmount / 2).toFixed(2));
     billData.CGSTAmount = parseFloat((gstAmount / 2).toFixed(2));
 

@@ -237,7 +237,7 @@ exports.createItemIssue = async (req, res) => {
         CatNo: row.CatNo || null,
         DrawNo: row.DrawNo || null,
         Qty: qty,
-        Stock: currentStock, // stock at issue time
+        OpeningQty: currentStock,
         UOM: item.UOM || row.UOM || null,
         EmpName: row.EmpName || null
       }, { transaction: t });
@@ -383,7 +383,7 @@ exports.updateItemIssue = async (req, res) => {
         CatNo: row.CatNo || null,
         DrawNo: row.DrawNo || null,
         Qty: qty,
-        Stock: currentStock,
+        OpeningQty: currentStock,
         UOM: item.UOM || row.UOM || null,
         EmpName: row.EmpName || null
       }, { transaction: t });
