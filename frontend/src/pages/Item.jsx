@@ -202,13 +202,17 @@ export default function Item() {
         setEditingCode(item.ItemCode);
         const resolvedQuantity = item.Quantity !== undefined && item.Quantity !== null && Number(item.Quantity) !== 0
             ? item.Quantity
-            : item.OpeningQty || 0;
+            : (parseFloat(item.OpeningQty) > 0 ? item.OpeningQty : '');
         setEditFormData({
             ...item,
             DepartmentId: item.DepartmentId ? String(item.DepartmentId) : '',
             SubHeadCode: item.SubHeadCode || '',
+            UnitRate: parseFloat(item.UnitRate) > 0 ? item.UnitRate : '',
+            MinStockLevel: parseFloat(item.MinStockLevel) > 0 ? item.MinStockLevel : '',
             Quantity: resolvedQuantity,
-            OpeningQty: resolvedQuantity
+            OpeningQty: resolvedQuantity,
+            MaxStockLevel: parseFloat(item.MaxStockLevel) > 0 ? item.MaxStockLevel : '',
+            OpenValue: parseFloat(item.OpenValue) > 0 ? item.OpenValue : ''
         });
         setEditDrawerOpen(true);
         setTimeout(() => {
@@ -440,9 +444,9 @@ export default function Item() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="UnitRate"
-                        value={data.UnitRate}
+                        value={data.UnitRate || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter unit rate"
+                        placeholder="0.00"
                         step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -452,9 +456,9 @@ export default function Item() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="MinStockLevel"
-                        value={data.MinStockLevel}
+                        value={data.MinStockLevel || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter min stock level"
+                        placeholder="0"
                         step="any"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -468,9 +472,9 @@ export default function Item() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="Quantity"
-                        value={data.Quantity}
+                        value={data.Quantity || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter quantity"
+                        placeholder="0"
                         step="any"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -481,9 +485,9 @@ export default function Item() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="MaxStockLevel"
-                        value={data.MaxStockLevel}
+                        value={data.MaxStockLevel || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter max stock level"
+                        placeholder="0"
                         step="any"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -497,9 +501,9 @@ export default function Item() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="OpenValue"
-                        value={data.OpenValue}
+                        value={data.OpenValue || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter opening value"
+                        placeholder="0.00"
                         step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>

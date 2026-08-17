@@ -176,8 +176,8 @@ export default function Receipt() {
           OrderNo: orderNo,
           GateInwardNo: data.GateInwardNo || prev.GateInwardNo,
           InwardDate: data.InwardDate ? new Date(data.InwardDate).toISOString().split('T')[0] : prev.InwardDate,
-          InvoiceNo: data.InvoiceNo || prev.InvoiceNo,
-          InvoiceDate: data.InvoiceDate ? new Date(data.InvoiceDate).toISOString().split('T')[0] : prev.InvoiceDate,
+          InvoiceNo: data.InvoiceNo || '',
+          InvoiceDate: data.InvoiceDate ? new Date(data.InvoiceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           Discount: parseFloat(poTotals.Discount) > 0 ? parseFloat(poTotals.Discount) : '',
           GST: parseFloat(poTotals.GST) > 0 ? parseFloat(poTotals.GST) : '',
           IGST: parseFloat(poTotals.IGST) > 0 ? parseFloat(poTotals.IGST) : '',
@@ -309,14 +309,14 @@ export default function Receipt() {
       InvoiceNo: receipt.InvoiceNo || '',
       InvoiceDate: receipt.InvoiceDate ? new Date(receipt.InvoiceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       FormType: receipt.FormType || '',
-      BillAmount: receipt.BillAmount || 0,
+      BillAmount: parseFloat(receipt.BillAmount) > 0 ? receipt.BillAmount : '',
       Total: receipt.Total || 0,
-      Discount: receipt.Discount || 0,
-      GST: receipt.GST || 0,
-      IGST: receipt.IGST || 0,
-      VAT_CST: receipt.VAT_CST || 0,
-      P_F: receipt.P_F || 0,
-      LorryFreight: receipt.LorryFreight || 0,
+      Discount: parseFloat(receipt.Discount) > 0 ? receipt.Discount : '',
+      GST: parseFloat(receipt.GST) > 0 ? receipt.GST : '',
+      IGST: parseFloat(receipt.IGST) > 0 ? receipt.IGST : '',
+      VAT_CST: parseFloat(receipt.VAT_CST) > 0 ? receipt.VAT_CST : '',
+      P_F: parseFloat(receipt.P_F) > 0 ? receipt.P_F : '',
+      LorryFreight: parseFloat(receipt.LorryFreight) > 0 ? receipt.LorryFreight : '',
       RoundOff: receipt.RoundOff || 0,
       GrandTotal: receipt.GrandTotal || 0
     });
@@ -606,7 +606,7 @@ export default function Receipt() {
                               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
 
-                                  Gate Inwards & Items for GRN-{String(receipt.GRNNo).padStart(3, '0')} {poNo ? `(PO-${poNo})` : ''}
+                                  Gate Inwards & Items for GRN
                                 </h4>
 
                               </div>
@@ -915,8 +915,8 @@ export default function Receipt() {
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] text-slate-600">
-                                  <span>Invoice: <strong className="text-slate-700">{gi.InvoiceNo || 'N/A'}</strong></span>
-                                  <span className="text-slate-500 font-medium">{gi.details?.length || 0} item(s)</span>
+                                  <span className="text-slate-500 font-medium">Inward Batch</span>
+                                  <span className="text-slate-600 font-semibold">{gi.details?.length || 0} item(s)</span>
                                 </div>
                               </div>
                             ))}

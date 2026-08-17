@@ -121,7 +121,7 @@ export default function ItemIssue() {
             ItemName: row.ItemName,
             CatNo: '',
             DrawNo: '',
-            Qty: row.Qty || 0,
+            Qty: (row.Qty && parseFloat(row.Qty) > 0) ? row.Qty : '',
             OpeningQty: row.OpeningQty || 0,
             UOM: row.UOM || ''
           }))
@@ -223,7 +223,7 @@ export default function ItemIssue() {
               ItemName: row.ItemName,
               CatNo: existingDetail?.CatNo || '',
               DrawNo: existingDetail?.DrawNo || '',
-              Qty: issuedQty > 0 ? issuedQty : 0,
+              Qty: issuedQty > 0 ? issuedQty : '',
               OpeningQty: effectiveStock,
               UOM: row.UOM || existingDetail?.UOM || ''
             };
@@ -239,7 +239,7 @@ export default function ItemIssue() {
                 ItemName: d.ItemName,
                 CatNo: d.CatNo || '',
                 DrawNo: d.DrawNo || '',
-                Qty: issuedQty,
+                Qty: issuedQty > 0 ? issuedQty : '',
                 OpeningQty: baseStock > 0 ? baseStock : issuedQty + 1,
                 UOM: d.UOM || ''
               });
@@ -256,7 +256,7 @@ export default function ItemIssue() {
               ItemName: detail.ItemName,
               CatNo: detail.CatNo || '',
               DrawNo: detail.DrawNo || '',
-              Qty: Number(detail.Qty || 0),
+              Qty: Number(detail.Qty || 0) > 0 ? Number(detail.Qty) : '',
               OpeningQty: Number(detail.OpeningQty || detail.Stock || 0) || (Number(detail.Qty || 0) + 1),
               UOM: detail.UOM || ''
             }))

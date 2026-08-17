@@ -184,7 +184,11 @@ export default function Supplier() {
 
     const handleEdit = (supplier) => {
         setEditingId(supplier.AccCode);
-        setEditFormData({ ...supplier });
+        setEditFormData({
+            ...supplier,
+            OpeningCredit: parseFloat(supplier.OpeningCredit) > 0 ? supplier.OpeningCredit : '',
+            OpeningDebit: parseFloat(supplier.OpeningDebit) > 0 ? supplier.OpeningDebit : ''
+        });
         setEditDrawerOpen(true);
         setTimeout(() => {
             setIsDrawerVisible(true);
@@ -401,9 +405,9 @@ export default function Supplier() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="OpeningCredit"
-                        value={data.OpeningCredit ?? 0}
+                        value={data.OpeningCredit || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter opening credit"
+                        placeholder="0.00"
                         step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -413,9 +417,9 @@ export default function Supplier() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="OpeningDebit"
-                        value={data.OpeningDebit ?? 0}
+                        value={data.OpeningDebit || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter opening debit"
+                        placeholder="0.00"
                         step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>

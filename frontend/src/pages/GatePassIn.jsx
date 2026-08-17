@@ -393,7 +393,8 @@ export default function GatePassIn() {
                     type="number"
                     onWheel={(e) => e.target.blur()}
                     step="any"
-                    value={itemData.PendingQty}
+                    value={itemData.PendingQty || ''}
+                    placeholder="0"
                     onChange={(e) => setItemData({ ...itemData, PendingQty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -405,7 +406,8 @@ export default function GatePassIn() {
                     type="number"
                     onWheel={(e) => e.target.blur()}
                     step="any"
-                    value={itemData.RecQty}
+                    value={itemData.RecQty || ''}
+                    placeholder="0"
                     onChange={(e) => setItemData({ ...itemData, RecQty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />

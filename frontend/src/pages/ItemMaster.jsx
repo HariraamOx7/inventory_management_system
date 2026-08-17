@@ -166,7 +166,10 @@ export default function ItemMaster() {
 
     const handleEdit = (itemMaster) => {
         setEditingCode(itemMaster.ItemCode);
-        setEditFormData(itemMaster);
+        setEditFormData({
+            ...itemMaster,
+            UnitRate: parseFloat(itemMaster.UnitRate) > 0 ? itemMaster.UnitRate : ''
+        });
 
         // Load sub heads for the department
         const dept = departments.find(d => d.dept_name === itemMaster.Department);
@@ -298,9 +301,9 @@ export default function ItemMaster() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="UnitRate"
-                        value={data.UnitRate}
+                        value={data.UnitRate || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter unit rate"
+                        placeholder="0.00"
                         step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>

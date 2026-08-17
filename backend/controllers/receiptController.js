@@ -225,15 +225,15 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
       };
     });
 
-    // Primary Gate Inward (e.g. latest)
-    const primaryGI = gateInwards.length > 0 ? gateInwards[gateInwards.length - 1] : null;
+    // Primary Gate Inward (pick the one with an InvoiceNo, or latest)
+    const primaryGI = gateInwards.find(gi => gi.InvoiceNo && gi.InvoiceNo.trim()) || (gateInwards.length > 0 ? gateInwards[gateInwards.length - 1] : null);
 
     res.json({
       success: true,
       data: {
         OrderNo: po.OrderNo,
         PartyName: po.PartyName,
-        GateInwardNo: primaryGI ? primaryGI.InwardNo : null,
+        GateInwardNo: primaryGI ? primaryGI.InwardNo : (gateInwards[0]?.InwardNo || null),
         InvoiceNo: primaryGI ? primaryGI.InvoiceNo : '',
         InvoiceDate: primaryGI ? primaryGI.InvoiceDate : null,
         InwardDate: primaryGI ? primaryGI.InwardDate : null,

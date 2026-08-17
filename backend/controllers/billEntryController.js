@@ -11,51 +11,29 @@ const {
   PurchaseType
 } = require('../models/index');
 
-// Get parties that have created entry at Gate Inward AND Receipt, and not created Bill Entry
+// Get parties that have unbilled Receipts (GRNs)
 exports.getAvailableParties = async (req, res) => {
   try {
-    // 1. Get all GRN numbers and Gate Inward numbers that are already billed
+    // 1. Get all GRN numbers that are already billed
     const billedBills = await BillEntry.findAll({
-      attributes: ['GRNNo', 'GateInwardNo'],
+      attributes: ['GRNNo'],
       raw: true
     });
     const billedGRNs = billedBills.map(b => b.GRNNo).filter(Boolean);
-    const billedInwards = billedBills.map(b => b.GateInwardNo).filter(Boolean);
 
-    // 2. Find receipts that have a valid GateInwardNo and are not already billed
-    const receiptWhere = {
-      GateInwardNo: { [Op.ne]: null }
-    };
+    // 2. Find receipts that are not already billed
+    const receiptWhere = {};
     if (billedGRNs.length > 0) {
       receiptWhere.GRNNo = { [Op.notIn]: billedGRNs };
-    }
-    if (billedInwards.length > 0) {
-      receiptWhere.GateInwardNo = { [Op.and]: [{ [Op.ne]: null }, { [Op.notIn]: billedInwards }] };
     }
 
     const receipts = await Receipt.findAll({
       where: receiptWhere,
-      attributes: ['PartyName', 'GateInwardNo'],
+      attributes: ['PartyName'],
       raw: true
     });
 
-    const inwardNos = [...new Set(receipts.map(r => r.GateInwardNo).filter(Boolean))];
-
-    // 3. Verify that the Gate Inward record actually exists in GateInward
-    let validInwardSet = new Set();
-    if (inwardNos.length > 0) {
-      const validInwards = await GateInward.findAll({
-        where: { InwardNo: { [Op.in]: inwardNos } },
-        attributes: ['InwardNo'],
-        raw: true
-      });
-      validInwardSet = new Set(validInwards.map(gi => gi.InwardNo));
-    }
-
-    // Filter receipts to only those with valid Gate Inwards
-    const validReceipts = receipts.filter(r => validInwardSet.has(r.GateInwardNo));
-
-    const parties = [...new Set(validReceipts.map(r => r.PartyName ? r.PartyName.trim() : '').filter(Boolean))].sort();
+    const parties = [...new Set(receipts.map(r => r.PartyName ? r.PartyName.trim() : '').filter(Boolean))].sort();
 
     res.json({ success: true, data: parties });
   } catch (error) {
@@ -68,7 +46,7 @@ exports.getAvailableParties = async (req, res) => {
   }
 };
 
-// Get available Gate Inwards for bill entry (must have a receipt and not already billed)
+// Get available Gate Inwards for bill entry (kept for backward compatibility)
 exports.getAvailableGateInwards = async (req, res) => {
   try {
     const { partyName } = req.query;
@@ -80,7 +58,7 @@ exports.getAvailableGateInwards = async (req, res) => {
       });
     }
 
-    // 1. Get already billed GateInwardNos and GRNNos
+    // 1. Get already billed GRNNos and GateInwardNos
     const billedBills = await BillEntry.findAll({
       attributes: ['GateInwardNo', 'GRNNo'],
       raw: true
@@ -88,7 +66,7 @@ exports.getAvailableGateInwards = async (req, res) => {
     const usedInwardNos = billedBills.map(v => v.GateInwardNo).filter(Boolean);
     const billedGRNs = billedBills.map(v => v.GRNNo).filter(Boolean);
 
-    // 2. Find receipts for this party that have a GateInwardNo and are not billed
+    // 2. Find receipts for this party that are not billed
     const receiptWhere = {
       PartyName: partyName.trim(),
       GateInwardNo: { [Op.ne]: null }
@@ -111,7 +89,6 @@ exports.getAvailableGateInwards = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
-    // 3. Find matching GateInward records
     const gateInwards = await GateInward.findAll({
       where: {
         InwardNo: { [Op.in]: candidateInwardNos },
@@ -136,7 +113,7 @@ exports.getAvailableGateInwards = async (req, res) => {
   }
 };
 
-// Get available GRNs for party and selected gate inward (must be linked to GateInward and not billed)
+// Get available GRNs for party (must have a receipt and not already billed)
 exports.getAvailableGRNs = async (req, res) => {
   try {
     const { partyName, gateInwardNo } = req.query;
@@ -149,22 +126,17 @@ exports.getAvailableGRNs = async (req, res) => {
     }
 
     const billed = await BillEntry.findAll({
-      attributes: ['GRNNo', 'GateInwardNo'],
+      attributes: ['GRNNo'],
       raw: true
     });
     const billedGRNs = billed.map(b => b.GRNNo).filter(Boolean);
-    const billedInwards = billed.map(b => b.GateInwardNo).filter(Boolean);
 
     const receiptWhere = {
-      PartyName: partyName.trim(),
-      GateInwardNo: { [Op.ne]: null }
+      PartyName: partyName.trim()
     };
     if (gateInwardNo) {
       receiptWhere.GateInwardNo = gateInwardNo;
-    } else if (billedInwards.length > 0) {
-      receiptWhere.GateInwardNo = { [Op.and]: [{ [Op.ne]: null }, { [Op.notIn]: billedInwards }] };
     }
-
     if (billedGRNs.length > 0) {
       receiptWhere.GRNNo = { [Op.notIn]: billedGRNs };
     }
@@ -172,22 +144,86 @@ exports.getAvailableGRNs = async (req, res) => {
     const receipts = await Receipt.findAll({
       where: receiptWhere,
       attributes: ['GRNNo', 'InwardDate', 'InvoiceNo', 'BillAmount', 'GrandTotal', 'GateInwardNo'],
-      order: [['GRNNo', 'DESC']],
-      raw: true
+      include: [{
+        model: ReceiptDetail,
+        as: 'details',
+        attributes: ['OrderNo']
+      }],
+      order: [['GRNNo', 'DESC']]
     });
 
-    // Verify GateInward exists for each receipt
-    const inwardNos = receipts.map(r => r.GateInwardNo).filter(Boolean);
-    const existingInwards = inwardNos.length > 0
+    // Collect all orderNos and gateInwardNos across candidate receipts
+    const allOrderNos = new Set();
+    const allInwardNos = new Set();
+    for (const r of receipts) {
+      const rData = r.toJSON ? r.toJSON() : r;
+      if (rData.GateInwardNo) allInwardNos.add(rData.GateInwardNo);
+      for (const d of rData.details || []) {
+        if (d.OrderNo) allOrderNos.add(d.OrderNo);
+      }
+    }
+
+    const orConditions = [];
+    if (allOrderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(allOrderNos) } });
+    if (allInwardNos.size > 0) orConditions.push({ InwardNo: { [Op.in]: Array.from(allInwardNos) } });
+
+    const allGIs = orConditions.length > 0
       ? await GateInward.findAll({
-          where: { InwardNo: { [Op.in]: inwardNos } },
-          attributes: ['InwardNo'],
-          raw: true
+          where: { [Op.or]: orConditions },
+          include: [{ model: GateInwardDetail, as: 'details' }],
+          order: [['InwardNo', 'ASC']]
         })
       : [];
-    const validInwardSet = new Set(existingInwards.map(g => g.InwardNo));
 
-    const available = receipts.filter(r => validInwardSet.has(r.GateInwardNo));
+    const giByOrder = new Map();
+    const giByInward = new Map();
+    for (const gi of allGIs) {
+      const json = gi.toJSON ? gi.toJSON() : gi;
+      if (gi.OrderNo) {
+        if (!giByOrder.has(gi.OrderNo)) giByOrder.set(gi.OrderNo, []);
+        giByOrder.get(gi.OrderNo).push(json);
+      }
+      giByInward.set(gi.InwardNo, json);
+    }
+
+    const available = receipts.map(r => {
+      const rData = r.toJSON ? r.toJSON() : r;
+      const orderNos = [...new Set((rData.details || []).map(d => d.OrderNo).filter(Boolean))];
+
+      let linkedGIs = [];
+      const seenGIs = new Set();
+      for (const oNo of orderNos) {
+        if (giByOrder.has(oNo)) {
+          for (const gi of giByOrder.get(oNo)) {
+            if (!seenGIs.has(gi.InwardNo)) {
+              seenGIs.add(gi.InwardNo);
+              linkedGIs.push(gi);
+            }
+          }
+        }
+      }
+      if (rData.GateInwardNo && giByInward.has(rData.GateInwardNo) && !seenGIs.has(rData.GateInwardNo)) {
+        seenGIs.add(rData.GateInwardNo);
+        linkedGIs.push(giByInward.get(rData.GateInwardNo));
+      }
+
+      const giNos = linkedGIs.map(g => g.InwardNo);
+
+      return {
+        GRNNo: rData.GRNNo,
+        InwardDate: rData.InwardDate,
+        InvoiceNo: rData.InvoiceNo,
+        BillAmount: rData.BillAmount,
+        GrandTotal: rData.GrandTotal,
+        GateInwardNo: rData.GateInwardNo,
+        GateInwardNos: giNos,
+        GateInwardDisplay: giNos.length > 0 ? giNos.map(n => `GI-${String(n).padStart(3, '0')}`).join(', ') : (rData.GateInwardNo ? `GI-${String(rData.GateInwardNo).padStart(3, '0')}` : ''),
+        gateInwards: linkedGIs,
+        batchCount: linkedGIs.length || (rData.GateInwardNo ? 1 : 0),
+        OrderNos: orderNos,
+        OrderNoDisplay: orderNos.length > 0 ? orderNos.map(o => `PO-${o}`).join(', ') : ''
+      };
+    });
 
     res.json({
       success: true,
@@ -269,6 +305,24 @@ exports.getGRNDetails = async (req, res) => {
         DiscountPct: parseFloat(poD.DiscountPct) || 0
       };
     });
+
+    // Fetch all Gate Inward batches linked to these POs or GateInwardNo
+    const orConditions = [];
+    if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
+    if (receiptData.GateInwardNo) orConditions.push({ InwardNo: receiptData.GateInwardNo });
+
+    const gateInwards = orConditions.length > 0
+      ? await GateInward.findAll({
+          where: { [Op.or]: orConditions },
+          include: [{ model: GateInwardDetail, as: 'details' }],
+          order: [['InwardNo', 'ASC']]
+        })
+      : [];
+
+    receiptData.gateInwards = gateInwards.map(gi => gi.toJSON ? gi.toJSON() : gi);
+    const giNos = receiptData.gateInwards.map(g => g.InwardNo);
+    receiptData.GateInwardNos = giNos;
+    receiptData.GateInwardDisplay = giNos.length > 0 ? giNos.map(n => `GI-${String(n).padStart(3, '0')}`).join(', ') : (receiptData.GateInwardNo ? `GI-${String(receiptData.GateInwardNo).padStart(3, '0')}` : '');
 
     res.json({
       success: true,
@@ -407,13 +461,27 @@ exports.createBillEntry = async (req, res) => {
       Status: 'Billed'
     });
 
+    // Build item-to-order map from receipt details
+    const rcptDetails = await ReceiptDetail.findAll({
+      where: { GRNNo },
+      attributes: ['ItemName', 'OrderNo'],
+      raw: true
+    });
+    const itemOrderMap = {};
+    rcptDetails.forEach(rd => {
+      if (rd.ItemName && rd.OrderNo) itemOrderMap[rd.ItemName] = rd.OrderNo;
+    });
+    const defaultOrderNo = rcptDetails[0]?.OrderNo || null;
+
     const billItems = (items && items.length > 0) ? items : [];
     for (const item of billItems) {
       const qty = parseFloat(item.Qty || item.ReceivedQty) || 0;
       const unitRate = parseFloat(item.UnitRate) || 0;
+      const resolvedOrderNo = item.OrderNo || itemOrderMap[item.ItemName] || defaultOrderNo;
+
       await BillEntryDetail.create({
         VoucherNo: newBill.VoucherNo,
-        OrderNo: item.OrderNo || null,
+        OrderNo: resolvedOrderNo,
         ItemName: item.ItemName,
         Qty: qty,
         UnitRate: unitRate,
@@ -478,12 +546,28 @@ exports.updateBillEntry = async (req, res) => {
     if (items && items.length > 0) {
       await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo } });
 
+      let itemOrderMap = {};
+      let defaultOrderNo = null;
+      if (billEntry.GRNNo) {
+        const rcptDetails = await ReceiptDetail.findAll({
+          where: { GRNNo: billEntry.GRNNo },
+          attributes: ['ItemName', 'OrderNo'],
+          raw: true
+        });
+        rcptDetails.forEach(rd => {
+          if (rd.ItemName && rd.OrderNo) itemOrderMap[rd.ItemName] = rd.OrderNo;
+        });
+        defaultOrderNo = rcptDetails[0]?.OrderNo || null;
+      }
+
       for (const item of items) {
         const qty = item.Qty || 0;
         const unitRate = item.UnitRate || 0;
+        const resolvedOrderNo = item.OrderNo || itemOrderMap[item.ItemName] || defaultOrderNo;
+
         await BillEntryDetail.create({
           VoucherNo: voucherNo,
-          OrderNo: item.OrderNo || null,
+          OrderNo: resolvedOrderNo,
           ItemName: item.ItemName,
           Qty: qty,
           UnitRate: unitRate,
@@ -537,7 +621,7 @@ exports.deleteBillEntry = async (req, res) => {
   }
 };
 
-// Get all bill entries
+// Get all bill entries (including all linked Gate Inwards for each bill)
 exports.getBillEntries = async (req, res) => {
   try {
     const bills = await BillEntry.findAll({
@@ -545,9 +629,147 @@ exports.getBillEntries = async (req, res) => {
       order: [['VoucherNo', 'DESC']]
     });
 
+    // Collect all GRNNos, GateInwardNos, and OrderNos from bills
+    const grnNos = new Set();
+    const inwardNos = new Set();
+    const orderNos = new Set();
+
+    for (const b of bills) {
+      if (b.GateInwardNo) inwardNos.add(b.GateInwardNo);
+      if (b.GRNNo) grnNos.add(b.GRNNo);
+      for (const d of b.details || []) {
+        if (d.OrderNo) orderNos.add(d.OrderNo);
+      }
+    }
+
+    // Map Receipts by GRNNo
+    const grnReceiptMap = new Map();
+    if (grnNos.size > 0) {
+      const receipts = await Receipt.findAll({
+        where: { GRNNo: { [Op.in]: Array.from(grnNos) } },
+        include: [{ model: ReceiptDetail, as: 'details' }]
+      });
+      for (const r of receipts) {
+        const rJson = r.toJSON ? r.toJSON() : r;
+        const rOrderNos = [...new Set((rJson.details || []).map(d => d.OrderNo).filter(Boolean))];
+        const itemOrderMap = {};
+        (rJson.details || []).forEach(d => {
+          if (d.ItemName && d.OrderNo) itemOrderMap[d.ItemName] = d.OrderNo;
+        });
+
+        grnReceiptMap.set(rJson.GRNNo, {
+          GateInwardNo: rJson.GateInwardNo,
+          orderNos: rOrderNos,
+          itemOrderMap
+        });
+
+        if (rJson.GateInwardNo) inwardNos.add(rJson.GateInwardNo);
+        rOrderNos.forEach(o => orderNos.add(o));
+      }
+    }
+
+    // Also look up GateInwards to see if any have OrderNos that weren't in orderNos
+    if (inwardNos.size > 0) {
+      const giRecords = await GateInward.findAll({
+        where: { InwardNo: { [Op.in]: Array.from(inwardNos) } },
+        attributes: ['InwardNo', 'OrderNo'],
+        raw: true
+      });
+      for (const gi of giRecords) {
+        if (gi.OrderNo) orderNos.add(gi.OrderNo);
+      }
+    }
+
+    // Fetch all Gate Inwards matching any of the resolved OrderNos or InwardNos
+    const orConditions = [];
+    if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
+    if (inwardNos.size > 0) orConditions.push({ InwardNo: { [Op.in]: Array.from(inwardNos) } });
+
+    const gateInwards = orConditions.length > 0
+      ? await GateInward.findAll({
+          where: { [Op.or]: orConditions },
+          include: [{ model: GateInwardDetail, as: 'details' }],
+          order: [['InwardNo', 'ASC']]
+        })
+      : [];
+
+    const giByOrder = new Map();
+    const giByInward = new Map();
+    for (const gi of gateInwards) {
+      const json = gi.toJSON ? gi.toJSON() : gi;
+      if (gi.OrderNo) {
+        if (!giByOrder.has(gi.OrderNo)) giByOrder.set(gi.OrderNo, []);
+        giByOrder.get(gi.OrderNo).push(json);
+      }
+      giByInward.set(gi.InwardNo, json);
+    }
+
+    const result = bills.map(b => {
+      const bJson = b.toJSON ? b.toJSON() : b;
+      const receiptInfo = bJson.GRNNo ? grnReceiptMap.get(bJson.GRNNo) : null;
+
+      // Resolve all PO Order numbers for this bill
+      const billOrderNos = new Set();
+      (bJson.details || []).forEach(d => {
+        if (d.OrderNo) billOrderNos.add(d.OrderNo);
+      });
+      if (receiptInfo && receiptInfo.orderNos) {
+        receiptInfo.orderNos.forEach(o => billOrderNos.add(o));
+      }
+      if (bJson.GateInwardNo && giByInward.has(bJson.GateInwardNo)) {
+        const oNo = giByInward.get(bJson.GateInwardNo)?.OrderNo;
+        if (oNo) billOrderNos.add(oNo);
+      }
+
+      // Enrich details with OrderNo if missing
+      const primaryOrderNo = Array.from(billOrderNos)[0] || null;
+      const enrichedDetails = (bJson.details || []).map(d => {
+        const itemOrderNo = d.OrderNo || (receiptInfo?.itemOrderMap && receiptInfo.itemOrderMap[d.ItemName]) || primaryOrderNo;
+        return {
+          ...d,
+          OrderNo: itemOrderNo
+        };
+      });
+
+      // Gather all linked Gate Inwards across all PO orders for this bill
+      let linkedGIs = [];
+      const seenGIs = new Set();
+
+      for (const oNo of billOrderNos) {
+        if (giByOrder.has(oNo)) {
+          for (const gi of giByOrder.get(oNo)) {
+            if (!seenGIs.has(gi.InwardNo)) {
+              seenGIs.add(gi.InwardNo);
+              linkedGIs.push(gi);
+            }
+          }
+        }
+      }
+
+      if (bJson.GateInwardNo && giByInward.has(bJson.GateInwardNo) && !seenGIs.has(bJson.GateInwardNo)) {
+        seenGIs.add(bJson.GateInwardNo);
+        linkedGIs.push(giByInward.get(bJson.GateInwardNo));
+      }
+
+      if (receiptInfo?.GateInwardNo && giByInward.has(receiptInfo.GateInwardNo) && !seenGIs.has(receiptInfo.GateInwardNo)) {
+        seenGIs.add(receiptInfo.GateInwardNo);
+        linkedGIs.push(giByInward.get(receiptInfo.GateInwardNo));
+      }
+
+      // Sort linked gate inwards by InwardNo ascending
+      linkedGIs.sort((x, y) => (x.InwardNo || 0) - (y.InwardNo || 0));
+
+      return {
+        ...bJson,
+        details: enrichedDetails,
+        OrderNo: primaryOrderNo,
+        gateInwards: linkedGIs
+      };
+    });
+
     res.json({
       success: true,
-      data: bills
+      data: result
     });
   } catch (error) {
     console.error('Error fetching bill entries:', error);
@@ -575,9 +797,46 @@ exports.getBillEntry = async (req, res) => {
       });
     }
 
+    const bJson = billEntry.toJSON();
+    const billOrderNos = new Set((bJson.details || []).map(d => d.OrderNo).filter(Boolean));
+    let receiptInfo = null;
+
+    if (bJson.GRNNo) {
+      const receipt = await Receipt.findByPk(bJson.GRNNo, {
+        include: [{ model: ReceiptDetail, as: 'details' }]
+      });
+      if (receipt) {
+        const rJson = receipt.toJSON ? receipt.toJSON() : receipt;
+        (rJson.details || []).forEach(d => {
+          if (d.OrderNo) billOrderNos.add(d.OrderNo);
+        });
+        receiptInfo = rJson;
+      }
+    }
+
+    if (bJson.GateInwardNo) {
+      const gi = await GateInward.findByPk(bJson.GateInwardNo, { raw: true });
+      if (gi && gi.OrderNo) billOrderNos.add(gi.OrderNo);
+    }
+
+    const orConditions = [];
+    if (billOrderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(billOrderNos) } });
+    if (bJson.GateInwardNo) orConditions.push({ InwardNo: bJson.GateInwardNo });
+    if (receiptInfo?.GateInwardNo) orConditions.push({ InwardNo: receiptInfo.GateInwardNo });
+
+    const gateInwards = orConditions.length > 0
+      ? await GateInward.findAll({
+          where: { [Op.or]: orConditions },
+          include: [{ model: GateInwardDetail, as: 'details' }],
+          order: [['InwardNo', 'ASC']]
+        })
+      : [];
+
+    bJson.gateInwards = gateInwards.map(g => g.toJSON ? g.toJSON() : g);
+
     res.json({
       success: true,
-      data: billEntry
+      data: bJson
     });
   } catch (error) {
     console.error('Error fetching bill entry:', error);

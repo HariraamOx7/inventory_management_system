@@ -140,6 +140,14 @@ export default function GateInward() {
               ReceivedQty: ''
             }));
             setItems(itemsWithReceivedQty);
+
+            if (response.data.existingInvoiceNo) {
+              setFormData(prev => ({
+                ...prev,
+                InvoiceNo: prev.InvoiceNo || response.data.existingInvoiceNo,
+                InvoiceDate: prev.InvoiceDate || (response.data.existingInvoiceDate ? formatDateForInput(response.data.existingInvoiceDate) : prev.InvoiceDate)
+              }));
+            }
           }
         } catch (error) {
           console.error('Error fetching order items:', error);
@@ -216,7 +224,7 @@ export default function GateInward() {
         ItemName: d.ItemName,
         OrderNo: d.OrderNo || orderNo,
         PendingQty: d.PendingQty || 0,
-        ReceivedQty: d.ReceivedQty || 0
+        ReceivedQty: (d.ReceivedQty && parseFloat(d.ReceivedQty) > 0) ? d.ReceivedQty : ''
       })));
     } else {
       setItems([]);
@@ -766,7 +774,9 @@ export default function GateInward() {
                                   <td className="py-3.5 px-4 text-right">
                                     <input
                                       type="number"
-                                      step="any" value={item.ReceivedQty}
+                                      step="any"
+                                      value={item.ReceivedQty ?? ''}
+                                      placeholder="0"
                                       onWheel={(e) => e.target.blur()}
                                       onChange={(e) => {
                                         const enteredValue = e.target.value;

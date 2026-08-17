@@ -241,10 +241,14 @@ exports.createGateInward = async (req, res) => {
       });
     }
 
-    // Check for duplicate InvoiceNo per party (skip if blank)
+    // Check for duplicate InvoiceNo per party across DIFFERENT purchase orders
     if (InvoiceNo && InvoiceNo.trim()) {
       const duplicateInward = await GateInward.findOne({
-        where: { PartyName: PartyName.trim(), InvoiceNo: InvoiceNo.trim() }
+        where: {
+          PartyName: PartyName.trim(),
+          InvoiceNo: InvoiceNo.trim(),
+          OrderNo: { [Op.ne]: orderNos[0] }
+        }
       });
       if (duplicateInward) {
         const dupPO = duplicateInward.OrderNo
@@ -252,7 +256,7 @@ exports.createGateInward = async (req, res) => {
           : null;
         return res.status(409).json({
           success: false,
-          message: `A Gate Inward already exists for party "${PartyName.trim()}" with invoice number "${InvoiceNo.trim()}".`,
+          message: `A Gate Inward already exists for party "${PartyName.trim()}" with invoice number "${InvoiceNo.trim()}" on PO #${duplicateInward.OrderNo}.`,
           duplicate: {
             InwardNo: duplicateInward.InwardNo,
             PartyName: duplicateInward.PartyName,
@@ -565,11 +569,21 @@ exports.getItemsByOrder = async (req, res) => {
           UnitRate: item.UnitRate
         };
       })
-      .filter(item => item.Qty > 0);  // Only return items with pending qty
+    // Check if any previous Gate Inward for this order has an InvoiceNo and InvoiceDate
+    const existingGI = await GateInward.findOne({
+      where: {
+        OrderNo: orderNo,
+        InvoiceNo: { [Op.ne]: null }
+      },
+      attributes: ['InvoiceNo', 'InvoiceDate'],
+      order: [['InwardNo', 'ASC']]
+    });
 
     res.json({
       success: true,
-      data: itemsWithPending
+      data: itemsWithPending,
+      existingInvoiceNo: existingGI && existingGI.InvoiceNo ? existingGI.InvoiceNo : '',
+      existingInvoiceDate: existingGI && existingGI.InvoiceDate ? existingGI.InvoiceDate : null
     });
   } catch (error) {
     console.error('Error fetching items by order:', error);
@@ -666,7 +680,7 @@ exports.getItemsByParty = async (req, res) => {
 // Check for duplicate GateInward by PartyName + InvoiceNo
 exports.checkDuplicateInvoice = async (req, res) => {
   try {
-    const { partyName, invoiceNo, excludeInwardNo } = req.query;
+    const { partyName, invoiceNo, excludeInwardNo, orderNo } = req.query;
 
     if (!partyName || !invoiceNo) {
       return res.json({ success: true, duplicate: null });
@@ -678,6 +692,9 @@ exports.checkDuplicateInvoice = async (req, res) => {
     };
     if (excludeInwardNo) {
       whereClause.InwardNo = { [Op.ne]: excludeInwardNo };
+    }
+    if (orderNo) {
+      whereClause.OrderNo = { [Op.ne]: orderNo };
     }
 
     const duplicateInward = await GateInward.findOne({ where: whereClause });
