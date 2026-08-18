@@ -11,6 +11,12 @@ const {
   PurchaseType
 } = require('../models/index');
 
+const parseDec = (val, defaultVal = 0) => {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? defaultVal : parsed;
+};
+
 // Get parties that have unbilled Receipts (GRNs)
 exports.getAvailableParties = async (req, res) => {
   try {
@@ -438,26 +444,26 @@ exports.createBillEntry = async (req, res) => {
 
     const newBill = await BillEntry.create({
       VoucherNo: nextVoucherNo,
-      GateInwardNo: resolvedGateInwardNo || null,
-      GRNNo,
+      GateInwardNo: (resolvedGateInwardNo === '' || resolvedGateInwardNo === null || resolvedGateInwardNo === undefined) ? null : parseInt(resolvedGateInwardNo, 10),
+      GRNNo: parseInt(GRNNo, 10),
       PartyName: PartyName.trim(),
       AccDate: AccDate || new Date(),
       PartyBillNo: PartyBillNo ? PartyBillNo.trim() : null,
       BillDate: BillDate || new Date(),
       PurchaseType: PurchaseType || null,
-      BillAmount: BillAmount || 0,
-      TDS: TDS || 0,
-      Narration: Narration || null,
-      Total: Total || 0,
-      Discount: Discount || 0,
-      GST: GST || 0,
-      IGST: IGST || 0,
-      VAT_CST: VAT_CST || 0,
-      P_F: P_F || 0,
-      LorryFreight: LorryFreight || 0,
-      RoundOff: RoundOff || 0,
-      TaxRndOff: TaxRndOff || 0,
-      GrandTotal: GrandTotal || 0,
+      BillAmount: parseDec(BillAmount, 0),
+      TDS: parseDec(TDS, 0),
+      Narration: Narration ? Narration.trim() : null,
+      Total: parseDec(Total, 0),
+      Discount: parseDec(Discount, 0),
+      GST: parseDec(GST, 0),
+      IGST: parseDec(IGST, 0),
+      VAT_CST: parseDec(VAT_CST, 0),
+      P_F: parseDec(P_F, 0),
+      LorryFreight: parseDec(LorryFreight, 0),
+      RoundOff: parseDec(RoundOff, 0),
+      TaxRndOff: parseDec(TaxRndOff, 0),
+      GrandTotal: parseDec(GrandTotal, 0),
       Status: 'Billed'
     });
 
@@ -528,19 +534,19 @@ exports.updateBillEntry = async (req, res) => {
       PartyBillNo: PartyBillNo ? PartyBillNo.trim() : billEntry.PartyBillNo,
       BillDate: BillDate || billEntry.BillDate,
       PurchaseType: PurchaseType || billEntry.PurchaseType,
-      BillAmount: BillAmount !== undefined ? BillAmount : billEntry.BillAmount,
-      TDS: TDS !== undefined ? TDS : billEntry.TDS,
-      Narration: Narration !== undefined ? Narration : billEntry.Narration,
-      Total: Total !== undefined ? Total : billEntry.Total,
-      Discount: Discount !== undefined ? Discount : billEntry.Discount,
-      GST: GST !== undefined ? GST : billEntry.GST,
-      IGST: IGST !== undefined ? IGST : billEntry.IGST,
-      VAT_CST: VAT_CST !== undefined ? VAT_CST : billEntry.VAT_CST,
-      P_F: P_F !== undefined ? P_F : billEntry.P_F,
-      LorryFreight: LorryFreight !== undefined ? LorryFreight : billEntry.LorryFreight,
-      RoundOff: RoundOff !== undefined ? RoundOff : billEntry.RoundOff,
-      TaxRndOff: TaxRndOff !== undefined ? TaxRndOff : billEntry.TaxRndOff,
-      GrandTotal: GrandTotal !== undefined ? GrandTotal : billEntry.GrandTotal
+      BillAmount: BillAmount !== undefined ? parseDec(BillAmount, 0) : billEntry.BillAmount,
+      TDS: TDS !== undefined ? parseDec(TDS, 0) : billEntry.TDS,
+      Narration: Narration !== undefined ? (Narration ? Narration.trim() : null) : billEntry.Narration,
+      Total: Total !== undefined ? parseDec(Total, 0) : billEntry.Total,
+      Discount: Discount !== undefined ? parseDec(Discount, 0) : billEntry.Discount,
+      GST: GST !== undefined ? parseDec(GST, 0) : billEntry.GST,
+      IGST: IGST !== undefined ? parseDec(IGST, 0) : billEntry.IGST,
+      VAT_CST: VAT_CST !== undefined ? parseDec(VAT_CST, 0) : billEntry.VAT_CST,
+      P_F: P_F !== undefined ? parseDec(P_F, 0) : billEntry.P_F,
+      LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : billEntry.LorryFreight,
+      RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : billEntry.RoundOff,
+      TaxRndOff: TaxRndOff !== undefined ? parseDec(TaxRndOff, 0) : billEntry.TaxRndOff,
+      GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : billEntry.GrandTotal
     });
 
     if (items && items.length > 0) {

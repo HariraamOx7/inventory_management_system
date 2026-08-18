@@ -497,8 +497,25 @@ export default function BillEntry() {
       return;
     }
 
+    const cleanNum = (val, defaultVal = 0) => {
+      if (val === '' || val === null || val === undefined || isNaN(val)) return defaultVal;
+      return parseFloat(val);
+    };
+
     const payload = {
       ...formData,
+      BillAmount: cleanNum(formData.BillAmount),
+      TDS: cleanNum(formData.TDS),
+      Total: cleanNum(formData.Total),
+      Discount: cleanNum(formData.Discount),
+      GST: cleanNum(formData.GST),
+      IGST: cleanNum(formData.IGST),
+      VAT_CST: cleanNum(formData.VAT_CST),
+      P_F: cleanNum(formData.P_F),
+      LorryFreight: cleanNum(formData.LorryFreight),
+      RoundOff: cleanNum(formData.RoundOff),
+      TaxRndOff: cleanNum(formData.TaxRndOff),
+      GrandTotal: cleanNum(formData.GrandTotal),
       items: items.map(item => {
         const qty = parseFloat(item.ReceivedQty !== undefined ? item.ReceivedQty : item.Qty) || 0;
         const rate = parseFloat(item.UnitRate) || 0;
@@ -694,17 +711,19 @@ export default function BillEntry() {
       }
     }
 
+    // Purchase amount (Debit)
     const purchaseLabel = bill.PurchaseAccountName || bill.PurchaseType || 'PURCHASE OF MATERIALS';
     doc.text(purchaseLabel, col1X + 12, y);
     doc.text(fmt(totalAmount), col2X + 15, y, { align: 'right' });
     totalDebit += totalAmount;
     y += 5;
 
+    // Discount (Credit)
     if (discountAmt > 0) {
-      doc.text('DISCOUNT', col1X + 12, y);
-      doc.text(fmt(discountAmt), col3X + 30, y, { align: 'right' });
+
+
       totalCredit += discountAmt;
-      y += 5;
+
     }
 
     // VAT/CST
@@ -742,10 +761,10 @@ export default function BillEntry() {
     const roundOff = parseFloat((targetCredit - currentDebit).toFixed(2));
 
     if (Math.abs(roundOff) > 0.0001) {
+      doc.text('To', col1X, y);
       doc.text('ROUND OFF', col1X + 12, y);
       if (roundOff > 0) {
-        doc.text(fmt(roundOff), col2X + 15, y, { align: 'right' });
-        totalDebit += roundOff;
+        doc.text(fmt(roundOff), col3X + 30, y, { align: 'right' });
       } else {
         doc.text(fmt(Math.abs(roundOff)), col3X + 30, y, { align: 'right' });
         totalCredit += Math.abs(roundOff);
@@ -757,15 +776,16 @@ export default function BillEntry() {
     doc.text('To', col1X, y);
     doc.text(bill.PartyName || '', col1X + 12, y);
     doc.text(fmt(partyPayable), col3X + 30, y, { align: 'right' });
-    totalCredit += partyPayable;
+    totalCredit = partyPayable;
     y += 3;
     drawLine(y);
     y += 5;
 
-    // Totals row (always strictly balanced)
+    // Totals row (always strictly balanced with rounded debit)
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text(fmt(totalDebit), col2X + 15, y, { align: 'right' });
+    const roundedDebit = Math.round(totalDebit);
+    doc.text(fmt(roundedDebit), col2X + 15, y, { align: 'right' });
     doc.text(fmt(totalCredit), col3X + 30, y, { align: 'right' });
     y += 3;
     drawLine(y);

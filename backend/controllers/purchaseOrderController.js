@@ -12,6 +12,12 @@ const BillEntryDetail = require('../models/BillEntryDetail');
 const Supplier = require('../models/Supplier');
 const Item = require('../models/Item');
 
+const parseDec = (val, defaultVal = 0) => {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? defaultVal : parsed;
+};
+
 const resolveLineUnitRate = (item) => {
   const qty = parseFloat(item.Qty) || 0;
   const unitRate = parseFloat(item.UnitRate) || 0;
@@ -189,15 +195,15 @@ exports.createPurchaseOrder = async (req, res) => {
       Place: Place ? Place.trim() : null,
       Remarks: Remarks ? Remarks.trim() : null,
       RefNo: RefNo ? RefNo.trim() : null,
-      Total: Total || 0,
-      Discount: Discount || 0,
-      GST: GST || 0,
-      IGST: IGST || 0,
-      VAT_CST: VAT_CST || 0,
-      P_F: P_F || 0,
-      LorryFreight: LorryFreight || 0,
-      RoundOff: RoundOff || 0,
-      GrandTotal: GrandTotal || 0,
+      Total: parseDec(Total, 0),
+      Discount: parseDec(Discount, 0),
+      GST: parseDec(GST, 0),
+      IGST: parseDec(IGST, 0),
+      VAT_CST: parseDec(VAT_CST, 0),
+      P_F: parseDec(P_F, 0),
+      LorryFreight: parseDec(LorryFreight, 0),
+      RoundOff: parseDec(RoundOff, 0),
+      GrandTotal: parseDec(GrandTotal, 0),
       DutyWithoutPF: DutyWithoutPF || false,
       VoltasFormat: VoltasFormat || false,
       VatWithPF: VatWithPF || false
@@ -209,27 +215,27 @@ exports.createPurchaseOrder = async (req, res) => {
       await PurchaseOrderDetail.create({
         OrderNo: newOrder.OrderNo,
         ItemName: item.ItemName,
-        Qty: item.Qty || 0,
+        Qty: parseDec(item.Qty, 0),
         UnitRate: unitRate,
-        TotalAmount: item.TotalAmount || 0,
-        DiscountPct: item.DiscountPct || 0,
-        DiscountAmt: item.DiscountAmt || 0,
+        TotalAmount: parseDec(item.TotalAmount, 0),
+        DiscountPct: parseDec(item.DiscountPct, 0),
+        DiscountAmt: parseDec(item.DiscountAmt, 0),
         GSTType: item.GSTType || null,
-        GSTPct: item.GSTPct || 0,
-        SGSTPct: item.SGSTPct || 0,
-        SGST: item.SGST || 0,
-        CGSTPct: item.CGSTPct || 0,
-        CGST: item.CGST || 0,
-        IGSTPct: item.IGSTPct || 0,
-        IGST: item.IGST || 0,
+        GSTPct: parseDec(item.GSTPct, 0),
+        SGSTPct: parseDec(item.SGSTPct, 0),
+        SGST: parseDec(item.SGST, 0),
+        CGSTPct: parseDec(item.CGSTPct, 0),
+        CGST: parseDec(item.CGST, 0),
+        IGSTPct: parseDec(item.IGSTPct, 0),
+        IGST: parseDec(item.IGST, 0),
         TaxType: item.TaxType || null,
-        TaxPct: item.TaxPct || 0,
-        TaxAmount: item.TaxAmount || 0,
-        PF_Pct: item.PF_Pct || 0,
-        PF_Amount: item.PF_Amount || 0,
-        LorryFreight: item.LorryFreight || 0,
-        RoundOff: item.RoundOff || 0,
-        GrandTotal: item.GrandTotal || 0,
+        TaxPct: parseDec(item.TaxPct, 0),
+        TaxAmount: parseDec(item.TaxAmount, 0),
+        PF_Pct: parseDec(item.PF_Pct, 0),
+        PF_Amount: parseDec(item.PF_Amount, 0),
+        LorryFreight: parseDec(item.LorryFreight, 0),
+        RoundOff: parseDec(item.RoundOff, 0),
+        GrandTotal: parseDec(item.GrandTotal, 0),
         MRS_No: item.MRS_No || null
       });
       // Update item stock by adding the quantity
@@ -287,15 +293,15 @@ exports.updatePurchaseOrder = async (req, res) => {
       Place: Place ? Place.trim() : order.Place,
       Remarks: Remarks ? Remarks.trim() : order.Remarks,
       RefNo: RefNo ? RefNo.trim() : order.RefNo,
-      Total: Total !== undefined ? Total : order.Total,
-      Discount: Discount !== undefined ? Discount : order.Discount,
-      GST: GST !== undefined ? GST : order.GST,
-      IGST: IGST !== undefined ? IGST : order.IGST,
-      VAT_CST: VAT_CST !== undefined ? VAT_CST : order.VAT_CST,
-      P_F: P_F !== undefined ? P_F : order.P_F,
-      LorryFreight: LorryFreight !== undefined ? LorryFreight : order.LorryFreight,
-      RoundOff: RoundOff !== undefined ? RoundOff : order.RoundOff,
-      GrandTotal: GrandTotal !== undefined ? GrandTotal : order.GrandTotal,
+      Total: Total !== undefined ? parseDec(Total, 0) : order.Total,
+      Discount: Discount !== undefined ? parseDec(Discount, 0) : order.Discount,
+      GST: GST !== undefined ? parseDec(GST, 0) : order.GST,
+      IGST: IGST !== undefined ? parseDec(IGST, 0) : order.IGST,
+      VAT_CST: VAT_CST !== undefined ? parseDec(VAT_CST, 0) : order.VAT_CST,
+      P_F: P_F !== undefined ? parseDec(P_F, 0) : order.P_F,
+      LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : order.LorryFreight,
+      RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : order.RoundOff,
+      GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : order.GrandTotal,
       DutyWithoutPF: DutyWithoutPF !== undefined ? DutyWithoutPF : order.DutyWithoutPF,
       VoltasFormat: VoltasFormat !== undefined ? VoltasFormat : order.VoltasFormat,
       VatWithPF: VatWithPF !== undefined ? VatWithPF : order.VatWithPF

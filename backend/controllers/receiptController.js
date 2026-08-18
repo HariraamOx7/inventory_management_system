@@ -7,6 +7,12 @@ const GateInwardDetail = require('../models/GateInwardDetail');
 const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 
+const parseDec = (val, defaultVal = 0) => {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? defaultVal : parsed;
+};
+
 const getPurchaseOrderUnitRateMap = async (orderNos = []) => {
   if (orderNos.length === 0) return new Map();
 
@@ -638,23 +644,23 @@ exports.createReceipt = async (req, res) => {
 
     const newReceipt = await Receipt.create({
       PartyName: PartyName.trim(),
-      GateInwardNo,
+      GateInwardNo: (GateInwardNo === '' || GateInwardNo === null || GateInwardNo === undefined) ? null : parseInt(GateInwardNo, 10),
       InwardDate: InwardDate || gateInward.InwardDate || new Date(),
       InvoiceNo: InvoiceNo ? InvoiceNo.trim() : gateInward.InvoiceNo,
       InvoiceDate: InvoiceDate || gateInward.InvoiceDate || null,
       DCNo: DCNo ? DCNo.trim() : null,
       DCDate: DCDate || null,
       FormType: FormType ? FormType.trim() : null,
-      BillAmount: BillAmount || 0,
-      Total: Total || 0,
-      Discount: Discount || 0,
-      GST: GST || 0,
-      IGST: IGST || 0,
-      VAT_CST: VAT_CST || 0,
-      P_F: P_F || 0,
-      LorryFreight: LorryFreight || 0,
-      RoundOff: RoundOff || 0,
-      GrandTotal: GrandTotal || 0,
+      BillAmount: parseDec(BillAmount, 0),
+      Total: parseDec(Total, 0),
+      Discount: parseDec(Discount, 0),
+      GST: parseDec(GST, 0),
+      IGST: parseDec(IGST, 0),
+      VAT_CST: parseDec(VAT_CST, 0),
+      P_F: parseDec(P_F, 0),
+      LorryFreight: parseDec(LorryFreight, 0),
+      RoundOff: parseDec(RoundOff, 0),
+      GrandTotal: parseDec(GrandTotal, 0),
       DutyWithoutPF: DutyWithoutPF || false,
       VatWithPF: VatWithPF || false,
       Status: 'ReceiptCreated'
@@ -709,23 +715,23 @@ exports.updateReceipt = async (req, res) => {
 
     await receipt.update({
       PartyName: PartyName ? PartyName.trim() : receipt.PartyName,
-      GateInwardNo: GateInwardNo !== undefined ? GateInwardNo : receipt.GateInwardNo,
+      GateInwardNo: GateInwardNo !== undefined ? ((GateInwardNo === '' || GateInwardNo === null) ? null : parseInt(GateInwardNo, 10)) : receipt.GateInwardNo,
       InwardDate: InwardDate || receipt.InwardDate,
       InvoiceNo: InvoiceNo ? InvoiceNo.trim() : receipt.InvoiceNo,
       InvoiceDate: InvoiceDate || receipt.InvoiceDate,
       DCNo: DCNo ? DCNo.trim() : receipt.DCNo,
       DCDate: DCDate || receipt.DCDate,
       FormType: FormType ? FormType.trim() : receipt.FormType,
-      BillAmount: BillAmount !== undefined ? BillAmount : receipt.BillAmount,
-      Total: Total !== undefined ? Total : receipt.Total,
-      Discount: Discount !== undefined ? Discount : receipt.Discount,
-      GST: GST !== undefined ? GST : receipt.GST,
-      IGST: IGST !== undefined ? IGST : receipt.IGST,
-      VAT_CST: VAT_CST !== undefined ? VAT_CST : receipt.VAT_CST,
-      P_F: P_F !== undefined ? P_F : receipt.P_F,
-      LorryFreight: LorryFreight !== undefined ? LorryFreight : receipt.LorryFreight,
-      RoundOff: RoundOff !== undefined ? RoundOff : receipt.RoundOff,
-      GrandTotal: GrandTotal !== undefined ? GrandTotal : receipt.GrandTotal,
+      BillAmount: BillAmount !== undefined ? parseDec(BillAmount, 0) : receipt.BillAmount,
+      Total: Total !== undefined ? parseDec(Total, 0) : receipt.Total,
+      Discount: Discount !== undefined ? parseDec(Discount, 0) : receipt.Discount,
+      GST: GST !== undefined ? parseDec(GST, 0) : receipt.GST,
+      IGST: IGST !== undefined ? parseDec(IGST, 0) : receipt.IGST,
+      VAT_CST: VAT_CST !== undefined ? parseDec(VAT_CST, 0) : receipt.VAT_CST,
+      P_F: P_F !== undefined ? parseDec(P_F, 0) : receipt.P_F,
+      LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : receipt.LorryFreight,
+      RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : receipt.RoundOff,
+      GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : receipt.GrandTotal,
       DutyWithoutPF: DutyWithoutPF !== undefined ? DutyWithoutPF : receipt.DutyWithoutPF,
       VatWithPF: VatWithPF !== undefined ? VatWithPF : receipt.VatWithPF
     });

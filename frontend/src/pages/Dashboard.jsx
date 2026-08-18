@@ -21,6 +21,8 @@ import {
   Eye
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/dashboard/stats', {
+      const response = await axios.get(`${API_URL}/dashboard/stats`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (response.data && response.data.success) {
