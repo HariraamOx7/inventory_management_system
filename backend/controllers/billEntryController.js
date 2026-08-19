@@ -514,13 +514,22 @@ exports.createBillEntry = async (req, res) => {
 exports.updateBillEntry = async (req, res) => {
   try {
     const { voucherNo } = req.params;
+    const vNo = parseInt(voucherNo, 10);
+
+    if (!vNo || isNaN(vNo)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Voucher Number'
+      });
+    }
+
     const {
       PartyName, AccDate, PartyBillNo, BillDate, PurchaseType, BillAmount,
       TDS, Narration, Total, Discount, GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff,
       TaxRndOff, GrandTotal, items
     } = req.body;
 
-    const billEntry = await BillEntry.findByPk(voucherNo);
+    const billEntry = await BillEntry.findByPk(vNo);
     if (!billEntry) {
       return res.status(404).json({
         success: false,
@@ -528,11 +537,24 @@ exports.updateBillEntry = async (req, res) => {
       });
     }
 
-    await billEntry.update({
+    const cleanDate = (d) => {
+      if (!d) return null;
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return null;
+      return dt.toISOString().split('T')[0];
+    };
+
+    const cleanOrderNo = (val) => {
+      if (!val) return null;
+      const num = parseInt(String(val).replace(/\D/g, ''), 10);
+      return isNaN(num) ? null : num;
+    };
+
+    const updateData = {
       PartyName: PartyName ? PartyName.trim() : billEntry.PartyName,
-      AccDate: AccDate || billEntry.AccDate,
-      PartyBillNo: PartyBillNo ? PartyBillNo.trim() : billEntry.PartyBillNo,
-      BillDate: BillDate || billEntry.BillDate,
+      AccDate: cleanDate(AccDate) || billEntry.AccDate || cleanDate(new Date()),
+      PartyBillNo: PartyBillNo !== undefined ? (PartyBillNo ? PartyBillNo.trim() : null) : billEntry.PartyBillNo,
+      BillDate: cleanDate(BillDate) || billEntry.BillDate || cleanDate(new Date()),
       PurchaseType: PurchaseType || billEntry.PurchaseType,
       BillAmount: BillAmount !== undefined ? parseDec(BillAmount, 0) : billEntry.BillAmount,
       TDS: TDS !== undefined ? parseDec(TDS, 0) : billEntry.TDS,
@@ -547,37 +569,45 @@ exports.updateBillEntry = async (req, res) => {
       RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : billEntry.RoundOff,
       TaxRndOff: TaxRndOff !== undefined ? parseDec(TaxRndOff, 0) : billEntry.TaxRndOff,
       GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : billEntry.GrandTotal
-    });
+    };
 
-    if (items && items.length > 0) {
-      await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo } });
+    await billEntry.update(updateData);
+
+    if (items && Array.isArray(items) && items.length > 0) {
+      await BillEntryDetail.destroy({ where: { VoucherNo: vNo } });
 
       let itemOrderMap = {};
       let defaultOrderNo = null;
       if (billEntry.GRNNo) {
-        const rcptDetails = await ReceiptDetail.findAll({
-          where: { GRNNo: billEntry.GRNNo },
-          attributes: ['ItemName', 'OrderNo'],
-          raw: true
-        });
-        rcptDetails.forEach(rd => {
-          if (rd.ItemName && rd.OrderNo) itemOrderMap[rd.ItemName] = rd.OrderNo;
-        });
-        defaultOrderNo = rcptDetails[0]?.OrderNo || null;
+        try {
+          const rcptDetails = await ReceiptDetail.findAll({
+            where: { GRNNo: billEntry.GRNNo },
+            attributes: ['ItemName', 'OrderNo'],
+            raw: true
+          });
+          rcptDetails.forEach(rd => {
+            if (rd.ItemName && rd.OrderNo) itemOrderMap[rd.ItemName] = rd.OrderNo;
+          });
+          defaultOrderNo = rcptDetails[0]?.OrderNo || null;
+        } catch (err) {
+          console.warn('Could not query receipt details for order mapping:', err.message);
+        }
       }
 
       for (const item of items) {
-        const qty = item.Qty || 0;
-        const unitRate = item.UnitRate || 0;
-        const resolvedOrderNo = item.OrderNo || itemOrderMap[item.ItemName] || defaultOrderNo;
+        if (!item || !item.ItemName) continue;
+        const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
+        const unitRate = parseDec(item.UnitRate, 0);
+        const rawOrderNo = item.OrderNo || itemOrderMap[item.ItemName] || defaultOrderNo;
+        const resolvedOrderNo = cleanOrderNo(rawOrderNo);
 
         await BillEntryDetail.create({
-          VoucherNo: voucherNo,
+          VoucherNo: vNo,
           OrderNo: resolvedOrderNo,
-          ItemName: item.ItemName,
+          ItemName: String(item.ItemName).trim(),
           Qty: qty,
           UnitRate: unitRate,
-          TotalAmount: item.TotalAmount || (qty * unitRate)
+          TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
         });
       }
     }

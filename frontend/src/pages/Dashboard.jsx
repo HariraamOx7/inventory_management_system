@@ -514,26 +514,26 @@ const Dashboard = () => {
 
       {/* Modal Popup Viewer for KPI Card Lists */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border-0 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-up">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md ${activeModal === 'awaiting-pos' ? 'bg-indigo-600 shadow-indigo-500/20' :
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md ${activeModal === 'awaiting-pos' ? 'bg-indigo-600 shadow-indigo-500/20' :
                   activeModal === 'low-stock' ? 'bg-cyan-600 shadow-cyan-500/20' :
                     'bg-amber-600 shadow-amber-500/20'
                   }`}>
-                  {activeModal === 'awaiting-pos' && <ShoppingCart size={22} />}
-                  {activeModal === 'low-stock' && <Boxes size={22} />}
-                  {activeModal === 'pending-verifications' && <AlertCircle size={22} />}
+                  {activeModal === 'awaiting-pos' && <ShoppingCart size={24} />}
+                  {activeModal === 'low-stock' && <Boxes size={24} />}
+                  {activeModal === 'pending-verifications' && <AlertCircle size={24} />}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-2xl font-bold text-slate-900">
                     {activeModal === 'awaiting-pos' && 'Purchase Orders Awaiting Approval'}
                     {activeModal === 'low-stock' && 'Low Stock & Out of Stock Items'}
                     {activeModal === 'pending-verifications' && 'Pending Gate & Bill Verifications'}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-sm text-slate-500 font-medium mt-0.5">
                     {activeModal === 'awaiting-pos' && `Showing ${stats.awaitingApprovalPOsList.length} orders pending review`}
                     {activeModal === 'low-stock' && `Showing ${stats.lowStockItemsList.length} items below minimum reorder level`}
                     {activeModal === 'pending-verifications' && `Showing ${stats.pendingVerificationsList.length} records awaiting verification`}
@@ -544,22 +544,22 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                className="w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-full flex items-center justify-center transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Modal Toolbar with Search */}
             <div className="p-4 border-b border-slate-100 bg-white flex items-center justify-between gap-4">
               <div className="relative flex-1 max-w-md">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={modalSearch}
                   onChange={(e) => setModalSearch(e.target.value)}
                   placeholder="Search records by name, code, or supplier..."
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -567,10 +567,10 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => { setActiveModal(null); navigate('/transaction/purchase-order'); }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
                 >
                   <span>Go to PO Manager</span>
-                  <ExternalLink size={14} />
+                  <ExternalLink size={16} />
                 </button>
               )}
 
@@ -578,10 +578,10 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => { setActiveModal(null); navigate('/item'); }}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
                 >
                   <span>Go to Item Master</span>
-                  <ExternalLink size={14} />
+                  <ExternalLink size={16} />
                 </button>
               )}
 
@@ -589,29 +589,29 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => { setActiveModal(null); navigate('/transaction/gate-inward'); }}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
                 >
                   <span>Go to Gate Inward</span>
-                  <ExternalLink size={14} />
+                  <ExternalLink size={16} />
                 </button>
               )}
             </div>
 
             {/* Modal Body / Table Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               {/* VIEW 1: Awaiting Purchase Orders */}
               {activeModal === 'awaiting-pos' && (
                 <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full text-left text-sm border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                        <th className="py-3 px-4">Order No</th>
-                        <th className="py-3 px-4">Date</th>
-                        <th className="py-3 px-4">Supplier / Party</th>
-                        <th className="py-3 px-4">Ref No</th>
-                        <th className="py-3 px-4 text-right">Grand Total (₹)</th>
-                        <th className="py-3 px-4 text-center">Status</th>
-                        <th className="py-3 px-4 text-right">Action</th>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-xs">
+                        <th className="py-3.5 px-4">Order No</th>
+                        <th className="py-3.5 px-4">Date</th>
+                        <th className="py-3.5 px-4">Supplier / Party</th>
+                        <th className="py-3.5 px-4">Ref No</th>
+                        <th className="py-3.5 px-4 text-right">Grand Total (₹)</th>
+                        <th className="py-3.5 px-4 text-center">Status</th>
+                        <th className="py-3.5 px-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -624,25 +624,25 @@ const Dashboard = () => {
                         )
                         .map((po, idx) => (
                           <tr key={po.orderNo || idx} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3 px-4 font-bold text-indigo-600">
+                            <td className="py-3.5 px-4 font-bold text-indigo-600">
                               PO-{String(po.orderNo).padStart(3, '0')}
                             </td>
-                            <td className="py-3 px-4 font-medium text-slate-500">{po.orderDate}</td>
-                            <td className="py-3 px-4 font-semibold text-slate-900">{po.partyName}</td>
-                            <td className="py-3 px-4 text-slate-500">{po.refNo}</td>
-                            <td className="py-3 px-4 text-right font-bold text-slate-900">
+                            <td className="py-3.5 px-4 font-medium text-slate-500">{po.orderDate}</td>
+                            <td className="py-3.5 px-4 font-bold text-slate-900">{po.partyName}</td>
+                            <td className="py-3.5 px-4 text-slate-500">{po.refNo}</td>
+                            <td className="py-3.5 px-4 text-right font-bold text-slate-900">
                               ₹{(parseFloat(po.grandTotal) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3 px-4 text-center">
-                              <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[11px] font-semibold">
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold">
                                 {po.status}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right">
+                            <td className="py-3.5 px-4 text-right">
                               <button
                                 type="button"
                                 onClick={() => { setActiveModal(null); navigate('/transaction/purchase-order'); }}
-                                className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+                                className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
                               >
                                 View PO
                               </button>
@@ -665,16 +665,16 @@ const Dashboard = () => {
               {/* VIEW 2: Low Stock Items */}
               {activeModal === 'low-stock' && (
                 <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full text-left text-sm border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                        <th className="py-3 px-4">Item Code</th>
-                        <th className="py-3 px-4">Item Name</th>
-                        <th className="py-3 px-4">Category</th>
-                        <th className="py-3 px-4 text-right">Current Stock</th>
-                        <th className="py-3 px-4 text-right">Min Reorder Level</th>
-                        <th className="py-3 px-4 text-right">Unit Rate (₹)</th>
-                        <th className="py-3 px-4 text-right">Action</th>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-xs">
+                        <th className="py-3.5 px-4">Item Code</th>
+                        <th className="py-3.5 px-4">Item Name</th>
+                        <th className="py-3.5 px-4">Category</th>
+                        <th className="py-3.5 px-4 text-right">Current Stock</th>
+                        <th className="py-3.5 px-4 text-right">Min Reorder Level</th>
+                        <th className="py-3.5 px-4 text-right">Unit Rate (₹)</th>
+                        <th className="py-3.5 px-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -691,28 +691,28 @@ const Dashboard = () => {
                           const isOutOfStock = qty <= 0;
                           return (
                             <tr key={item.itemCode || idx} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-3 px-4 font-bold text-cyan-600">
+                              <td className="py-3.5 px-4 font-bold text-cyan-600">
                                 ITEM-{String(item.itemCode).padStart(3, '0')}
                               </td>
-                              <td className="py-3 px-4 font-semibold text-slate-900">{item.itemName}</td>
-                              <td className="py-3 px-4 text-slate-500">{item.category}</td>
-                              <td className="py-3 px-4 text-right">
-                                <span className={`px-2.5 py-1 rounded-md font-bold text-xs inline-block ${isOutOfStock
+                              <td className="py-3.5 px-4 font-bold text-slate-900">{item.itemName}</td>
+                              <td className="py-3.5 px-4 text-slate-500">{item.category}</td>
+                              <td className="py-3.5 px-4 text-right">
+                                <span className={`px-3 py-1 rounded-lg font-bold text-xs inline-block ${isOutOfStock
                                   ? 'bg-rose-100 text-rose-700 border border-rose-200'
                                   : 'bg-amber-100 text-amber-800 border border-amber-200'
                                   }`}>
                                   {qty} {isOutOfStock ? '(OUT OF STOCK)' : '(LOW)'}
                                 </span>
                               </td>
-                              <td className="py-3 px-4 text-right font-medium text-slate-600">{minLvl}</td>
-                              <td className="py-3 px-4 text-right font-bold text-slate-800">
+                              <td className="py-3.5 px-4 text-right font-medium text-slate-600">{minLvl}</td>
+                              <td className="py-3.5 px-4 text-right font-bold text-slate-800">
                                 ₹{(parseFloat(item.unitRate) || 0).toFixed(2)}
                               </td>
-                              <td className="py-3 px-4 text-right">
+                              <td className="py-3.5 px-4 text-right">
                                 <button
                                   type="button"
                                   onClick={() => { setActiveModal(null); navigate('/item'); }}
-                                  className="px-3 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+                                  className="px-3.5 py-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
                                 >
                                   Manage Item
                                 </button>
@@ -736,16 +736,16 @@ const Dashboard = () => {
               {/* VIEW 3: Pending Verifications */}
               {activeModal === 'pending-verifications' && (
                 <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full text-left text-sm border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                        <th className="py-3 px-4">Record ID</th>
-                        <th className="py-3 px-4">Type</th>
-                        <th className="py-3 px-4">Supplier / Party</th>
-                        <th className="py-3 px-4">Date</th>
-                        <th className="py-3 px-4">Reference</th>
-                        <th className="py-3 px-4 text-center">Status</th>
-                        <th className="py-3 px-4 text-right">Action</th>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-xs">
+                        <th className="py-3.5 px-4">Record ID</th>
+                        <th className="py-3.5 px-4">Type</th>
+                        <th className="py-3.5 px-4">Supplier / Party</th>
+                        <th className="py-3.5 px-4">Date</th>
+                        <th className="py-3.5 px-4">Reference</th>
+                        <th className="py-3.5 px-4 text-center">Status</th>
+                        <th className="py-3.5 px-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -758,21 +758,21 @@ const Dashboard = () => {
                         )
                         .map((v, idx) => (
                           <tr key={v.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3 px-4 font-bold text-amber-600">{v.id}</td>
-                            <td className="py-3 px-4 font-semibold text-slate-800">{v.type}</td>
-                            <td className="py-3 px-4 font-semibold text-slate-900">{v.partyName}</td>
-                            <td className="py-3 px-4 text-slate-500 font-medium">{v.date}</td>
-                            <td className="py-3 px-4 text-slate-500">{v.refNo}</td>
-                            <td className="py-3 px-4 text-center">
-                              <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[11px] font-semibold">
+                            <td className="py-3.5 px-4 font-bold text-amber-600">{v.id}</td>
+                            <td className="py-3.5 px-4 font-semibold text-slate-800">{v.type}</td>
+                            <td className="py-3.5 px-4 font-bold text-slate-900">{v.partyName}</td>
+                            <td className="py-3.5 px-4 text-slate-500 font-medium">{v.date}</td>
+                            <td className="py-3.5 px-4 text-slate-500">{v.refNo}</td>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold">
                                 {v.status}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right">
+                            <td className="py-3.5 px-4 text-right">
                               <button
                                 type="button"
                                 onClick={() => { setActiveModal(null); navigate('/transaction/gate-inward'); }}
-                                className="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+                                className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
                               >
                                 Verify Entry
                               </button>
@@ -794,11 +794,11 @@ const Dashboard = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end">
+            <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
                 Close
               </button>

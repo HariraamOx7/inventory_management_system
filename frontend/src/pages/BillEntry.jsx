@@ -563,7 +563,9 @@ export default function BillEntry() {
       }
     } catch (error) {
       console.error('Error saving bill entry:', error);
-      const msg = error.response?.data?.message || 'Error saving bill entry. Please check all fields and try again.';
+      const serverErr = error.response?.data?.error;
+      const serverMsg = error.response?.data?.message;
+      const msg = serverErr ? `${serverMsg || 'Error'}: ${serverErr}` : (serverMsg || error.message || 'Error saving bill entry. Please check all fields and try again.');
       showToast(msg, 'error');
     } finally {
       setLoading(false);
@@ -1213,33 +1215,33 @@ export default function BillEntry() {
           )}
         </div>
 
-        {/* Rightward Slide-Over Edit Drawer (Matching Receipt / Item Master Drawer) */}
+        {/* Centered Modal Window for Add New & Edit Bill Entry */}
         {editDrawerOpen && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
             {/* Backdrop */}
             <div
-              className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
                 }`}
               onClick={handleCloseEditDrawer}
             />
 
-            {/* Right Drawer Modal */}
-            <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            {/* Centered Modal Container */}
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 pointer-events-none">
               <div
-                className={`w-screen max-w-2xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
+                className={`relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden border-0 pointer-events-auto transform transition-all duration-300 ease-out ${isDrawerVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
                   }`}
               >
-                {/* Drawer Header */}
-                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md">
+                {/* Modal Header */}
+                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                      <FileText className="w-5 h-5 text-white" />
+                    <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+                      <FileText className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">
+                      <h2 className="text-2xl font-bold">
                         {isNewEntry ? 'Add New Bill Entry' : 'Edit Bill Entry'}
                       </h2>
-                      <p className="text-xs text-blue-100">
+                      <p className="text-sm text-blue-100 mt-0.5">
                         Voucher No: VCH-{String(formData.VoucherNo || '').padStart(3, '0')}
                       </p>
                     </div>
@@ -1247,24 +1249,24 @@ export default function BillEntry() {
                   <button
                     type="button"
                     onClick={handleCloseEditDrawer}
-                    className="p-1.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                    className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
                   >
                     <X className="w-6 h-6" />
                   </button>
                 </div>
 
-                {/* Drawer Scrollable Form Body */}
+                {/* Modal Scrollable Form Body */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                   <form id="bill-entry-form" onSubmit={handleSave} className="space-y-6">
                     <div>
                       {!isNewEntry ? (
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">Party Name</label>
+                          <label className="block text-base font-semibold text-slate-700 mb-2">Party Name</label>
                           <input
                             type="text"
                             value={formData.PartyName}
                             disabled
-                            className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                            className="w-full px-4 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-semibold text-base cursor-not-allowed"
                           />
                         </div>
                       ) : (
@@ -1280,26 +1282,26 @@ export default function BillEntry() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">GRN No / PO Reference *</label>
+                      <label className="block text-base font-semibold text-slate-700 mb-2">GRN No / PO Reference *</label>
                       {!isNewEntry ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <span className="text-xs text-slate-500 block mb-1">GRN Number</span>
+                            <span className="text-sm font-semibold text-slate-500 block mb-1">GRN Number</span>
                             <input
                               type="text"
                               value={formData.GRNNo ? `GRN-${String(formData.GRNNo).padStart(3, '0')}` : '—'}
                               disabled
-                              className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                              className="w-full px-4 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-semibold text-base cursor-not-allowed"
                             />
                           </div>
                           {formData.GateInwardNo && (
                             <div>
-                              <span className="text-xs text-slate-500 block mb-1">Gate Inward</span>
+                              <span className="text-sm font-semibold text-slate-500 block mb-1">Gate Inward</span>
                               <input
                                 type="text"
                                 value={`GI-${String(formData.GateInwardNo).padStart(3, '0')}`}
                                 disabled
-                                className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 cursor-not-allowed"
+                                className="w-full px-4 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-600 text-base cursor-not-allowed"
                               />
                             </div>
                           )}
@@ -1328,18 +1330,18 @@ export default function BillEntry() {
                         </div>
                       )}
 
-                      {/* Display All Linked Gate Inwards in Drawer */}
+                      {/* Display All Linked Gate Inwards in Modal */}
                       {linkedGateInwards && linkedGateInwards.length > 0 ? (
-                        <div className="mt-2.5 text-xs text-slate-500 bg-blue-50/80 border border-blue-100 rounded-lg px-3 py-2 space-y-1.5">
+                        <div className="mt-3 text-sm text-slate-600 bg-blue-50/80 border border-blue-100 rounded-xl px-4 py-2.5 space-y-1.5">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-blue-700">Linked Gate Inwards ({linkedGateInwards.length}):</span>
                             <span className="font-bold text-slate-800">
                               {linkedGateInwards.map(gi => `GI-${String(gi.InwardNo).padStart(3, '0')}`).join(', ')}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-600">
+                          <div className="flex flex-wrap gap-1.5 text-xs text-slate-600">
                             {linkedGateInwards.map(gi => (
-                              <span key={gi.InwardNo} className="bg-white border border-blue-200 px-2 py-0.5 rounded shadow-2xs">
+                              <span key={gi.InwardNo} className="bg-white border border-blue-200 px-2.5 py-1 rounded-lg shadow-2xs">
                                 GI-{String(gi.InwardNo).padStart(3, '0')} {gi.InwardDate ? `(${new Date(gi.InwardDate).toLocaleDateString('en-GB')})` : ''}
                               </span>
                             ))}
@@ -1347,9 +1349,9 @@ export default function BillEntry() {
                         </div>
                       ) : (
                         formData.GateInwardNo && (
-                          <div className="mt-2 text-xs text-slate-500 flex items-center gap-2 bg-blue-50/80 border border-blue-100 rounded-lg px-3 py-1.5">
-                            <span className="font-medium text-blue-700">Auto-Linked Gate Inward:</span>
-                            <span>GI-{String(formData.GateInwardNo).padStart(3, '0')}</span>
+                          <div className="mt-2.5 text-sm text-slate-600 flex items-center gap-2 bg-blue-50/80 border border-blue-100 rounded-xl px-4 py-2">
+                            <span className="font-semibold text-blue-700">Auto-Linked Gate Inward:</span>
+                            <span className="font-bold">GI-{String(formData.GateInwardNo).padStart(3, '0')}</span>
                           </div>
                         )
                       )}
@@ -1357,35 +1359,35 @@ export default function BillEntry() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Party Bill No</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Party Bill No</label>
                         <input
                           type="text"
                           value={formData.PartyBillNo}
                           onChange={(e) => setFormData({ ...formData, PartyBillNo: e.target.value })}
                           placeholder="Enter Party Bill No (optional)"
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Accounting Date</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Accounting Date</label>
                         <input
                           type="date"
                           value={formData.AccDate}
                           onChange={(e) => setFormData({ ...formData, AccDate: e.target.value })}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Bill Date</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Bill Date</label>
                         <input
                           type="date"
                           value={formData.BillDate}
                           onChange={(e) => setFormData({ ...formData, BillDate: e.target.value })}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
 
@@ -1403,30 +1405,30 @@ export default function BillEntry() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Narration</label>
+                      <label className="block text-base font-semibold text-slate-700 mb-2">Narration</label>
                       <textarea
                         value={formData.Narration}
                         onChange={(e) => setFormData({ ...formData, Narration: e.target.value })}
                         placeholder="Enter any accounting narration or remarks..."
                         rows={3}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base font-medium"
                       />
                     </div>
 
                     {/* Billed Items List Table */}
                     {items.length > 0 && (
-                      <div className="border border-slate-200 rounded-xl overflow-hidden mt-4">
-                        <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                          <h4 className="text-sm font-semibold text-slate-700">Billed Items ({items.length})</h4>
+                      <div className="border border-slate-200 rounded-2xl overflow-hidden mt-4 shadow-sm">
+                        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                          <h4 className="text-base font-bold text-slate-800">Billed Items ({items.length})</h4>
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-xs text-left border-collapse">
+                          <table className="w-full text-sm text-left border-collapse">
                             <thead>
-                              <tr className="border-b border-slate-200 bg-white text-slate-500 font-semibold uppercase text-[11px]">
-                                <th className="py-2.5 px-3">Item Name</th>
-                                <th className="py-2.5 px-3 text-right">Qty</th>
-                                <th className="py-2.5 px-3 text-right">Unit Rate</th>
-                                <th className="py-2.5 px-3 text-right">Total Amount</th>
+                              <tr className="border-b border-slate-200 bg-slate-100/70 text-slate-600 font-bold uppercase text-xs tracking-wider">
+                                <th className="py-3 px-4">Item Name</th>
+                                <th className="py-3 px-4 text-right">Qty</th>
+                                <th className="py-3 px-4 text-right">Unit Rate</th>
+                                <th className="py-3 px-4 text-right">Total Amount</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 bg-white">
@@ -1435,14 +1437,14 @@ export default function BillEntry() {
                                 const rate = parseFloat(item.UnitRate) || 0;
                                 const total = qty * rate;
                                 return (
-                                  <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="py-2 px-3 font-medium text-slate-800">
+                                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                    <td className="py-3 px-4 font-semibold text-slate-800 text-base">
                                       {item.ItemName}
-                                      {item.OrderNo && <span className="text-[10px] text-slate-400 ml-1.5">(PO-{item.OrderNo})</span>}
+                                      {item.OrderNo && <span className="text-xs text-slate-400 ml-2">(PO-{item.OrderNo})</span>}
                                     </td>
-                                    <td className="py-2 px-3 text-right text-slate-600">{qty}</td>
-                                    <td className="py-2 px-3 text-right text-slate-600">₹{rate.toFixed(2)}</td>
-                                    <td className="py-2 px-3 text-right font-semibold text-slate-800">₹{total.toFixed(2)}</td>
+                                    <td className="py-3 px-4 text-right text-slate-700 font-medium text-base">{qty}</td>
+                                    <td className="py-3 px-4 text-right text-slate-700 font-medium text-base">₹{rate.toFixed(2)}</td>
+                                    <td className="py-3 px-4 text-right font-bold text-slate-900 text-base">₹{total.toFixed(2)}</td>
                                   </tr>
                                 );
                               })}
@@ -1453,22 +1455,22 @@ export default function BillEntry() {
                     )}
 
                     {/* Financial Summary & Breakdown Form Card */}
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Financial Breakdown</h4>
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                      <h4 className="text-base font-bold text-slate-800 mb-2">Financial Breakdown</h4>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Subtotal (Total)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">Subtotal (Total)</label>
                           <input
                             type="number"
                             value={formData.Total || 0}
                             disabled
-                            className="w-full px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 text-sm font-semibold cursor-not-allowed"
+                            className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-base font-bold cursor-not-allowed"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Discount (₹)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">Discount (₹)</label>
                           <input
                             type="number"
                             step="any"
@@ -1476,12 +1478,12 @@ export default function BillEntry() {
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, Discount: e.target.value })}
                             placeholder="0.00"
-                            className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">GST (₹)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">GST (₹)</label>
                           <input
                             type="number"
                             step="any"
@@ -1489,12 +1491,12 @@ export default function BillEntry() {
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, GST: e.target.value })}
                             placeholder="0.00"
-                            className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">IGST (₹)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">IGST (₹)</label>
                           <input
                             type="number"
                             step="any"
@@ -1502,12 +1504,12 @@ export default function BillEntry() {
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, IGST: e.target.value })}
                             placeholder="0.00"
-                            className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">VAT / CST (₹)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">VAT / CST (₹)</label>
                           <input
                             type="number"
                             step="any"
@@ -1515,12 +1517,12 @@ export default function BillEntry() {
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, VAT_CST: e.target.value })}
                             placeholder="0.00"
-                            className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">P & F (₹)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">P & F (₹)</label>
                           <input
                             type="number"
                             step="any"
@@ -1528,12 +1530,12 @@ export default function BillEntry() {
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, P_F: e.target.value })}
                             placeholder="0.00"
-                            className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Lorry Freight (₹)</label>
+                          <label className="block text-sm font-semibold text-slate-600 mb-1.5">Lorry Freight (₹)</label>
                           <input
                             type="number"
                             step="any"
@@ -1541,19 +1543,19 @@ export default function BillEntry() {
                             onWheel={(e) => e.target.blur()}
                             onChange={(e) => setFormData({ ...formData, LorryFreight: e.target.value })}
                             placeholder="0.00"
-                            className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="block text-xs font-medium text-slate-600">Round Off</label>
-                            <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-500">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-sm font-semibold text-slate-600">Round Off</label>
+                            <label className="flex items-center gap-1 cursor-pointer text-xs text-slate-500">
                               <input
                                 type="checkbox"
                                 checked={noRoundOff}
                                 onChange={(e) => setNoRoundOff(e.target.checked)}
-                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                               />
                               No Round
                             </label>
@@ -1562,14 +1564,14 @@ export default function BillEntry() {
                             type="text"
                             value={formatRoundOff(formData.RoundOff)}
                             disabled
-                            className="w-full px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 text-sm font-semibold cursor-not-allowed"
+                            className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-base font-bold cursor-not-allowed"
                           />
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-700">Grand Total (Bill Amount)</span>
-                        <span className="text-lg font-bold text-emerald-600">
+                      <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+                        <span className="text-base font-bold text-slate-700">Grand Total (Bill Amount)</span>
+                        <span className="text-2xl font-extrabold text-emerald-600">
                           ₹{(formData.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -1577,12 +1579,12 @@ export default function BillEntry() {
                   </form>
                 </div>
 
-                {/* Sticky Drawer Footer */}
-                <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                {/* Modal Footer */}
+                <div className="px-6 py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 flex-shrink-0">
                   <button
                     type="button"
                     onClick={handleCloseEditDrawer}
-                    className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors font-medium text-sm cursor-pointer"
+                    className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100 transition-colors font-semibold text-base cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1590,9 +1592,9 @@ export default function BillEntry() {
                     type="submit"
                     form="bill-entry-form"
                     disabled={loading}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 font-medium text-sm cursor-pointer disabled:opacity-50"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 font-semibold text-base cursor-pointer disabled:opacity-50"
                   >
-                    <Save size={16} />
+                    <Save size={18} />
                     {loading ? 'Saving...' : (isNewEntry ? 'Save Bill Entry' : 'Update Bill Entry')}
                   </button>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trash2, Edit2 } from 'lucide-react';
+import { Trash2, Edit2, X } from 'lucide-react';
 import Layout from '../components/Layout';
 import SearchSelect from '../components/SearchSelect';
 import { useToastStore } from '../store/toastStore';
@@ -207,42 +207,50 @@ const BillVerify = () => {
 
           {/* Edit Modal */}
           {showEditForm && editingRecord && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Bill Verify</h2>
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full border-0">
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                  <h2 className="text-2xl font-bold text-slate-800">Edit Bill Verify</h2>
+                  <button
+                    onClick={() => setShowEditForm(false)}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
                 <div className="space-y-4">
                   {/* Bill No (Read-only) */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bill No</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-1.5">Bill No</label>
                     <input
                       type="text"
                       value={editingRecord.BillNo}
                       disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-slate-100 font-bold text-slate-700 text-base cursor-not-allowed"
                     />
                   </div>
 
                   {/* Party Name (Read-only) */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Party Name</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-1.5">Party Name</label>
                     <input
                       type="text"
                       value={editingRecord.PartyName}
                       disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-slate-100 font-semibold text-slate-700 text-base cursor-not-allowed"
                     />
                   </div>
 
                   {/* Payment Status */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-1.5">Payment Status</label>
                     <select
                       value={editFormData.PaymentStatus}
                       onChange={(e) =>
                         setEditFormData(prev => ({ ...prev, PaymentStatus: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-base font-medium bg-white"
                     >
                       <option value="Paid">Paid</option>
                       <option value="UnPaid">UnPaid</option>
@@ -251,29 +259,29 @@ const BillVerify = () => {
 
                   {/* Remarks */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-1.5">Remarks</label>
                     <textarea
                       value={editFormData.Remarks}
                       onChange={(e) =>
                         setEditFormData(prev => ({ ...prev, Remarks: e.target.value }))
                       }
                       rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                   </div>
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-3 mt-6 justify-end">
+                <div className="flex gap-3 mt-6 justify-end pt-4 border-t border-slate-100">
                   <button
                     onClick={() => setShowEditForm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="px-6 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold text-base transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpdate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-semibold text-base shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
                   >
                     Update
                   </button>

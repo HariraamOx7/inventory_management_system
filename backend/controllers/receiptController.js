@@ -13,6 +13,19 @@ const parseDec = (val, defaultVal = 0) => {
   return isNaN(parsed) ? defaultVal : parsed;
 };
 
+const cleanDate = (d) => {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString().split('T')[0];
+};
+
+const cleanOrderNo = (val) => {
+  if (!val) return null;
+  const num = parseInt(String(val).replace(/\D/g, ''), 10);
+  return isNaN(num) ? null : num;
+};
+
 const getPurchaseOrderUnitRateMap = async (orderNos = []) => {
   if (orderNos.length === 0) return new Map();
 
@@ -639,17 +652,17 @@ exports.createReceipt = async (req, res) => {
       }
     }
 
-    const orderNos = [...new Set(items.map(item => item.OrderNo).filter(Boolean))];
+    const orderNos = [...new Set(items.map(item => cleanOrderNo(item.OrderNo)).filter(Boolean))];
     const unitRateMap = await getPurchaseOrderUnitRateMap(orderNos);
 
     const newReceipt = await Receipt.create({
       PartyName: PartyName.trim(),
-      GateInwardNo: (GateInwardNo === '' || GateInwardNo === null || GateInwardNo === undefined) ? null : parseInt(GateInwardNo, 10),
-      InwardDate: InwardDate || gateInward.InwardDate || new Date(),
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : gateInward.InvoiceNo,
-      InvoiceDate: InvoiceDate || gateInward.InvoiceDate || null,
+      GateInwardNo: GateInwardNo ? parseInt(GateInwardNo, 10) : null,
+      InwardDate: cleanDate(InwardDate) || cleanDate(gateInward.InwardDate) || cleanDate(new Date()),
+      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : (gateInward.InvoiceNo ? gateInward.InvoiceNo.trim() : null),
+      InvoiceDate: cleanDate(InvoiceDate) || cleanDate(gateInward.InvoiceDate),
       DCNo: DCNo ? DCNo.trim() : null,
-      DCDate: DCDate || null,
+      DCDate: cleanDate(DCDate),
       FormType: FormType ? FormType.trim() : null,
       BillAmount: parseDec(BillAmount, 0),
       Total: parseDec(Total, 0),
@@ -661,21 +674,22 @@ exports.createReceipt = async (req, res) => {
       LorryFreight: parseDec(LorryFreight, 0),
       RoundOff: parseDec(RoundOff, 0),
       GrandTotal: parseDec(GrandTotal, 0),
-      DutyWithoutPF: DutyWithoutPF || false,
-      VatWithPF: VatWithPF || false,
+      DutyWithoutPF: !!DutyWithoutPF,
+      VatWithPF: !!VatWithPF,
       Status: 'ReceiptCreated'
     });
 
     for (const item of items) {
-      const qty = item.Qty ?? item.ReceivedQty ?? 0;
+      if (!item || !item.ItemName) continue;
+      const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
       const unitRate = resolveUnitRate(item, unitRateMap);
       await ReceiptDetail.create({
         GRNNo: newReceipt.GRNNo,
-        OrderNo: item.OrderNo || null,
-        ItemName: item.ItemName,
+        OrderNo: cleanOrderNo(item.OrderNo),
+        ItemName: String(item.ItemName).trim(),
         Qty: qty,
         UnitRate: unitRate,
-        TotalAmount: item.TotalAmount || (qty * unitRate)
+        TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
       });
     }
 
@@ -698,6 +712,15 @@ exports.createReceipt = async (req, res) => {
 exports.updateReceipt = async (req, res) => {
   try {
     const { grnNo } = req.params;
+    const gNo = parseInt(grnNo, 10);
+
+    if (!gNo || isNaN(gNo)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid GRN Number'
+      });
+    }
+
     const {
       PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
       DCNo, DCDate, FormType, BillAmount, Total, Discount,
@@ -705,7 +728,7 @@ exports.updateReceipt = async (req, res) => {
       DutyWithoutPF, VatWithPF
     } = req.body;
 
-    const receipt = await Receipt.findByPk(grnNo);
+    const receipt = await Receipt.findByPk(gNo);
     if (!receipt) {
       return res.status(404).json({
         success: false,
@@ -713,15 +736,15 @@ exports.updateReceipt = async (req, res) => {
       });
     }
 
-    await receipt.update({
+    const updateData = {
       PartyName: PartyName ? PartyName.trim() : receipt.PartyName,
-      GateInwardNo: GateInwardNo !== undefined ? ((GateInwardNo === '' || GateInwardNo === null) ? null : parseInt(GateInwardNo, 10)) : receipt.GateInwardNo,
-      InwardDate: InwardDate || receipt.InwardDate,
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : receipt.InvoiceNo,
-      InvoiceDate: InvoiceDate || receipt.InvoiceDate,
-      DCNo: DCNo ? DCNo.trim() : receipt.DCNo,
-      DCDate: DCDate || receipt.DCDate,
-      FormType: FormType ? FormType.trim() : receipt.FormType,
+      GateInwardNo: GateInwardNo !== undefined ? (GateInwardNo ? parseInt(GateInwardNo, 10) : null) : receipt.GateInwardNo,
+      InwardDate: cleanDate(InwardDate) || receipt.InwardDate || cleanDate(new Date()),
+      InvoiceNo: InvoiceNo !== undefined ? (InvoiceNo ? InvoiceNo.trim() : null) : receipt.InvoiceNo,
+      InvoiceDate: cleanDate(InvoiceDate) || (InvoiceDate === null ? null : receipt.InvoiceDate),
+      DCNo: DCNo !== undefined ? (DCNo ? DCNo.trim() : null) : receipt.DCNo,
+      DCDate: cleanDate(DCDate) || (DCDate === null ? null : receipt.DCDate),
+      FormType: FormType !== undefined ? (FormType ? FormType.trim() : null) : receipt.FormType,
       BillAmount: BillAmount !== undefined ? parseDec(BillAmount, 0) : receipt.BillAmount,
       Total: Total !== undefined ? parseDec(Total, 0) : receipt.Total,
       Discount: Discount !== undefined ? parseDec(Discount, 0) : receipt.Discount,
@@ -732,26 +755,29 @@ exports.updateReceipt = async (req, res) => {
       LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : receipt.LorryFreight,
       RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : receipt.RoundOff,
       GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : receipt.GrandTotal,
-      DutyWithoutPF: DutyWithoutPF !== undefined ? DutyWithoutPF : receipt.DutyWithoutPF,
-      VatWithPF: VatWithPF !== undefined ? VatWithPF : receipt.VatWithPF
-    });
+      DutyWithoutPF: DutyWithoutPF !== undefined ? !!DutyWithoutPF : receipt.DutyWithoutPF,
+      VatWithPF: VatWithPF !== undefined ? !!VatWithPF : receipt.VatWithPF
+    };
 
-    if (items && items.length > 0) {
-      const orderNos = [...new Set(items.map(item => item.OrderNo).filter(Boolean))];
+    await receipt.update(updateData);
+
+    if (items && Array.isArray(items) && items.length > 0) {
+      const orderNos = [...new Set(items.map(item => cleanOrderNo(item.OrderNo)).filter(Boolean))];
       const unitRateMap = await getPurchaseOrderUnitRateMap(orderNos);
 
-      await ReceiptDetail.destroy({ where: { GRNNo: grnNo } });
+      await ReceiptDetail.destroy({ where: { GRNNo: gNo } });
 
       for (const item of items) {
-        const qty = item.Qty ?? item.ReceivedQty ?? 0;
+        if (!item || !item.ItemName) continue;
+        const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
         const unitRate = resolveUnitRate(item, unitRateMap);
         await ReceiptDetail.create({
-          GRNNo: grnNo,
-          OrderNo: item.OrderNo || null,
-          ItemName: item.ItemName,
+          GRNNo: gNo,
+          OrderNo: cleanOrderNo(item.OrderNo),
+          ItemName: String(item.ItemName).trim(),
           Qty: qty,
           UnitRate: unitRate,
-          TotalAmount: item.TotalAmount || (qty * unitRate)
+          TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
         });
       }
     }

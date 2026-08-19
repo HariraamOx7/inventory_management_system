@@ -1128,7 +1128,7 @@ export default function PurchaseOrder() {
         {/* View Order Modal */}
         {viewOrderModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border-0">
               {/* Modal Header */}
               <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
                 <div>
@@ -1311,41 +1311,42 @@ export default function PurchaseOrder() {
         )}
 
         {/* Slide-Over Modal Form Drawer */}
+        {/* Centered Modal Window for Create / Edit Purchase Order */}
         {editDrawerOpen && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
             {/* Backdrop */}
             <div
-              className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
                 }`}
               onClick={handleCloseEditDrawer}
             />
 
-            {/* Right Drawer Modal */}
-            <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            {/* Centered Modal Container */}
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 pointer-events-none">
               <div
-                className={`w-screen max-w-3xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
+                className={`relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden border-0 pointer-events-auto transform transition-all duration-300 ease-out ${isDrawerVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
                   }`}
               >
-                {/* Drawer Header */}
-                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md">
+                {/* Modal Header */}
+                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
                   <div>
-                    <h3 className="text-lg font-bold">
+                    <h3 className="text-2xl font-bold">
                       {isNewEntry ? 'Create New Purchase Order' : `Edit Purchase Order #${headData.OrderNo}`}
                     </h3>
-                    <p className="text-blue-100 text-xs mt-0.5">
+                    <p className="text-blue-100 text-sm mt-0.5">
                       Fill in supplier details and add items to order
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleCloseEditDrawer}
-                    className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                    className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
                   >
                     <X className="w-6 h-6" />
                   </button>
                 </div>
 
-                {/* Drawer Scrollable Body */}
+                {/* Modal Scrollable Body */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/30">
                   <form id="po-form" onSubmit={handleSavePO} className="space-y-6">
 
@@ -1772,22 +1773,22 @@ export default function PurchaseOrder() {
                                         <button
                                           type="button"
                                           onClick={() => handleStartEditItem(idx)}
-                                          className={`px-2.5 py-1 text-white rounded-md transition-all shadow-xs flex items-center gap-1 font-medium text-xs cursor-pointer ${isItemEditing
+                                          className={`px-3 py-1.5 text-white rounded-lg transition-all shadow-sm flex items-center gap-1 font-semibold text-sm cursor-pointer ${isItemEditing
                                             ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'
                                             : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20'
                                             }`}
                                           title="Edit item details"
                                         >
-                                          <Edit2 size={12} />
+                                          <Edit2 size={14} />
                                           Edit
                                         </button>
                                         <button
                                           type="button"
                                           onClick={() => handleRemoveItem(idx)}
-                                          className="px-2.5 py-1 bg-red-500 text-white hover:bg-red-600 rounded-md transition-all shadow-xs flex items-center gap-1 font-medium text-xs cursor-pointer shadow-red-500/20"
+                                          className="px-3 py-1.5 bg-red-500 text-white hover:bg-red-600 rounded-lg transition-all shadow-sm flex items-center gap-1 font-semibold text-sm cursor-pointer shadow-red-500/20"
                                           title="Remove item"
                                         >
-                                          <Trash2 size={12} />
+                                          <Trash2 size={14} />
                                           Delete
                                         </button>
                                       </div>
@@ -1802,65 +1803,65 @@ export default function PurchaseOrder() {
                     )}
 
                     {/* Section 4: Financial Summary */}
-                    <div className="bg-white rounded-xl p-5 border border-slate-200 space-y-3 shadow-xs">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                        <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
                           4. Order Summary
                         </h4>
                         <button
                           type="button"
                           onClick={() => setNoRoundOff(prev => !prev)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${noRoundOff
-                            ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-xs'
+                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border ${noRoundOff
+                            ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-sm'
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                             }`}
                           title={noRoundOff ? "Round off value is set to 0. Click to restore calculated round off." : "Click to set round off value to 0"}
                         >
-                          <span className={`w-2 h-2 rounded-full ${noRoundOff ? 'bg-amber-500' : 'bg-slate-400'}`}></span>
+                          <span className={`w-2.5 h-2.5 rounded-full ${noRoundOff ? 'bg-amber-500' : 'bg-slate-400'}`}></span>
                           {noRoundOff ? 'Zero Round Off (Active)' : 'Zero Round Off'}
                         </button>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-600">
+                      <div className="flex items-center justify-between text-sm text-slate-600">
                         <span>Items Subtotal:</span>
-                        <span className="font-bold text-slate-800">₹{totals.Total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-slate-900 text-base">₹{totals.Total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
 
                       {totals.Discount > 0 && (
-                        <div className="flex items-center justify-between text-xs text-slate-600">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
                           <span>Total Discount:</span>
-                          <span className="font-medium text-amber-600">-₹{totals.Discount.toFixed(2)}</span>
+                          <span className="font-semibold text-amber-600 text-base">-₹{totals.Discount.toFixed(2)}</span>
                         </div>
                       )}
 
                       {(totals.GST > 0 || totals.IGST > 0) && (
-                        <div className="flex items-center justify-between text-xs text-slate-600">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
                           <span>Total Tax (GST):</span>
-                          <span className="font-medium text-slate-700">+₹{(totals.GST + totals.IGST).toFixed(2)}</span>
+                          <span className="font-semibold text-slate-700 text-base">+₹{(totals.GST + totals.IGST).toFixed(2)}</span>
                         </div>
                       )}
 
                       {totals.P_F > 0 && (
-                        <div className="flex items-center justify-between text-xs text-slate-600">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
                           <span>Packing & Forwarding (P&F):</span>
-                          <span className="font-medium text-slate-700">+₹{totals.P_F.toFixed(2)}</span>
+                          <span className="font-semibold text-slate-700 text-base">+₹{totals.P_F.toFixed(2)}</span>
                         </div>
                       )}
 
                       {totals.LorryFreight > 0 && (
-                        <div className="flex items-center justify-between text-xs text-slate-600">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
                           <span>Lorry Freight:</span>
-                          <span className="font-medium text-slate-700">+₹{totals.LorryFreight.toFixed(2)}</span>
+                          <span className="font-semibold text-slate-700 text-base">+₹{totals.LorryFreight.toFixed(2)}</span>
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between text-sm text-slate-600 pt-3 border-t border-slate-100">
                         <span>Round Off:</span>
-                        <span className="font-semibold">{formatRoundOff(totals.RoundOff)}</span>
+                        <span className="font-semibold text-base">{formatRoundOff(totals.RoundOff)}</span>
                       </div>
 
-                      <div className="flex items-center justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between text-base font-bold text-slate-900 pt-3 border-t border-slate-200">
                         <span>Grand Total:</span>
-                        <span className="text-emerald-600 text-lg">₹{totals.GrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-emerald-600 text-xl">₹{totals.GrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -1868,11 +1869,11 @@ export default function PurchaseOrder() {
                 </div>
 
                 {/* Drawer Footer */}
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 rounded-b-2xl">
                   <button
                     type="button"
                     onClick={handleCloseEditDrawer}
-                    className="px-5 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-medium text-sm transition-colors cursor-pointer"
+                    className="px-6 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold text-sm transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1880,7 +1881,7 @@ export default function PurchaseOrder() {
                     type="submit"
                     form="po-form"
                     disabled={loading}
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-semibold text-sm shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
                     {isNewEntry ? 'Save Purchase Order' : 'Save Changes'}
@@ -1894,7 +1895,7 @@ export default function PurchaseOrder() {
         {/* ── Add New Item – Popup Modal ────────────────────────────────────── */}
         {showAddItemMasterModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl border-0 overflow-hidden flex flex-col max-h-[90vh]">
 
               {/* Header */}
               <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">

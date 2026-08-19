@@ -574,66 +574,66 @@ export default function GateInward() {
           )}
         </div>
 
-        {/* Rightward Slide-Over Edit Drawer (Item Master Exact Edit Drawer Modal) */}
+        {/* Centered Modal Window for Add / Edit Gate Inward */}
         {editDrawerOpen && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
             {/* Backdrop */}
             <div
-              className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
                 }`}
               onClick={handleCloseEditDrawer}
             />
 
-            {/* Right Drawer Modal */}
-            <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            {/* Centered Modal Container */}
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 pointer-events-none">
               <div
-                className={`w-screen max-w-2xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
+                className={`relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden border-0 pointer-events-auto transform transition-all duration-300 ease-out ${isDrawerVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
                   }`}
               >
-                {/* Drawer Header */}
-                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md">
+                {/* Modal Header */}
+                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                      <Truck className="w-5 h-5 text-white" />
+                    <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+                      <Truck className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">
+                      <h2 className="text-2xl font-bold">
                         {isNewEntry ? 'Add New Gate Inward' : 'Edit Gate Inward'}
                       </h2>
-                      <p className="text-xs text-blue-100">
+                      <p className="text-sm text-blue-100 mt-0.5">
                         Inward No: GI-{String(formData.InwardNo).padStart(3, '0')}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={handleCloseEditDrawer}
-                    className="p-1.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                    className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
                   >
                     <X className="w-6 h-6" />
                   </button>
                 </div>
 
-                {/* Drawer Scrollable Form Body */}
+                {/* Modal Scrollable Form Body */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                   <form id="gate-inward-form" onSubmit={handleSave} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Inward No</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Inward No</label>
                         <input
                           type="text"
                           value={`GI-${String(formData.InwardNo).padStart(3, '0')}`}
                           disabled
-                          className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold"
+                          className="w-full px-4 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-bold text-base cursor-not-allowed"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Inward Date</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Inward Date</label>
                         <input
                           type="date"
                           value={formData.InwardDate}
                           onChange={(e) => setFormData({ ...formData, InwardDate: e.target.value })}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
                     </div>
@@ -642,12 +642,12 @@ export default function GateInward() {
                       <div>
                         {!isNewEntry ? (
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Party Name</label>
+                            <label className="block text-base font-semibold text-slate-700 mb-2">Party Name</label>
                             <input
                               type="text"
                               value={formData.PartyName}
                               disabled
-                              className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                              className="w-full px-4 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-semibold text-base cursor-not-allowed"
                             />
                           </div>
                         ) : (
@@ -669,12 +669,12 @@ export default function GateInward() {
                       <div>
                         {!isNewEntry ? (
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Purchase Order No</label>
+                            <label className="block text-base font-semibold text-slate-700 mb-2">Purchase Order No</label>
                             <input
                               type="text"
                               value={formData.OrderNo ? `PO-${formData.OrderNo}` : '-'}
                               disabled
-                              className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-semibold cursor-not-allowed"
+                              className="w-full px-4 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-semibold text-base cursor-not-allowed"
                             />
                           </div>
                         ) : (
@@ -698,7 +698,7 @@ export default function GateInward() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Invoice No</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Invoice No</label>
                         <input
                           type="text"
                           value={formData.InvoiceNo}
@@ -722,29 +722,29 @@ export default function GateInward() {
                             } catch {/* silent */ }
                           }}
                           placeholder="Enter Invoice No"
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${invoiceDuplicateWarning ? 'border-amber-400 bg-amber-50' : 'border-slate-300'
+                          className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium ${invoiceDuplicateWarning ? 'border-amber-400 bg-amber-50' : 'border-slate-300'
                             }`}
                         />
                         {invoiceDuplicateWarning && (
-                          <p className="mt-1 text-xs text-amber-600 font-medium">
+                          <p className="mt-1.5 text-sm text-amber-700 font-medium">
                             ⚠️ Invoice already used in Gate Inward #GI-{String(invoiceDuplicateWarning.InwardNo).padStart(3, '0')}{' '}
                             ({new Date(invoiceDuplicateWarning.InwardDate).toLocaleDateString('en-GB')})
                           </p>
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Invoice Date</label>
+                        <label className="block text-base font-semibold text-slate-700 mb-2">Invoice Date</label>
                         <input
                           type="date"
                           value={formData.InvoiceDate}
                           onChange={(e) => setFormData({ ...formData, InvoiceDate: e.target.value })}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
                     </div>
 
                     {/* Items Section Table */}
-                    <div className="border border-slate-200 rounded-xl overflow-hidden mt-6 shadow-sm">
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden mt-6 shadow-sm">
                       <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                         <h4 className="text-base font-bold text-slate-800">Received Items ({items.length})</h4>
                       </div>
@@ -755,13 +755,13 @@ export default function GateInward() {
                               <th className="py-3.5 px-4">Item Name</th>
                               <th className="py-3.5 px-4">Order No</th>
                               <th className="py-3.5 px-4 text-right">Pending Qty</th>
-                              <th className="py-3.5 px-4 text-right w-44">Received Qty</th>
+                              <th className="py-3.5 px-4 text-right w-48">Received Qty</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-slate-700">
                             {items.length === 0 ? (
                               <tr>
-                                <td colSpan="4" className="py-8 text-center text-slate-400 text-sm">
+                                <td colSpan="4" className="py-8 text-center text-slate-400 text-base">
                                   No items found for selected party
                                 </td>
                               </tr>
@@ -769,8 +769,8 @@ export default function GateInward() {
                               items.map((item, idx) => (
                                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                                   <td className="py-3.5 px-4 font-semibold text-slate-800 text-base">{item.ItemName}</td>
-                                  <td className="py-3.5 px-4 text-slate-600 font-medium text-sm">{item.OrderNo}</td>
-                                  <td className="py-3.5 px-4 text-right font-semibold text-slate-700 text-sm">{item.PendingQty}</td>
+                                  <td className="py-3.5 px-4 text-slate-600 font-medium text-base">{item.OrderNo}</td>
+                                  <td className="py-3.5 px-4 text-right font-bold text-slate-700 text-base">{item.PendingQty}</td>
                                   <td className="py-3.5 px-4 text-right">
                                     <input
                                       type="number"
@@ -799,7 +799,7 @@ export default function GateInward() {
                                       }}
                                       max={item.PendingQty}
                                       min="0"
-                                      className="w-36 px-3 py-2 border-2 border-blue-400 rounded-lg text-right font-bold text-blue-600 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                      className="w-36 px-3.5 py-2 border-2 border-blue-400 rounded-xl text-right font-bold text-blue-600 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                                     />
                                   </td>
                                 </tr>
@@ -812,12 +812,12 @@ export default function GateInward() {
                   </form>
                 </div>
 
-                {/* Drawer Footer */}
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                {/* Modal Footer */}
+                <div className="px-6 py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 flex-shrink-0">
                   <button
                     type="button"
                     onClick={handleCloseEditDrawer}
-                    className="px-5 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-medium text-sm transition-colors cursor-pointer"
+                    className="px-6 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold text-base transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -825,9 +825,9 @@ export default function GateInward() {
                     type="submit"
                     form="gate-inward-form"
                     disabled={loading}
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-semibold text-base shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
+                    <Save className="w-5 h-5" />
                     {isNewEntry ? 'Save Entry' : 'Save Changes'}
                   </button>
                 </div>

@@ -967,53 +967,53 @@ export default function ItemIssue() {
           />
         </div>
 
-        {/* Slide-over Drawer for Add / Edit Item Issue */}
+        {/* Centered Modal Window for Add / Edit Item Issue */}
         {editDrawerOpen && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
             {/* Backdrop */}
             <div
-              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+              className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
                 }`}
               onClick={handleCloseDrawer}
             />
 
-            {/* Slide-over Container */}
-            <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
+            {/* Centered Modal Container */}
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 pointer-events-none">
               <div
-                className={`w-screen max-w-3xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
+                className={`relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden border-0 pointer-events-auto transform transition-all duration-300 ease-out ${isDrawerVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
                   }`}
               >
-                {/* Drawer Header */}
+                {/* Modal Header */}
                 <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
                       <PackageCheck className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">
+                      <h2 className="text-2xl font-bold">
                         {editingIssueNo ? 'Edit Item Issue' : 'Create New Item Issue'}
                       </h2>
-                      <p className="text-xs text-blue-100">
+                      <p className="text-sm text-blue-100 mt-0.5">
                         Issue Voucher No: ISS-{String(formData.IssueNo).padStart(4, '0')}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={handleCloseDrawer}
-                    className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                    className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
 
-                {/* Drawer Content */}
+                {/* Modal Content */}
                 <form
                   onSubmit={handleSave}
                   className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
                 >
                   {/* Section 1: Issue Overview & Metadata */}
-                  <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <div className="bg-slate-50/70 p-6 rounded-2xl border border-slate-200/80 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-sm font-bold uppercase tracking-wider text-slate-700">
                       <FileText className="w-4 h-4 text-blue-600" />
                       Issue Header Details
                     </div>
@@ -1021,22 +1021,22 @@ export default function ItemIssue() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {/* Issue No (Read only) */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                          <Hash className="w-3.5 h-3.5 text-blue-500" />
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <Hash className="w-4 h-4 text-blue-500" />
                           Issue No
                         </label>
                         <input
                           type="text"
                           value={`ISS-${String(formData.IssueNo).padStart(4, '0')}`}
                           disabled
-                          className="w-full px-3 py-2 bg-slate-200/70 border border-slate-300 rounded-lg text-slate-700 font-mono text-sm font-semibold cursor-not-allowed"
+                          className="w-full px-4 py-2.5 bg-slate-200/70 border border-slate-300 rounded-xl text-slate-700 font-mono text-base font-bold cursor-not-allowed"
                         />
                       </div>
 
                       {/* Issue Date */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4 text-blue-500" />
                           Issue Date <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -1046,7 +1046,7 @@ export default function ItemIssue() {
                             setFormData({ ...formData, IssueDate: e.target.value })
                           }
                           required
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                       </div>
 
@@ -1069,8 +1069,8 @@ export default function ItemIssue() {
 
                       {/* Indent No */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                          <Hash className="w-3.5 h-3.5 text-blue-500" />
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <Hash className="w-4 h-4 text-blue-500" />
                           Indent No
                         </label>
                         <input
@@ -1080,14 +1080,14 @@ export default function ItemIssue() {
                             setFormData({ ...formData, IndentNo: e.target.value })
                           }
                           placeholder="e.g. IND-2026-001"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                       </div>
 
                       {/* Approval */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-blue-500" />
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-blue-500" />
                           Approval / Issued By
                         </label>
                         <input
@@ -1097,14 +1097,14 @@ export default function ItemIssue() {
                             setFormData({ ...formData, Approval: e.target.value })
                           }
                           placeholder="Approver name"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                       </div>
 
                       {/* Remarks */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5 text-blue-500" />
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-blue-500" />
                           Remarks
                         </label>
                         <input
@@ -1114,7 +1114,7 @@ export default function ItemIssue() {
                             setFormData({ ...formData, Remarks: e.target.value })
                           }
                           placeholder="Purpose / Notes"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                       </div>
                     </div>
@@ -1122,35 +1122,35 @@ export default function ItemIssue() {
 
                   {/* Section 2: Department Items & Allocation */}
                   <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                    <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="p-5 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div>
-                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                          <PackageCheck className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                          <PackageCheck className="w-5 h-5 text-blue-600" />
                           Department Items & Allocation
                         </h3>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-sm text-slate-500 mt-0.5">
                           Enter quantity for the items to issue (Qty must be less than stock).
                         </p>
                       </div>
 
                       {/* Item Search Input */}
                       {items.length > 0 && (
-                        <div className="relative w-full sm:w-64">
-                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <div className="relative w-full sm:w-72">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                           <input
                             type="text"
                             value={itemSearch}
                             onChange={(e) => setItemSearch(e.target.value)}
                             placeholder="Filter items..."
-                            className="w-full pl-9 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full pl-10 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           {itemSearch && (
                             <button
                               type="button"
                               onClick={() => setItemSearch('')}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                             >
-                              <X className="w-3.5 h-3.5" />
+                              <X className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -1160,36 +1160,36 @@ export default function ItemIssue() {
                     {/* Department Items Table */}
                     {loadingDeptItems ? (
                       <div className="p-12 text-center text-slate-500 space-y-2">
-                        <Loader2 className="w-7 h-7 text-blue-600 animate-spin mx-auto" />
-                        <p className="text-sm font-medium">Loading department inventory items...</p>
+                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+                        <p className="text-base font-medium">Loading department inventory items...</p>
                       </div>
                     ) : !formData.Department ? (
                       <div className="p-12 text-center text-slate-400 space-y-2">
-                        <Building2 className="w-10 h-10 text-slate-300 mx-auto" />
-                        <p className="text-sm font-semibold text-slate-600">No Department Selected</p>
-                        <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                        <Building2 className="w-12 h-12 text-slate-300 mx-auto" />
+                        <p className="text-base font-bold text-slate-700">No Department Selected</p>
+                        <p className="text-sm text-slate-500 max-w-sm mx-auto">
                           Please select a department above to view available store inventory items.
                         </p>
                       </div>
                     ) : items.length === 0 ? (
                       <div className="p-12 text-center text-slate-400 space-y-2">
-                        <Inbox className="w-10 h-10 text-slate-300 mx-auto" />
-                        <p className="text-sm font-semibold text-slate-600">
+                        <Inbox className="w-12 h-12 text-slate-300 mx-auto" />
+                        <p className="text-base font-bold text-slate-700">
                           No Items Available in &quot;{formData.Department}&quot;
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-sm text-slate-500">
                           No items have been assigned to this department yet.
                         </p>
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left border-collapse">
+                        <table className="w-full text-sm text-left border-collapse">
                           <thead>
-                            <tr className="bg-slate-50/60 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
-                              <th className="py-3 px-4">Item Name</th>
-                              <th className="py-3 px-4 text-center">Available Stock</th>
-                              <th className="py-3 px-4">Issue Qty</th>
-                              <th className="py-3 px-4 text-center">UOM</th>
+                            <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-xs">
+                              <th className="py-3.5 px-4">Item Name</th>
+                              <th className="py-3.5 px-4 text-center">Available Stock</th>
+                              <th className="py-3.5 px-4">Issue Qty</th>
+                              <th className="py-3.5 px-4 text-center">UOM</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -1209,19 +1209,19 @@ export default function ItemIssue() {
 
                               // Stock badge color
                               let stockBadge = (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                   {openingQty} In Stock
                                 </span>
                               );
                               if (openingQty === 0) {
                                 stockBadge = (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
                                     0 Out of Stock
                                   </span>
                                 );
                               } else if (openingQty <= 10) {
                                 stockBadge = (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                     {openingQty} Low Stock
                                   </span>
                                 );
@@ -1238,13 +1238,13 @@ export default function ItemIssue() {
                                     }`}
                                 >
                                   {/* Item Details */}
-                                  <td className="py-3 px-4 font-medium text-slate-800">
+                                  <td className="py-3.5 px-4 font-medium text-slate-800">
                                     <div className="space-y-0.5">
-                                      <p className="font-semibold text-slate-800">
+                                      <p className="font-bold text-slate-900 text-base">
                                         {item.ItemName}
                                       </p>
                                       {item.ItemCode && (
-                                        <p className="text-[11px] font-mono text-slate-400">
+                                        <p className="text-xs font-mono text-slate-400">
                                           Code: {item.ItemCode}
                                         </p>
                                       )}
@@ -1252,12 +1252,12 @@ export default function ItemIssue() {
                                   </td>
 
                                   {/* Available Stock */}
-                                  <td className="py-3 px-4 text-center">
+                                  <td className="py-3.5 px-4 text-center">
                                     {stockBadge}
                                   </td>
 
                                   {/* Issue Qty */}
-                                  <td className="py-3 px-4">
+                                  <td className="py-3.5 px-4">
                                     <div className="space-y-1">
                                       <input
                                         type="number"
@@ -1273,7 +1273,7 @@ export default function ItemIssue() {
                                           )
                                         }
                                         placeholder="0"
-                                        className={`w-32 px-2.5 py-1.5 border rounded-lg text-sm font-semibold focus:outline-none transition-all ${isInvalidQty
+                                        className={`w-36 px-3.5 py-2 border rounded-xl text-base font-bold focus:outline-none transition-all ${isInvalidQty
                                           ? 'border-red-500 bg-red-50 text-red-900 focus:ring-2 focus:ring-red-400'
                                           : isSelected
                                             ? 'border-blue-500 bg-blue-50/60 text-blue-900 focus:ring-2 focus:ring-blue-400'
@@ -1281,13 +1281,13 @@ export default function ItemIssue() {
                                           }`}
                                       />
                                       {isInvalidQty && (
-                                        <p className="text-[11px] text-red-600 font-medium flex items-center gap-1">
-                                          <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                        <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
+                                          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                                           Must be &lt; {openingQty}
                                         </p>
                                       )}
                                       {isSelected && (
-                                        <p className="text-[11px] text-emerald-600 font-medium">
+                                        <p className="text-xs text-emerald-600 font-semibold">
                                           Remaining: {openingQty - issueQty}
                                         </p>
                                       )}
@@ -1295,7 +1295,7 @@ export default function ItemIssue() {
                                   </td>
 
                                   {/* UOM */}
-                                  <td className="py-3 px-4 text-center font-medium text-slate-600">
+                                  <td className="py-3.5 px-4 text-center font-semibold text-slate-700 text-base">
                                     {item.UOM || '-'}
                                   </td>
                                 </tr>
@@ -1308,39 +1308,39 @@ export default function ItemIssue() {
                   </div>
                 </form>
 
-                {/* Drawer Sticky Footer */}
-                <div className="p-4 sm:p-5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg flex-shrink-0">
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <span className="font-semibold text-slate-800">
+                {/* Modal Sticky Footer */}
+                <div className="p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg flex-shrink-0">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+                    <span className="font-bold text-slate-900">
                       {activeIssueCount} item{activeIssueCount === 1 ? '' : 's'} selected
                     </span>
                     <span>•</span>
-                    <span>Total {activeIssueUnits} unit(s) to issue</span>
+                    <span className="font-semibold text-slate-700">Total {activeIssueUnits} unit(s) to issue</span>
                   </div>
 
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={handleCloseDrawer}
-                      className="flex-1 sm:flex-none px-5 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl font-semibold text-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      className="flex-1 sm:flex-none px-6 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl font-semibold text-base transition-colors cursor-pointer flex items-center justify-center gap-2"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleSave}
                       disabled={saving || activeIssueCount === 0}
-                      className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                      className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                     >
                       {saving ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                           Saving...
                         </>
                       ) : (
                         <>
-                          <Save className="w-4 h-4" />
+                          <Save className="w-5 h-5" />
                           {editingIssueNo ? 'Update Issue' : 'Confirm & Save Issue'}
                         </>
                       )}

@@ -5,18 +5,6 @@ import { X, ChevronDown } from 'lucide-react';
 /**
  * Reusable searchable dropdown with "starts with" priority sorting
  * and match highlighting.
- *
- * Props:
- *   options      - Array of { value, label, sub? } or strings
- *   value        - Currently selected value (string)
- *   onChange     - (value, option) => void
- *   placeholder  - Input placeholder text
- *   label        - Optional label rendered above the input
- *   required     - Show red asterisk next to label
- *   disabled     - Disable the input
- *   selectOnly   - When true, disables text input; click opens full list (no search)
- *   maxResults   - Max dropdown items (default 50)
- *   className    - Extra classes for the outer wrapper
  */
 export default function SearchSelect({
   options = [],
@@ -100,14 +88,6 @@ export default function SearchSelect({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Scroll highlighted item into view
-  useEffect(() => {
-    if (isOpen && listRef.current) {
-      const el = listRef.current.children[highlightedIndex];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    }
-  }, [highlightedIndex, isOpen]);
-
   const handleSelect = (opt) => {
     onChange(opt.value, opt);
     setSearch('');
@@ -186,47 +166,47 @@ export default function SearchSelect({
     return (
       <div className={`relative ${className}`} ref={containerRef}>
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {cleanLabel}
-            {showRequired && <span className="text-red-500 ml-1">*</span>}
+          <label className="block text-base font-semibold text-slate-700 mb-2 flex items-center gap-1">
+            <span>{cleanLabel}</span>
+            {showRequired && <span className="text-red-500 font-bold ml-0.5">*</span>}
           </label>
         )}
         <div
           tabIndex={disabled ? -1 : 0}
           onKeyDown={handleKeyDown}
           onClick={() => { if (!disabled) setIsOpen(prev => !prev); }}
-          className={`relative flex items-center w-full pl-3 pr-10 py-2 border rounded-lg bg-white text-sm font-medium cursor-pointer select-none transition-all ${disabled ? 'bg-gray-100 cursor-not-allowed text-gray-400 border-gray-200' : 'border-gray-300 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'} ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
+          className={`relative min-h-[46px] flex items-center w-full px-4 py-2.5 border rounded-xl bg-white text-base font-medium cursor-pointer select-none transition-all shadow-2xs ${disabled ? 'bg-slate-100 cursor-not-allowed text-slate-400 border-slate-200' : 'border-slate-300 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'} ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
         >
-          <span className={`flex-1 truncate ${displayValue ? 'text-gray-900' : 'text-gray-400'}`}>
+          <span className={`flex-1 truncate pr-6 ${displayValue ? 'text-slate-800' : 'text-slate-400'}`}>
             {displayValue || placeholder}
           </span>
           {(selectedOption || value) && !disabled ? (
-            <button type="button" onClick={handleClear} className="absolute right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" title="Clear">
+            <button type="button" onClick={handleClear} className="absolute right-3 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors" title="Clear">
               <X size={16} />
             </button>
           ) : (
-            <ChevronDown size={18} className={`absolute right-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={18} className={`absolute right-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           )}
         </div>
 
         {isOpen && filtered.length > 0 && (
-          <div ref={listRef} className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-60 overflow-y-auto">
+          <div ref={listRef} className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar py-1">
             {filtered.map((opt, idx) => (
               <div
                 key={opt.value + '-' + idx}
                 onClick={() => handleSelect(opt)}
                 onMouseEnter={() => setHighlightedIndex(idx)}
-                className={`px-3 py-2 cursor-pointer text-sm ${String(opt.value).trim().toLowerCase() === String(value || '').trim().toLowerCase() ? 'bg-blue-50 text-blue-900 font-semibold' : highlightedIndex === idx ? 'bg-blue-100 text-blue-900' : 'hover:bg-gray-50 text-gray-800'}`}
+                className={`px-4 py-2.5 cursor-pointer text-base ${String(opt.value).trim().toLowerCase() === String(value || '').trim().toLowerCase() ? 'bg-blue-50 text-blue-800 font-semibold' : highlightedIndex === idx ? 'bg-blue-50/70 text-blue-900' : 'hover:bg-slate-50 text-slate-700'}`}
               >
                 <div className="font-medium">{opt.label}</div>
-                {opt.sub && <div className="text-xs text-gray-500">{opt.sub}</div>}
+                {opt.sub && <div className="text-xs text-slate-500 mt-0.5">{opt.sub}</div>}
               </div>
             ))}
           </div>
         )}
 
         {isOpen && filtered.length === 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-sm z-30 px-3 py-2 text-sm text-gray-500">
+          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 px-4 py-3 text-sm text-slate-400 text-center">
             No options available
           </div>
         )}
@@ -238,9 +218,9 @@ export default function SearchSelect({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {cleanLabel}
-          {showRequired && <span className="text-red-500 ml-1">*</span>}
+        <label className="block text-base font-semibold text-slate-700 mb-2 flex items-center gap-1">
+          <span>{cleanLabel}</span>
+          {showRequired && <span className="text-red-500 font-bold ml-0.5">*</span>}
         </label>
       )}
       <div className="relative flex items-center">
@@ -265,11 +245,11 @@ export default function SearchSelect({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 transition-all font-medium disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full min-h-[46px] px-4 pr-10 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800 text-base font-medium transition-all shadow-2xs disabled:bg-slate-100 disabled:cursor-not-allowed cursor-pointer"
           autoComplete="off"
         />
         {(selectedOption || search || value) ? (
-          <button type="button" onClick={handleClear} className="absolute right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer" title="Clear" disabled={disabled}>
+          <button type="button" onClick={handleClear} className="absolute right-3 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="Clear" disabled={disabled}>
             <X size={16} />
           </button>
         ) : (
@@ -280,7 +260,7 @@ export default function SearchSelect({
               if (!disabled) setIsOpen(prev => !prev);
             }}
             tabIndex={-1}
-            className="absolute right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            className="absolute right-3 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             disabled={disabled}
           >
             <ChevronDown size={18} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -289,23 +269,23 @@ export default function SearchSelect({
       </div>
 
       {isOpen && filtered.length > 0 && (
-        <div ref={listRef} className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-60 overflow-y-auto">
+        <div ref={listRef} className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar py-1">
           {filtered.map((opt, idx) => (
             <div
               key={opt.value + '-' + idx}
               onClick={() => handleSelect(opt)}
               onMouseEnter={() => setHighlightedIndex(idx)}
-              className={`px-3 py-2 cursor-pointer text-sm ${String(opt.value).trim().toLowerCase() === String(value || '').trim().toLowerCase() ? 'bg-blue-50 text-blue-900 font-semibold' : highlightedIndex === idx ? 'bg-blue-100 text-blue-900' : 'hover:bg-gray-50 text-gray-800'}`}
+              className={`px-4 py-2.5 cursor-pointer text-base ${String(opt.value).trim().toLowerCase() === String(value || '').trim().toLowerCase() ? 'bg-blue-50 text-blue-800 font-semibold' : highlightedIndex === idx ? 'bg-blue-50/70 text-blue-900' : 'hover:bg-slate-50 text-slate-700'}`}
             >
               <div className="font-medium">{renderHighlighted(opt.label)}</div>
-              {opt.sub && <div className="text-xs text-gray-500">{opt.sub}</div>}
+              {opt.sub && <div className="text-xs text-slate-500 mt-0.5">{opt.sub}</div>}
             </div>
           ))}
         </div>
       )}
 
       {isOpen && search && filtered.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-sm z-30 px-3 py-2 text-sm text-gray-500">
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 px-4 py-3 text-sm text-slate-400 text-center">
           No results matching "{search}"
         </div>
       )}

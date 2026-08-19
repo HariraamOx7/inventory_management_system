@@ -276,131 +276,131 @@ export default function Supplier() {
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Account Name</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Account Name</label>
                     <input
                         type="text"
                         name="AccountName"
                         value={data.AccountName || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter account name"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Description</label>
                     <input
                         type="text"
                         name="Description"
                         value={data.Description || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter description"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Place</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Place</label>
                     <input
                         type="text"
                         name="Place"
                         value={data.Place || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter place"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Ph. No.</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Ph. No.</label>
                     <input
                         type="text"
                         name="PhNo"
                         value={data.PhNo || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter phone number"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">CST No.</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">CST No.</label>
                     <input
                         type="text"
                         name="CSTNo"
                         value={data.CSTNo || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter CST No."
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">TIN No.</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">TIN No.</label>
                     <input
                         type="text"
                         name="TINNo"
                         value={data.TINNo || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter TIN No."
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Email</label>
                     <input
                         type="email"
                         name="Email"
                         value={data.Email || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter email"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Fax</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Fax</label>
                     <input
                         type="text"
                         name="Fax"
                         value={data.Fax || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter fax"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Address</label>
+                <label className="block text-base font-semibold text-slate-700 mb-2">Address</label>
                 <textarea
                     name="Address"
                     value={data.Address || ''}
                     onChange={(e) => handleInputChange(e, isEdit)}
                     placeholder="Enter address"
                     rows="3"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                 />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Delivery Address</label>
+                <label className="block text-base font-semibold text-slate-700 mb-2">Delivery Address</label>
                 <textarea
                     name="DeliveryAddress"
                     value={data.DeliveryAddress || ''}
                     onChange={(e) => handleInputChange(e, isEdit)}
                     placeholder="Enter delivery address"
                     rows="3"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                 />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Opening Credit</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Opening Credit</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -408,11 +408,12 @@ export default function Supplier() {
                         value={data.OpeningCredit || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0.00"
-                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Opening Debit</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Opening Debit</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -420,44 +421,45 @@ export default function Supplier() {
                         value={data.OpeningDebit || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0.00"
-                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Account No.</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Account No.</label>
                     <input
                         type="text"
                         name="AccountNo"
                         value={data.AccountNo || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter account number"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">PAN Number</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">PAN Number</label>
                     <input
                         type="text"
                         name="PanNumber"
                         value={data.PanNumber || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter PAN number"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Department</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Department</label>
                     <select
                         name="Department"
                         value={data.Department || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-base font-medium"
                     >
                         <option value="">Select Department</option>
                         <option value="SALES">SALES</option>
@@ -465,64 +467,64 @@ export default function Supplier() {
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">GST No.</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">GST No.</label>
                     <input
                         type="text"
                         name="GSTNo"
                         value={data.GSTNo || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter GST No."
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Contact Person</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Contact Person</label>
                     <input
                         type="text"
                         name="ContactPerson"
                         value={data.ContactPerson || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter contact person"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Pincode</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Pincode</label>
                     <input
                         type="text"
                         name="Pincode"
                         value={data.Pincode || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter pincode"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Cell No.</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Cell No.</label>
                     <input
                         type="text"
                         name="CellNo"
                         value={data.CellNo || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter cell number"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">WebSite</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">WebSite</label>
                     <input
                         type="text"
                         name="WebSite"
                         value={data.WebSite || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter website"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
@@ -869,66 +871,68 @@ export default function Supplier() {
                     )}
                 </div>
 
-                {/* Rightward Slide-Over Edit Window / Drawer */}
+                {/* Centered Modal Window for Edit Supplier */}
                 {editDrawerOpen && (
-                    <div className="fixed inset-0 z-50 overflow-hidden">
-                        {/* Backdrop with Fade transition */}
+                    <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
+                        {/* Backdrop */}
                         <div
-                            className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+                            className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
                                 }`}
                             onClick={handleCloseEditDrawer}
                         />
 
-                        {/* Slide-Over Drawer Container with Slide transition */}
-                        <div
-                            className={`fixed inset-y-0 right-0 max-w-2xl w-full bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200 transition-transform duration-300 ease-out transform ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
-                                }`}
-                        >
-                            {/* Drawer Header */}
-                            <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
-                                        <Edit2 className="w-5 h-5 text-white" />
+                        {/* Centered Modal Container */}
+                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+                            <div
+                                className={`relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden border-0 pointer-events-auto transform transition-all duration-300 ease-out ${isDrawerVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+                                    }`}
+                            >
+                                {/* Modal Header */}
+                                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                            <Edit2 className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold">Edit Supplier</h2>
+                                            <p className="text-blue-100 text-sm mt-0.5">Supplier Code: <span className="font-semibold text-white">{editingId}</span></p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h2 className="text-xl font-bold">Edit Supplier</h2>
-                                        <p className="text-blue-100 text-xs mt-0.5">Supplier Code: <span className="font-semibold text-white">{editingId}</span></p>
-                                    </div>
+                                    <button
+                                        onClick={handleCloseEditDrawer}
+                                        className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
+                                        title="Close Window"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={handleCloseEditDrawer}
-                                    className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                    title="Close Window"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
 
-                            {/* Scrollable Form Body */}
-                            <div className="flex-1 overflow-y-auto p-6">
-                                <form id="editSupplierForm" onSubmit={(e) => { e.preventDefault(); handleUpdate(editingId); }}>
-                                    {renderFormFields(editFormData, true)}
-                                </form>
-                            </div>
+                                {/* Modal Scrollable Form Body */}
+                                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                                    <form id="editSupplierForm" onSubmit={(e) => { e.preventDefault(); handleUpdate(editingId); }}>
+                                        {renderFormFields(editFormData, true)}
+                                    </form>
+                                </div>
 
-                            {/* Sticky Drawer Footer */}
-                            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleCloseEditDrawer}
-                                    className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-all"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    form="editSupplierForm"
-                                    disabled={loading}
-                                    className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/30 transition-all font-medium flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    Save Changes
-                                </button>
+                                {/* Modal Sticky Footer */}
+                                <div className="px-6 py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={handleCloseEditDrawer}
+                                        className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100 font-semibold text-base transition-all cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        form="editSupplierForm"
+                                        disabled={loading}
+                                        className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/30 transition-all font-semibold text-base flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                    >
+                                        <Save className="w-5 h-5" />
+                                        Save Changes
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -400,46 +400,46 @@ export default function Item() {
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Item Name *</label>
+                <label className="block text-base font-semibold text-slate-700 mb-2">Item Name *</label>
                 <input
                     type="text"
                     name="ItemName"
                     value={data.ItemName}
                     onChange={(e) => handleInputChange(e, isEdit)}
                     placeholder="Enter item name"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     required
                 />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Category</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Category</label>
                     <input
                         type="text"
                         name="Category"
                         value={data.Category || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter category"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Commodity</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Commodity</label>
                     <input
                         type="text"
                         name="Commodity"
                         value={data.Commodity || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter commodity"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Unit Rate</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Unit Rate</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -447,11 +447,12 @@ export default function Item() {
                         value={data.UnitRate || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0.00"
-                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Min. Stock Level</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Min. Stock Level</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -460,14 +461,14 @@ export default function Item() {
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0"
                         step="any"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Quantity</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Quantity</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -476,11 +477,11 @@ export default function Item() {
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0"
                         step="any"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Max. Stock Level</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Max. Stock Level</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -489,14 +490,14 @@ export default function Item() {
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0"
                         step="any"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Opening Value</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Opening Value</label>
                     <input
                         type="number"
                         onWheel={(e) => e.target.blur()}
@@ -504,32 +505,33 @@ export default function Item() {
                         value={data.OpenValue || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="0.00"
-                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        step="any"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Location</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">Location</label>
                     <input
                         type="text"
                         name="Location"
                         value={data.Location || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter location"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">HSN Code</label>
+                    <label className="block text-base font-semibold text-slate-700 mb-2">HSN Code</label>
                     <input
                         type="text"
                         name="HSNCode"
                         value={data.HSNCode || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
                         placeholder="Enter HSN code"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                     />
                 </div>
                 <div>
@@ -1005,56 +1007,56 @@ export default function Item() {
                     )}
                 </div>
 
-                {/* Rightward Slide-Over Edit Drawer Modal */}
+                {/* Centered Modal Window for Edit Item */}
                 {editDrawerOpen && (
-                    <div className="fixed inset-0 z-50 overflow-hidden">
+                    <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
                         {/* Backdrop */}
                         <div
-                            className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
+                            className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isDrawerVisible ? 'opacity-100' : 'opacity-0'
                                 }`}
                             onClick={handleCloseEditDrawer}
                         />
 
-                        {/* Right Drawer Modal */}
-                        <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+                        {/* Centered Modal Container */}
+                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 pointer-events-none">
                             <div
-                                className={`w-screen max-w-2xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isDrawerVisible ? 'translate-x-0' : 'translate-x-full'
+                                className={`relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden border-0 pointer-events-auto transform transition-all duration-300 ease-out ${isDrawerVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
                                     }`}
                             >
-                                {/* Drawer Header */}
-                                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md">
+                                {/* Modal Header */}
+                                <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                                            <Edit2 className="w-5 h-5 text-white" />
+                                        <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+                                            <Edit2 className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-bold">Edit Item</h2>
-                                            <p className="text-xs text-blue-100">
+                                            <h2 className="text-2xl font-bold">Edit Item</h2>
+                                            <p className="text-sm text-blue-100 mt-0.5">
                                                 Code: {editingCode} | {editFormData.ItemName}
                                             </p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={handleCloseEditDrawer}
-                                        className="p-1.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        className="p-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
                                     >
                                         <X className="w-6 h-6" />
                                     </button>
                                 </div>
 
-                                {/* Drawer Scrollable Form Body */}
-                                <div className="flex-1 overflow-y-auto p-6">
+                                {/* Modal Scrollable Form Body */}
+                                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                                     <form id="edit-item-form" onSubmit={handleUpdate}>
                                         {renderFormFields(editFormData, true)}
                                     </form>
                                 </div>
 
-                                {/* Drawer Footer */}
-                                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                                {/* Modal Footer */}
+                                <div className="px-6 py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 flex-shrink-0">
                                     <button
                                         type="button"
                                         onClick={handleCloseEditDrawer}
-                                        className="px-5 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-medium text-sm transition-colors"
+                                        className="px-6 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold text-base transition-colors cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1062,9 +1064,9 @@ export default function Item() {
                                         type="submit"
                                         form="edit-item-form"
                                         disabled={loading}
-                                        className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2"
+                                        className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-semibold text-base shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                                     >
-                                        <Save className="w-4 h-4" />
+                                        <Save className="w-5 h-5" />
                                         Save Changes
                                     </button>
                                 </div>

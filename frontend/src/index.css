@@ -22,40 +22,62 @@ html {
 
 @layer utilities {
 
-  /* Custom scrollbar for content areas */
+  /* Custom scrollbar for content areas & tables */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 11px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
     background: #f1f5f9;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #94a3b8;
-    border-radius: 6px;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #64748b;
   }
 
+  /* Table horizontal scrollbar utility */
+  .table-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 12px;
+  }
+
+  .table-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 9999px;
+  }
+
+  .table-scrollbar::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 9999px;
+    border: 2px solid #f1f5f9;
+  }
+
+  .table-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+
   /* Sidebar Dark Scrollbar Override */
   .sidebar-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
   }
 
   .sidebar-scrollbar::-webkit-scrollbar-track {
     background: #0b1021;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .sidebar-scrollbar::-webkit-scrollbar-thumb {
     background: #4f6ef7;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -65,18 +87,19 @@ html {
 
 /* Global scrollbar styles - applied to all elements */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 11px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #94a3b8;
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb:hover {

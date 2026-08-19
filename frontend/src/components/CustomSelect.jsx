@@ -51,8 +51,8 @@ export default function CustomSelect({
     return (
         <div className="relative w-full" ref={containerRef}>
             {label && (
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    {Icon && <Icon className="w-3.5 h-3.5 text-blue-500" />}
+                <label className="block text-base font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                    {Icon && <Icon className="w-4 h-4 text-blue-500" />}
                     <span>{cleanLabel}</span>
                     {showRequired && <span className="text-red-500 font-bold ml-0.5">*</span>}
                 </label>
@@ -65,40 +65,41 @@ export default function CustomSelect({
                     setIsOpen(!isOpen);
                     setSearchTerm('');
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-left"
+                className="w-full min-h-[46px] flex items-center justify-between px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-left shadow-2xs hover:border-slate-400 cursor-pointer"
             >
-                <span className={selectedOption ? 'text-slate-800 font-medium' : 'text-slate-400'}>
+                <span className={`truncate ${selectedOption ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ml-2 flex-shrink-0 ${isOpen ? 'transform rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu Popover */}
             {isOpen && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-64 flex flex-col overflow-hidden">
+                <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-64 flex flex-col overflow-hidden">
                     {searchable && (
-                        <div className="p-2 border-b border-slate-100 relative flex-shrink-0">
-                            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                        <div className="p-2.5 border-b border-slate-100 relative flex-shrink-0">
+                            <Search className="w-4 h-4 text-slate-400 absolute left-5 top-1/2 -translate-y-1/2" />
                             <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="w-full pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
+                                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                 autoFocus
                             />
                             {searchTerm && (
                                 <button
+                                    type="button"
                                     onClick={() => setSearchTerm('')}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                                 >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-3.5 h-3.5" />
                                 </button>
                             )}
                         </div>
                     )}
 
-                    <div className="overflow-y-auto custom-scrollbar py-1 flex-1">
+                    <div className="overflow-y-auto custom-scrollbar py-1.5 flex-1">
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((opt) => {
                                 const isSelected = String(opt.value) === String(value);
@@ -110,7 +111,7 @@ export default function CustomSelect({
                                             onChange(opt.value);
                                             setIsOpen(false);
                                         }}
-                                        className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-slate-50 ${isSelected ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700'
+                                        className={`w-full text-left px-4 py-2.5 text-base transition-colors hover:bg-blue-50/70 ${isSelected ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700'
                                             }`}
                                     >
                                         {opt.label}
@@ -118,7 +119,7 @@ export default function CustomSelect({
                                 );
                             })
                         ) : (
-                            <div className="px-3 py-3 text-xs text-slate-400 text-center">
+                            <div className="px-4 py-3 text-sm text-slate-400 text-center">
                                 No options match search
                             </div>
                         )}

@@ -268,17 +268,33 @@ exports.createPurchaseOrder = async (req, res) => {
   }
 };
 
+const cleanDate = (d) => {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString().split('T')[0];
+};
+
 // Update purchase order
 exports.updatePurchaseOrder = async (req, res) => {
   try {
     const { orderNo } = req.params;
+    const oNo = parseInt(orderNo, 10);
+
+    if (!oNo || isNaN(oNo)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Order Number'
+      });
+    }
+
     const {
       OrderDate, PartyName, Address, Place, Remarks, RefNo, Total, Discount,
       GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items,
       DutyWithoutPF, VoltasFormat, VatWithPF
     } = req.body;
 
-    const order = await PurchaseOrder.findByPk(orderNo);
+    const order = await PurchaseOrder.findByPk(oNo);
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -287,12 +303,12 @@ exports.updatePurchaseOrder = async (req, res) => {
     }
 
     await order.update({
-      OrderDate: OrderDate || order.OrderDate,
+      OrderDate: cleanDate(OrderDate) || order.OrderDate || cleanDate(new Date()),
       PartyName: PartyName ? PartyName.trim() : order.PartyName,
-      Address: Address ? Address.trim() : order.Address,
-      Place: Place ? Place.trim() : order.Place,
-      Remarks: Remarks ? Remarks.trim() : order.Remarks,
-      RefNo: RefNo ? RefNo.trim() : order.RefNo,
+      Address: Address !== undefined ? (Address ? Address.trim() : null) : order.Address,
+      Place: Place !== undefined ? (Place ? Place.trim() : null) : order.Place,
+      Remarks: Remarks !== undefined ? (Remarks ? Remarks.trim() : null) : order.Remarks,
+      RefNo: RefNo !== undefined ? (RefNo ? RefNo.trim() : null) : order.RefNo,
       Total: Total !== undefined ? parseDec(Total, 0) : order.Total,
       Discount: Discount !== undefined ? parseDec(Discount, 0) : order.Discount,
       GST: GST !== undefined ? parseDec(GST, 0) : order.GST,
@@ -302,48 +318,50 @@ exports.updatePurchaseOrder = async (req, res) => {
       LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : order.LorryFreight,
       RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : order.RoundOff,
       GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : order.GrandTotal,
-      DutyWithoutPF: DutyWithoutPF !== undefined ? DutyWithoutPF : order.DutyWithoutPF,
-      VoltasFormat: VoltasFormat !== undefined ? VoltasFormat : order.VoltasFormat,
-      VatWithPF: VatWithPF !== undefined ? VatWithPF : order.VatWithPF
+      DutyWithoutPF: DutyWithoutPF !== undefined ? !!DutyWithoutPF : order.DutyWithoutPF,
+      VoltasFormat: VoltasFormat !== undefined ? !!VoltasFormat : order.VoltasFormat,
+      VatWithPF: VatWithPF !== undefined ? !!VatWithPF : order.VatWithPF
     });
 
     // Update order details if provided
-    if (items && items.length > 0) {
-      await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo } });
+    if (items && Array.isArray(items) && items.length > 0) {
+      await PurchaseOrderDetail.destroy({ where: { OrderNo: oNo } });
       
       for (const item of items) {
+        if (!item || !item.ItemName) continue;
         const unitRate = resolveLineUnitRate(item);
+        const qty = parseDec(item.Qty, 0);
         await PurchaseOrderDetail.create({
-          OrderNo: orderNo,
-          ItemName: item.ItemName,
-          Qty: item.Qty || 0,
+          OrderNo: oNo,
+          ItemName: String(item.ItemName).trim(),
+          Qty: qty,
           UnitRate: unitRate,
-          TotalAmount: item.TotalAmount || 0,
-          DiscountPct: item.DiscountPct || 0,
-          DiscountAmt: item.DiscountAmt || 0,
+          TotalAmount: parseDec(item.TotalAmount, qty * unitRate),
+          DiscountPct: parseDec(item.DiscountPct, 0),
+          DiscountAmt: parseDec(item.DiscountAmt, 0),
           GSTType: item.GSTType || null,
-          GSTPct: item.GSTPct || 0,
-          SGSTPct: item.SGSTPct || 0,
-          SGST: item.SGST || 0,
-          CGSTPct: item.CGSTPct || 0,
-          CGST: item.CGST || 0,
-          IGSTPct: item.IGSTPct || 0,
-          IGST: item.IGST || 0,
+          GSTPct: parseDec(item.GSTPct, 0),
+          SGSTPct: parseDec(item.SGSTPct, 0),
+          SGST: parseDec(item.SGST, 0),
+          CGSTPct: parseDec(item.CGSTPct, 0),
+          CGST: parseDec(item.CGST, 0),
+          IGSTPct: parseDec(item.IGSTPct, 0),
+          IGST: parseDec(item.IGST, 0),
           TaxType: item.TaxType || null,
-          TaxPct: item.TaxPct || 0,
-          TaxAmount: item.TaxAmount || 0,
-          PF_Pct: item.PF_Pct || 0,
-          PF_Amount: item.PF_Amount || 0,
-          LorryFreight: item.LorryFreight || 0,
-          RoundOff: item.RoundOff || 0,
-          GrandTotal: item.GrandTotal || 0,
+          TaxPct: parseDec(item.TaxPct, 0),
+          TaxAmount: parseDec(item.TaxAmount, 0),
+          PF_Pct: parseDec(item.PF_Pct, 0),
+          PF_Amount: parseDec(item.PF_Amount, 0),
+          LorryFreight: parseDec(item.LorryFreight, 0),
+          RoundOff: parseDec(item.RoundOff, 0),
+          GrandTotal: parseDec(item.GrandTotal, 0),
           MRS_No: item.MRS_No || null
         });
       }
 
       // Recalculate PO status (ordered qty may have changed)
       const { recalcPOStatus } = require('./gateInwardController');
-      await recalcPOStatus(orderNo);
+      await recalcPOStatus(oNo);
     }
 
     res.json({
