@@ -1012,7 +1012,10 @@ export default function BillEntry() {
     const currentDebit = parseFloat(totalDebit.toFixed(2));
     const roundOff = parseFloat((targetCredit - currentDebit).toFixed(2));
 
-    if (Math.abs(roundOff) > 0.0001) {
+    // Skip round off line if the bill was saved with "No Round Off" active
+    const billHasNoRoundOff = bill.RoundOff !== undefined && bill.RoundOff !== null && Math.abs(parseFloat(bill.RoundOff) || 0) < 0.0001;
+
+    if (Math.abs(roundOff) > 0.0001 && !billHasNoRoundOff) {
       doc.text('To', col1X, y);
       doc.text('ROUND OFF', col1X + 12, y);
       if (roundOff > 0) {
