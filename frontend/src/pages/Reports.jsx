@@ -1,12 +1,41 @@
 // frontend/src/pages/Reports.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, Eye } from 'lucide-react';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import { useToastStore } from '../store/toastStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const reportOptions = {
+  Purchase: [
+    { label: 'Supplier Wise Order Details', key: 'supplier-wise' },
+    { label: 'Department Wise Order Details', key: 'department-wise' }
+  ],
+  Receipt: [
+    { label: 'Date Wise Receipt Register', key: 'date-wise' },
+    { label: 'Party Wise Receipt Register', key: 'party-wise' },
+    { label: 'Department Wise Receipt Register', key: 'department-wise' },
+    { label: 'Item Wise Receipt Register', key: 'item-wise' }
+  ],
+  Issue: [
+    { label: 'Date Wise Issue Register', key: 'date-wise' },
+    { label: 'Item Wise Issue Register', key: 'item-wise' },
+    { label: 'Department Wise Issue Register', key: 'department-wise' }
+  ],
+  Stock: [
+    { label: 'Item Wise Stock', key: 'item-wise' },
+    { label: 'Department Wise Stock Abstract', key: 'department-wise' }
+  ]
+};
+
+const categoryApiPrefix = {
+  Purchase: 'purchase',
+  Receipt: 'receipt',
+  Issue: 'issue',
+  Stock: 'stock'
+};
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -14,79 +43,60 @@ const Reports = () => {
   const [selectedCategory, setSelectedCategory] = useState('Purchase');
   const [fromDate, setFromDate] = useState(new Date().toISOString().split('T')[0]);
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedReport, setSelectedReport] = useState('');
-
-  const reportOptions = {
-    Purchase: [
-      'Supplier Wise Order Details',
-      'Department Wise Order Details'
-    ],
-    Receipt: [
-      'Date Wise Receipt Register',
-      'Party Wise Receipt Register',
-      'Department Wise Receipt Register',
-      'Item Wise Receipt Register'
-    ],
-    Issue: [
-      'Date Wise Issue Register',
-      'Item Wise Issue Register',
-      'Department Wise Issue Register'
-    ],
-    Stock: [
-      'Item Wise Stock',
-      'Department Wise Stock Abstract',
-      'Department Wise Closing Stock Abstract',
-      'Department Wise Stock Details'
-    ]
-  };
+  const [selectedReportKey, setSelectedReportKey] = useState('');
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
-    setSelectedReport('');
+    setSelectedReportKey('');
   };
 
-  const handleReportSelect = (report) => {
-    setSelectedReport(report);
-  };
-
-  const handleGenerateReport = async () => {
-    if (!selectedReport) {
+  const handleViewReport = () => {
+    if (!selectedReportKey) {
       showToast('Please select a report', 'error');
       return;
     }
 
     // Special case: Stock -> Item Wise Stock => download Excel
-    if (selectedCategory === 'Stock' && selectedReport === 'Item Wise Stock') {
-      try {
-        const response = await axios.get(`${API_URL}/reports/stock/item-wise`, {
-          responseType: 'blob',
-          params: { fromDate, toDate } // optional for future
-        });
-
-        const blob = new Blob([response.data], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `ItemWiseStock_${fromDate}_to_${toDate}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-        return;
-      } catch (error) {
-        console.error('Error generating item wise stock report:', error);
-        showToast('Failed to generate Item Wise Stock report', 'error');
-        return;
-      }
+    if (selectedCategory === 'Stock' && selectedReportKey === 'item-wise') {
+      handleExcelDownload();
+      return;
     }
 
-    showToast(
-      `Generating ${selectedCategory} Report: ${selectedReport} (${fromDate} to ${toDate})`,
-      'info'
-    );
+    const prefix = categoryApiPrefix[selectedCategory];
+    const params = new URLSearchParams({
+      category: prefix,
+      report: selectedReportKey,
+      fromDate,
+      toDate,
+      title: currentReports.find(r => r.key === selectedReportKey)?.label || ''
+    });
+
+    window.open(`/reports/view?${params.toString()}`, '_blank');
+  };
+
+  const handleExcelDownload = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/reports/stock/item-wise`, {
+        responseType: 'blob',
+        params: { fromDate, toDate }
+      });
+
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ItemWiseStock_${fromDate}_to_${toDate}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating item wise stock report:', error);
+      showToast('Failed to generate Item Wise Stock report', 'error');
+    }
   };
 
   const currentReports = reportOptions[selectedCategory] || [];
@@ -164,21 +174,21 @@ const Reports = () => {
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Select Report</label>
                   <select
-                    value={selectedReport}
-                    onChange={(e) => handleReportSelect(e.target.value)}
+                    value={selectedReportKey}
+                    onChange={(e) => setSelectedReportKey(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">-- Select Report --</option>
-                    {currentReports.map((report, idx) => (
-                      <option key={idx} value={report}>
-                        {report}
+                    {currentReports.map((report) => (
+                      <option key={report.key} value={report.key}>
+                        {report.label}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 {/* Empty State */}
-                {!selectedReport && (
+                {!selectedReportKey && (
                   <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-8 text-center">
                     <p className="text-gray-600">Select a report to view options</p>
                   </div>
@@ -195,10 +205,10 @@ const Reports = () => {
                 Exit
               </button>
               <button
-                onClick={handleGenerateReport}
+                onClick={handleViewReport}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
               >
-                <Download size={18} />
+                <Eye size={18} />
                 OK
               </button>
             </div>

@@ -1,5 +1,5 @@
 // frontend/src/pages/BillEntry.jsx
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo, Fragment } from 'react';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import {
@@ -46,6 +46,242 @@ const initialFormState = {
   GrandTotal: 0
 };
 
+// Memoized Table Row Component
+const BillRow = memo(function BillRow({
+  bill,
+  isExpanded,
+  onToggleExpand,
+  onPrint,
+  onEdit,
+  onDelete
+}) {
+  const billItems = bill.details || bill.BillEntryDetails || [];
+
+  return (
+    <Fragment>
+      <tr className="hover:bg-slate-50/60 transition-colors group">
+        <td className="py-4 px-3 text-center">
+          <button
+            type="button"
+            onClick={() => onToggleExpand(bill.VoucherNo)}
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            title={isExpanded ? "Collapse bill item details & gate inwards" : "Expand bill item details & gate inwards"}
+          >
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </td>
+        <td className="py-4 px-4 font-bold text-slate-900 whitespace-nowrap">
+          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100 font-semibold text-xs">
+            VCH-{String(bill.VoucherNo).padStart(3, '0')}
+          </span>
+        </td>
+        <td className="py-4 px-4">
+          <div className="font-semibold text-slate-800">{bill.PartyName}</div>
+        </td>
+        <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">
+          {bill.GRNNo ? `GRN-${String(bill.GRNNo).padStart(3, '0')}` : <span className="text-slate-400">-</span>}
+        </td>
+        <td className="py-4 px-4 font-medium text-slate-700 whitespace-nowrap">
+          {bill.PartyBillNo || <span className="text-slate-400">-</span>}
+        </td>
+        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
+          {bill.BillDate ? new Date(bill.BillDate).toLocaleDateString('en-GB') : '-'}
+        </td>
+        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
+          {bill.AccDate ? new Date(bill.AccDate).toLocaleDateString('en-GB') : '-'}
+        </td>
+        <td className="py-4 px-4 whitespace-nowrap">
+          {bill.PurchaseType ? (
+            <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full text-xs font-medium border border-slate-200">
+              {bill.PurchaseType}
+            </span>
+          ) : (
+            <span className="text-slate-400">-</span>
+          )}
+        </td>
+        <td className="py-4 px-4 text-right font-bold text-emerald-600 whitespace-nowrap">
+          ₹{(bill.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        </td>
+        <td className="py-4 px-4 text-right whitespace-nowrap">
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => onPrint(bill.VoucherNo)}
+              className="px-3.5 py-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
+              title="Print Purchase Voucher"
+            >
+              <Printer size={14} />
+              Print
+            </button>
+            <button
+              type="button"
+              onClick={() => onEdit(bill)}
+              className="px-3.5 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
+              title="Edit Bill Entry"
+            >
+              <Edit2 size={14} />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(bill.VoucherNo)}
+              className="px-3.5 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
+              title="Delete Bill Entry"
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      {/* Expanded Sub-table for Gate Inwards & Billed Items */}
+      {isExpanded && (
+        <tr className="bg-slate-50/90 border-b border-slate-200">
+          <td colSpan={10} className="p-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                  <Layers size={14} className="text-blue-600" />
+                  Bill & Gate Inward Details for VCH-{String(bill.VoucherNo).padStart(3, '0')} ({bill.PartyName})
+                </h4>
+                <div className="flex items-center gap-3 text-xs text-slate-500">
+                  {bill.GRNNo && <span>GRN: <strong className="text-slate-700">GRN-{bill.GRNNo}</strong></span>}
+                  {bill.PartyBillNo && <span>Party Bill No: <strong className="text-slate-700">{bill.PartyBillNo}</strong></span>}
+                </div>
+              </div>
+
+              {/* Gate Inward Batches Table (Matching Receipt.jsx) */}
+              {bill.gateInwards && bill.gateInwards.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    Linked Gate Inwards ({bill.gateInwards.length})
+                  </div>
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                          <th className="py-2.5 px-3 whitespace-nowrap">Inward No</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Inward Date</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Invoice No</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
+                          <th className="py-2.5 px-3">Received Items in Batch</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+                        {bill.gateInwards.map((gi) => (
+                          <tr key={gi.InwardNo} className="hover:bg-slate-50/70">
+                            <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">
+                              GI-{String(gi.InwardNo).padStart(3, '0')}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
+                              {gi.InwardDate ? new Date(gi.InwardDate).toLocaleDateString('en-GB') : '-'}
+                            </td>
+                            <td className="py-2.5 px-3 font-medium text-slate-800 whitespace-nowrap">
+                              {gi.InvoiceNo || '-'}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
+                              {gi.InvoiceDate ? new Date(gi.InvoiceDate).toLocaleDateString('en-GB') : '-'}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              {gi.details && gi.details.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {gi.details.map((d, dIdx) => (
+                                    <span key={dIdx} className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-700 text-xs">
+                                      <span className="font-medium text-slate-800">{d.ItemName}:</span>
+                                      <span className="font-semibold text-slate-900">{d.ReceivedQty ?? d.Qty} units</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic">No item details recorded</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                bill.GateInwardNo && (
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+                    <span>Gate Inward: <strong className="text-slate-800 font-semibold">GI-{String(bill.GateInwardNo).padStart(3, '0')}</strong></span>
+                    <span>Inward Date: <strong className="text-slate-700">{bill.AccDate ? new Date(bill.AccDate).toLocaleDateString('en-GB') : '-'}</strong></span>
+                    <span>Party Bill No: <strong className="text-slate-700">{bill.PartyBillNo || 'N/A'}</strong></span>
+                  </div>
+                )
+              )}
+
+              {/* Billed Items Table */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Billed Line Items ({billItems.length})
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3">Item Name</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">PO Order No</th>
+                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Billed Qty</th>
+                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Unit Rate (₹)</th>
+                        <th className="py-2.5 px-3 text-right font-bold whitespace-nowrap">Item Total (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+                      {billItems.map((item, idx) => {
+                        const qty = parseFloat(item.Qty !== undefined ? item.Qty : (item.ReceivedQty || 0)) || 0;
+                        const rate = parseFloat(item.UnitRate) || 0;
+                        const itemTotal = parseFloat(item.TotalAmount) || (qty * rate);
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
+                            <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
+                            <td className="py-2.5 px-3 text-slate-600">{item.OrderNo ? `PO-${item.OrderNo}` : '-'}</td>
+                            <td className="py-2.5 px-3 text-right font-semibold text-slate-800">{qty}</td>
+                            <td className="py-2.5 px-3 text-right">₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-2.5 px-3 text-right font-bold text-slate-900">₹{itemTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          </tr>
+                        );
+                      })}
+                      {billItems.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-3 px-4 text-center text-slate-400 italic">
+                            No line items recorded for this bill entry
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Financial Summary */}
+              <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-slate-600">
+                  <span>Subtotal: <strong className="text-slate-800 font-semibold">₹{(bill.Total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                  {parseFloat(bill.Discount) > 0 && <span>Discount: <strong className="text-slate-800 font-semibold">-₹{parseFloat(bill.Discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                  {parseFloat(bill.GST) > 0 && <span>Tax (GST): <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.GST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                  {parseFloat(bill.IGST) > 0 && <span>IGST: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.IGST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                  {parseFloat(bill.VAT_CST) > 0 && <span>VAT/CST: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.VAT_CST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                  {parseFloat(bill.P_F) > 0 && <span>P&F: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.P_F).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                  {parseFloat(bill.LorryFreight) > 0 && <span>Freight: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.LorryFreight).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
+                  <span>Round Off: <strong className="text-slate-700">{formatRoundOff(bill.RoundOff)}</strong></span>
+                </div>
+                <div className="text-sm font-bold text-emerald-600">
+                  Grand Total: ₹{(bill.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </Fragment>
+  );
+});
+
 export default function BillEntry() {
   const showToast = useToastStore(state => state.showToast);
 
@@ -73,7 +309,7 @@ export default function BillEntry() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const fetchBillEntries = async () => {
+  const fetchBillEntries = useCallback(async () => {
     try {
       const billsRes = await axios.get(`${API_URL}/bill-entries`);
       if (billsRes.data?.success) {
@@ -82,9 +318,9 @@ export default function BillEntry() {
     } catch (error) {
       console.error('Error fetching bill entries:', error);
     }
-  };
+  }, []);
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       setLoading(true);
       await fetchBillEntries();
@@ -106,11 +342,11 @@ export default function BillEntry() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchBillEntries]);
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [fetchInitialData]);
 
   // Fetch available GRNs when party is selected in form
   useEffect(() => {
@@ -135,6 +371,22 @@ export default function BillEntry() {
     }
   }, [formData.PartyName]);
 
+  // Helper to generate default narration
+  const generateNarration = useCallback((itemList, billNo, billDate) => {
+    if (!itemList || itemList.length === 0) return '';
+    const itemPart = itemList.length === 1
+      ? itemList[0].ItemName
+      : `${itemList[0].ItemName} etc`;
+    const billDateObj = billDate ? new Date(billDate) : null;
+    const billDateFormatted = billDateObj && !isNaN(billDateObj.getTime())
+      ? `${String(billDateObj.getDate()).padStart(2, '0')}-${String(billDateObj.getMonth() + 1).padStart(2, '0')}-${billDateObj.getFullYear()}`
+      : '';
+    const billRefPart = billNo || billDateFormatted
+      ? ` as per Bill no:${billNo || ''}${billDateFormatted ? `/${billDateFormatted}` : ''}`
+      : '';
+    return `Being Supply of ${itemPart}${billRefPart}`;
+  }, []);
+
   // Fetch GRN details when GRNNo changes in form (only for new entries)
   useEffect(() => {
     if (formData.GRNNo && isNewEntry) {
@@ -150,12 +402,38 @@ export default function BillEntry() {
 
             setLinkedGateInwards(receipt.gateInwards || []);
 
+            const details = receipt.details || receipt.ReceiptDetails || [];
+            const mappedItems = details.map(d => {
+              const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
+              const rateVal = parseFloat(d.UnitRate) || 0;
+              return {
+                ItemName: d.ItemName,
+                ReceivedQty: qtyVal,
+                Qty: qtyVal,
+                UnitRate: rateVal,
+                OrderNo: d.OrderNo,
+                GRNNo: d.GRNNo || receipt.GRNNo,
+                DiscountAmt: parseFloat(d.DiscountAmt) || 0,
+                DiscountPct: parseFloat(d.DiscountPct) || 0,
+                GSTType: d.GSTType || (d.GSTPct ? `GST [${d.GSTPct} %]` : 'GST [0 %]'),
+                GSTPct: parseFloat(d.GSTPct) || 0,
+                SGSTPct: parseFloat(d.SGSTPct) || 0,
+                CGSTPct: parseFloat(d.CGSTPct) || 0,
+                IGSTPct: parseFloat(d.IGSTPct) || 0,
+                TotalAmount: d.TotalAmount !== undefined ? parseFloat(d.TotalAmount) : (qtyVal * rateVal)
+              };
+            });
+
+            const invoiceDateStr = receipt.InvoiceDate ? new Date(receipt.InvoiceDate).toISOString().split('T')[0] : formData.BillDate;
+            const autoNarration = generateNarration(mappedItems, receipt.InvoiceNo || '', invoiceDateStr);
+
             setFormData(prev => ({
               ...prev,
               GateInwardNo: receipt.GateInwardNo || prev.GateInwardNo,
               PartyName: receipt.PartyName || prev.PartyName,
               PartyBillNo: receipt.InvoiceNo || '',
-              BillDate: receipt.InvoiceDate ? new Date(receipt.InvoiceDate).toISOString().split('T')[0] : prev.BillDate,
+              BillDate: invoiceDateStr,
+              Narration: autoNarration || prev.Narration,
               Total: receipt.Total || 0,
               Discount: parseFloat(receipt.Discount) > 0 ? receipt.Discount : '',
               GST: parseFloat(receipt.GST) > 0 ? receipt.GST : '',
@@ -168,28 +446,8 @@ export default function BillEntry() {
               BillAmount: receipt.GrandTotal || 0
             }));
 
-            const details = receipt.details || receipt.ReceiptDetails || [];
-            if (details.length > 0) {
-              setItems(details.map(d => {
-                const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
-                const rateVal = parseFloat(d.UnitRate) || 0;
-                return {
-                  ItemName: d.ItemName,
-                  ReceivedQty: qtyVal,
-                  Qty: qtyVal,
-                  UnitRate: rateVal,
-                  OrderNo: d.OrderNo,
-                  GRNNo: d.GRNNo || receipt.GRNNo,
-                  DiscountAmt: parseFloat(d.DiscountAmt) || 0,
-                  DiscountPct: parseFloat(d.DiscountPct) || 0,
-                  GSTType: d.GSTType || (d.GSTPct ? `GST [${d.GSTPct} %]` : 'GST [0 %]'),
-                  GSTPct: parseFloat(d.GSTPct) || 0,
-                  SGSTPct: parseFloat(d.SGSTPct) || 0,
-                  CGSTPct: parseFloat(d.CGSTPct) || 0,
-                  IGSTPct: parseFloat(d.IGSTPct) || 0,
-                  TotalAmount: d.TotalAmount !== undefined ? parseFloat(d.TotalAmount) : (qtyVal * rateVal)
-                };
-              }));
+            if (mappedItems.length > 0) {
+              setItems(mappedItems);
             }
           }
         } catch (error) {
@@ -198,26 +456,22 @@ export default function BillEntry() {
       };
       fetchGRNDetails();
     }
-  }, [formData.GRNNo, isNewEntry]);
+  }, [formData.GRNNo, isNewEntry, generateNarration, formData.BillDate]);
 
-  // Recalculate Total from items
-  useEffect(() => {
+  // Derived financial computations using useMemo (zero cascading effects)
+  const calculatedTotal = useMemo(() => {
     if (items.length > 0) {
-      const calculatedTotal = items.reduce((sum, item) => {
+      return items.reduce((sum, item) => {
         const qty = parseFloat(item.ReceivedQty !== undefined ? item.ReceivedQty : item.Qty) || 0;
         const rate = parseFloat(item.UnitRate) || 0;
         return sum + (qty * rate);
       }, 0);
-      setFormData(prev => {
-        if (prev.Total === calculatedTotal) return prev;
-        return { ...prev, Total: calculatedTotal };
-      });
     }
-  }, [items]);
+    return parseFloat(formData.Total) || 0;
+  }, [items, formData.Total]);
 
-  // Recalculate Grand Total
-  useEffect(() => {
-    const total = parseFloat(formData.Total) || 0;
+  const financialCalculations = useMemo(() => {
+    const total = calculatedTotal;
     const discount = parseFloat(formData.Discount) || 0;
     const gst = parseFloat(formData.GST) || 0;
     const igst = parseFloat(formData.IGST) || 0;
@@ -225,19 +479,30 @@ export default function BillEntry() {
     const pf = parseFloat(formData.P_F) || 0;
     const lorryFreight = parseFloat(formData.LorryFreight) || 0;
     const unroundedGrandTotal = total - discount + gst + igst + vatCst + pf + lorryFreight;
-    const computedGrandTotal = Math.round(unroundedGrandTotal);
-    const computedRoundOff = noRoundOff ? 0 : parseFloat((computedGrandTotal - unroundedGrandTotal).toFixed(2));
+    const grandTotal = Math.round(unroundedGrandTotal);
+    const roundOff = noRoundOff ? 0 : parseFloat((grandTotal - unroundedGrandTotal).toFixed(2));
 
-    setFormData(prev => {
-      if (prev.GrandTotal === computedGrandTotal && prev.RoundOff === computedRoundOff && prev.BillAmount === computedGrandTotal) return prev;
-      return {
-        ...prev,
-        GrandTotal: computedGrandTotal,
-        RoundOff: computedRoundOff,
-        BillAmount: computedGrandTotal
-      };
-    });
-  }, [formData.Total, formData.Discount, formData.GST, formData.IGST, formData.VAT_CST, formData.P_F, formData.LorryFreight, noRoundOff]);
+    return {
+      total,
+      grandTotal,
+      roundOff,
+      billAmount: grandTotal
+    };
+  }, [calculatedTotal, formData.Discount, formData.GST, formData.IGST, formData.VAT_CST, formData.P_F, formData.LorryFreight, noRoundOff]);
+
+  // Auto-generate Narration for new entries only when needed
+  useEffect(() => {
+    if (items.length > 0 && isNewEntry) {
+      const autoNarration = generateNarration(items, formData.PartyBillNo, formData.BillDate);
+      setFormData(prev => {
+        if (!prev.Narration || prev.Narration.startsWith('Being Supply of') || prev.Narration === autoNarration) {
+          if (prev.Narration === autoNarration) return prev;
+          return { ...prev, Narration: autoNarration };
+        }
+        return prev;
+      });
+    }
+  }, [items, formData.PartyBillNo, formData.BillDate, isNewEntry, generateNarration]);
 
   // Unique parties from existing bill entries (for filter dropdown)
   const uniqueBillParties = useMemo(() => {
@@ -290,7 +555,7 @@ export default function BillEntry() {
     return filteredAndSortedBills.slice(start, start + itemsPerPage);
   }, [filteredAndSortedBills, currentPage, itemsPerPage]);
 
-  const handleOpenAddDrawer = () => {
+  const handleOpenAddDrawer = useCallback(() => {
     setIsNewEntry(true);
     setEditingVoucherNo(null);
     setFormData(initialFormState);
@@ -298,18 +563,24 @@ export default function BillEntry() {
     setGrnsList([]);
     setLinkedGateInwards([]);
     setNoRoundOff(false);
-    // Refresh parties list and purchase types
-    axios.get(`${API_URL}/bill-entries/available-parties`)
-      .then(res => { if (res.data?.success) setParties((res.data.data || []).map(n => ({ name: n }))); })
-      .catch(() => { });
-    axios.get(`${API_URL}/purchase-types`)
-      .then(res => { if (res.data?.success) setPurchaseTypes(res.data.data); })
-      .catch(() => { });
+
+    // Refresh if empty
+    if (parties.length === 0) {
+      axios.get(`${API_URL}/bill-entries/available-parties`)
+        .then(res => { if (res.data?.success) setParties((res.data.data || []).map(n => ({ name: n }))); })
+        .catch(() => { });
+    }
+    if (purchaseTypes.length === 0) {
+      axios.get(`${API_URL}/purchase-types`)
+        .then(res => { if (res.data?.success) setPurchaseTypes(res.data.data); })
+        .catch(() => { });
+    }
+
     setEditDrawerOpen(true);
     setTimeout(() => setIsDrawerVisible(true), 10);
-  };
+  }, [parties.length, purchaseTypes.length]);
 
-  const handleOpenEditDrawer = async (bill) => {
+  const handleOpenEditDrawer = useCallback(async (bill) => {
     setIsNewEntry(false);
     setNoRoundOff(bill.RoundOff !== undefined && bill.RoundOff !== null && Math.abs(parseFloat(bill.RoundOff) || 0) < 0.0001);
     setFormData({
@@ -408,9 +679,9 @@ export default function BillEntry() {
         console.error('Error enriching edit drawer items:', err);
       }
     }
-  };
+  }, []);
 
-  const handleCloseEditDrawer = () => {
+  const handleCloseEditDrawer = useCallback(() => {
     setIsDrawerVisible(false);
     setTimeout(() => {
       setEditDrawerOpen(false);
@@ -419,9 +690,9 @@ export default function BillEntry() {
       setLinkedGateInwards([]);
       setItems([]);
     }, 300);
-  };
+  }, []);
 
-  const handleDelete = async (voucherNo) => {
+  const handleDelete = useCallback(async (voucherNo) => {
     if (!window.confirm(`Are you sure you want to delete Bill Entry #${voucherNo}?`)) return;
     try {
       setLoading(true);
@@ -434,10 +705,10 @@ export default function BillEntry() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchBillEntries, showToast]);
 
   // Helper: run layered deletion confirmation for a duplicate bill entry chain
-  const handleDuplicateBillCleanup = async (duplicate, payload) => {
+  const handleDuplicateBillCleanup = useCallback(async (duplicate, payload) => {
     const { VoucherNo, PartyName: dupParty, PartyBillNo: dupBillNo, GRNNo, GateInwardNo, hasReceipt, hasGateInward, hasPurchaseOrder } = duplicate;
 
     // Layer 1: Confirm BillEntry deletion
@@ -484,9 +755,9 @@ export default function BillEntry() {
       showToast(deleteErr.response?.data?.message || 'Failed to delete duplicate records.', 'error');
       return false;
     }
-  };
+  }, [showToast]);
 
-  const handleSave = async (e) => {
+  const handleSave = useCallback(async (e) => {
     if (e) e.preventDefault();
     if (!formData.PartyName) {
       showToast('Please select Party Name', 'error');
@@ -504,18 +775,18 @@ export default function BillEntry() {
 
     const payload = {
       ...formData,
-      BillAmount: cleanNum(formData.BillAmount),
+      BillAmount: financialCalculations.billAmount,
       TDS: cleanNum(formData.TDS),
-      Total: cleanNum(formData.Total),
+      Total: financialCalculations.total,
       Discount: cleanNum(formData.Discount),
       GST: cleanNum(formData.GST),
       IGST: cleanNum(formData.IGST),
       VAT_CST: cleanNum(formData.VAT_CST),
       P_F: cleanNum(formData.P_F),
       LorryFreight: cleanNum(formData.LorryFreight),
-      RoundOff: cleanNum(formData.RoundOff),
+      RoundOff: financialCalculations.roundOff,
       TaxRndOff: cleanNum(formData.TaxRndOff),
-      GrandTotal: cleanNum(formData.GrandTotal),
+      GrandTotal: financialCalculations.grandTotal,
       items: items.map(item => {
         const qty = parseFloat(item.ReceivedQty !== undefined ? item.ReceivedQty : item.Qty) || 0;
         const rate = parseFloat(item.UnitRate) || 0;
@@ -570,27 +841,9 @@ export default function BillEntry() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, financialCalculations, items, editingVoucherNo, showToast, handleCloseEditDrawer, fetchBillEntries, handleDuplicateBillCleanup]);
 
-  const handlePrint = async (voucherNo) => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_URL}/bill-entries/print-data/${voucherNo}`);
-      if (!response.data?.success) {
-        showToast('Error fetching print data', 'error');
-        return;
-      }
-      const bill = response.data.data;
-      generatePurchaseVoucherPDF(bill);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      showToast('Error generating PDF', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generatePurchaseVoucherPDF = (bill) => {
+  const generatePurchaseVoucherPDF = useCallback((bill) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
@@ -722,10 +975,7 @@ export default function BillEntry() {
 
     // Discount (Credit)
     if (discountAmt > 0) {
-
-
       totalCredit += discountAmt;
-
     }
 
     // VAT/CST
@@ -834,7 +1084,74 @@ export default function BillEntry() {
     // Save
     doc.save(`Purchase_Voucher_${bill.VoucherNo}.pdf`);
     showToast('PDF generated successfully!', 'success');
-  };
+  }, [showToast]);
+
+  const handlePrint = useCallback(async (voucherNo) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/bill-entries/print-data/${voucherNo}`);
+      if (!response.data?.success) {
+        showToast('Error fetching print data', 'error');
+        return;
+      }
+      const bill = response.data.data;
+      generatePurchaseVoucherPDF(bill);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showToast('Error generating PDF', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [generatePurchaseVoucherPDF, showToast]);
+
+  const toggleExpandRow = useCallback((voucherNo) => {
+    setExpandedVoucherNo(prev => prev === voucherNo ? null : voucherNo);
+  }, []);
+
+  // Filter configuration memoized
+  const filterConfigs = useMemo(() => [
+    {
+      label: "Party Name",
+      icon: FileText,
+      value: partyFilter,
+      onChange: (val) => {
+        setPartyFilter(val);
+        setCurrentPage(1);
+      },
+      options: [
+        { value: 'ALL', label: 'All Parties' },
+        ...uniqueBillParties.map(p => ({ value: p, label: p }))
+      ],
+      searchable: true
+    },
+    {
+      label: "Sort By",
+      icon: ArrowUpDown,
+      value: sortBy,
+      onChange: (val) => setSortBy(val),
+      options: [
+        { value: 'newest', label: 'Date: Newest First' },
+        { value: 'oldest', label: 'Date: Oldest First' },
+        { value: 'voucher_desc', label: 'Voucher No: High to Low' },
+        { value: 'voucher_asc', label: 'Voucher No: Low to High' },
+        { value: 'total_desc', label: 'Grand Total: High to Low' }
+      ]
+    },
+    {
+      label: "Page Size",
+      value: itemsPerPage,
+      onChange: (val) => {
+        setItemsPerPage(Number(val));
+        setCurrentPage(1);
+      },
+      options: [
+        { value: 5, label: '5 per page' },
+        { value: 10, label: '10 per page' },
+        { value: 25, label: '25 per page' },
+        { value: 50, label: '50 per page' }
+      ]
+    }
+  ], [partyFilter, uniqueBillParties, sortBy, itemsPerPage]);
 
   return (
     <Layout>
@@ -856,49 +1173,7 @@ export default function BillEntry() {
             setCurrentPage(1);
           }}
           searchPlaceholder="Search by voucher no, GRN no, gate inward no, party name, bill no..."
-          filters={[
-            {
-              label: "Party Name",
-              icon: FileText,
-              value: partyFilter,
-              onChange: (val) => {
-                setPartyFilter(val);
-                setCurrentPage(1);
-              },
-              options: [
-                { value: 'ALL', label: 'All Parties' },
-                ...uniqueBillParties.map(p => ({ value: p, label: p }))
-              ],
-              searchable: true
-            },
-            {
-              label: "Sort By",
-              icon: ArrowUpDown,
-              value: sortBy,
-              onChange: (val) => setSortBy(val),
-              options: [
-                { value: 'newest', label: 'Date: Newest First' },
-                { value: 'oldest', label: 'Date: Oldest First' },
-                { value: 'voucher_desc', label: 'Voucher No: High to Low' },
-                { value: 'voucher_asc', label: 'Voucher No: Low to High' },
-                { value: 'total_desc', label: 'Grand Total: High to Low' }
-              ]
-            },
-            {
-              label: "Page Size",
-              value: itemsPerPage,
-              onChange: (val) => {
-                setItemsPerPage(Number(val));
-                setCurrentPage(1);
-              },
-              options: [
-                { value: 5, label: '5 per page' },
-                { value: 10, label: '10 per page' },
-                { value: 25, label: '25 per page' },
-                { value: 50, label: '50 per page' }
-              ]
-            }
-          ]}
+          filters={filterConfigs}
         />
 
         {/* Main Data Table (Matching Receipt Table Layout & Expandable Rows) */}
@@ -927,234 +1202,17 @@ export default function BillEntry() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {paginatedBills.map((bill) => {
-                  const isExpanded = expandedVoucherNo === bill.VoucherNo;
-                  const billItems = bill.details || bill.BillEntryDetails || [];
-
-                  return (
-                    <Fragment key={bill.VoucherNo}>
-                      <tr className="hover:bg-slate-50/60 transition-colors group">
-                        <td className="py-4 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setExpandedVoucherNo(isExpanded ? null : bill.VoucherNo)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                            title={isExpanded ? "Collapse bill item details & gate inwards" : "Expand bill item details & gate inwards"}
-                          >
-                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                          </button>
-                        </td>
-                        <td className="py-4 px-4 font-bold text-slate-900 whitespace-nowrap">
-                          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100 font-semibold text-xs">
-                            VCH-{String(bill.VoucherNo).padStart(3, '0')}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="font-semibold text-slate-800">{bill.PartyName}</div>
-                        </td>
-                        <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">
-                          {bill.GRNNo ? `GRN-${String(bill.GRNNo).padStart(3, '0')}` : <span className="text-slate-400">-</span>}
-                        </td>
-                        <td className="py-4 px-4 font-medium text-slate-700 whitespace-nowrap">
-                          {bill.PartyBillNo || <span className="text-slate-400">-</span>}
-                        </td>
-                        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
-                          {bill.BillDate ? new Date(bill.BillDate).toLocaleDateString('en-GB') : '-'}
-                        </td>
-                        <td className="py-4 px-4 text-slate-600 whitespace-nowrap">
-                          {bill.AccDate ? new Date(bill.AccDate).toLocaleDateString('en-GB') : '-'}
-                        </td>
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          {bill.PurchaseType ? (
-                            <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full text-xs font-medium border border-slate-200">
-                              {bill.PurchaseType}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-4 text-right font-bold text-emerald-600 whitespace-nowrap">
-                          ₹{(bill.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-4 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handlePrint(bill.VoucherNo)}
-                              className="px-3.5 py-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
-                              title="Print Purchase Voucher"
-                            >
-                              <Printer size={14} />
-                              Print
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditDrawer(bill)}
-                              className="px-3.5 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
-                              title="Edit Bill Entry"
-                            >
-                              <Edit2 size={14} />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(bill.VoucherNo)}
-                              className="px-3.5 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/20 flex items-center gap-1.5 font-medium text-xs cursor-pointer"
-                              title="Delete Bill Entry"
-                            >
-                              <Trash2 size={14} />
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {/* Expanded Sub-table for Gate Inwards & Billed Items */}
-                      {isExpanded && (
-                        <tr className="bg-slate-50/90 border-b border-slate-200">
-                          <td colSpan={10} className="p-4">
-                            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-4">
-                              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                  <Layers size={14} className="text-blue-600" />
-                                  Bill & Gate Inward Details for VCH-{String(bill.VoucherNo).padStart(3, '0')} ({bill.PartyName})
-                                </h4>
-                                <div className="flex items-center gap-3 text-xs text-slate-500">
-                                  {bill.GRNNo && <span>GRN: <strong className="text-slate-700">GRN-{bill.GRNNo}</strong></span>}
-                                  {bill.PartyBillNo && <span>Party Bill No: <strong className="text-slate-700">{bill.PartyBillNo}</strong></span>}
-                                </div>
-                              </div>
-
-                              {/* Gate Inward Batches Table (Matching Receipt.jsx) */}
-                              {bill.gateInwards && bill.gateInwards.length > 0 ? (
-                                <div className="space-y-2">
-                                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                    Linked Gate Inwards ({bill.gateInwards.length})
-                                  </div>
-                                  <div className="overflow-x-auto rounded-lg border border-slate-200">
-                                    <table className="w-full text-xs text-left border-collapse">
-                                      <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
-                                          <th className="py-2.5 px-3 whitespace-nowrap">Inward No</th>
-                                          <th className="py-2.5 px-3 whitespace-nowrap">Inward Date</th>
-                                          <th className="py-2.5 px-3 whitespace-nowrap">Invoice No</th>
-                                          <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
-                                          <th className="py-2.5 px-3">Received Items in Batch</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
-                                        {bill.gateInwards.map((gi) => (
-                                          <tr key={gi.InwardNo} className="hover:bg-slate-50/70">
-                                            <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-                                              GI-{String(gi.InwardNo).padStart(3, '0')}
-                                            </td>
-                                            <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
-                                              {gi.InwardDate ? new Date(gi.InwardDate).toLocaleDateString('en-GB') : '-'}
-                                            </td>
-                                            <td className="py-2.5 px-3 font-medium text-slate-800 whitespace-nowrap">
-                                              {gi.InvoiceNo || '-'}
-                                            </td>
-                                            <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
-                                              {gi.InvoiceDate ? new Date(gi.InvoiceDate).toLocaleDateString('en-GB') : '-'}
-                                            </td>
-                                            <td className="py-2.5 px-3">
-                                              {gi.details && gi.details.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1.5">
-                                                  {gi.details.map((d, dIdx) => (
-                                                    <span key={dIdx} className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-700 text-xs">
-                                                      <span className="font-medium text-slate-800">{d.ItemName}:</span>
-                                                      <span className="font-semibold text-slate-900">{d.ReceivedQty ?? d.Qty} units</span>
-                                                    </span>
-                                                  ))}
-                                                </div>
-                                              ) : (
-                                                <span className="text-slate-400 italic">No item details recorded</span>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                              ) : (
-                                bill.GateInwardNo && (
-                                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
-                                    <span>Gate Inward: <strong className="text-slate-800 font-semibold">GI-{String(bill.GateInwardNo).padStart(3, '0')}</strong></span>
-                                    <span>Inward Date: <strong className="text-slate-700">{bill.AccDate ? new Date(bill.AccDate).toLocaleDateString('en-GB') : '-'}</strong></span>
-                                    <span>Party Bill No: <strong className="text-slate-700">{bill.PartyBillNo || 'N/A'}</strong></span>
-                                  </div>
-                                )
-                              )}
-
-                              {/* Billed Items Table */}
-                              <div className="space-y-2 pt-2 border-t border-slate-100">
-                                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                  Billed Line Items ({billItems.length})
-                                </div>
-                                <div className="overflow-x-auto rounded-lg border border-slate-200">
-                                  <table className="w-full text-xs text-left border-collapse">
-                                    <thead>
-                                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
-                                        <th className="py-2.5 px-3 w-10 text-center">#</th>
-                                        <th className="py-2.5 px-3">Item Name</th>
-                                        <th className="py-2.5 px-3 whitespace-nowrap">PO Order No</th>
-                                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Billed Qty</th>
-                                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Unit Rate (₹)</th>
-                                        <th className="py-2.5 px-3 text-right font-bold whitespace-nowrap">Item Total (₹)</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
-                                      {billItems.map((item, idx) => {
-                                        const qty = parseFloat(item.Qty !== undefined ? item.Qty : (item.ReceivedQty || 0)) || 0;
-                                        const rate = parseFloat(item.UnitRate) || 0;
-                                        const itemTotal = parseFloat(item.TotalAmount) || (qty * rate);
-                                        return (
-                                          <tr key={idx} className="hover:bg-slate-50">
-                                            <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
-                                            <td className="py-2.5 px-3 font-semibold text-slate-800">{item.ItemName}</td>
-                                            <td className="py-2.5 px-3 text-slate-600">{item.OrderNo ? `PO-${item.OrderNo}` : '-'}</td>
-                                            <td className="py-2.5 px-3 text-right font-semibold text-slate-800">{qty}</td>
-                                            <td className="py-2.5 px-3 text-right">₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                                            <td className="py-2.5 px-3 text-right font-bold text-slate-900">₹{itemTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                                          </tr>
-                                        );
-                                      })}
-                                      {billItems.length === 0 && (
-                                        <tr>
-                                          <td colSpan={6} className="py-3 px-4 text-center text-slate-400 italic">
-                                            No line items recorded for this bill entry
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-
-                              {/* Financial Summary */}
-                              <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs">
-                                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-slate-600">
-                                  <span>Subtotal: <strong className="text-slate-800 font-semibold">₹{(bill.Total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
-                                  {parseFloat(bill.Discount) > 0 && <span>Discount: <strong className="text-slate-800 font-semibold">-₹{parseFloat(bill.Discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
-                                  {parseFloat(bill.GST) > 0 && <span>Tax (GST): <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.GST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
-                                  {parseFloat(bill.IGST) > 0 && <span>IGST: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.IGST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
-                                  {parseFloat(bill.VAT_CST) > 0 && <span>VAT/CST: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.VAT_CST).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
-                                  {parseFloat(bill.P_F) > 0 && <span>P&F: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.P_F).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
-                                  {parseFloat(bill.LorryFreight) > 0 && <span>Freight: <strong className="text-slate-800 font-semibold">+₹{parseFloat(bill.LorryFreight).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>}
-                                  <span>Round Off: <strong className="text-slate-700">{formatRoundOff(bill.RoundOff)}</strong></span>
-                                </div>
-                                <div className="text-sm font-bold text-emerald-600">
-                                  Grand Total: ₹{(bill.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
+                {paginatedBills.map((bill) => (
+                  <BillRow
+                    key={bill.VoucherNo}
+                    bill={bill}
+                    isExpanded={expandedVoucherNo === bill.VoucherNo}
+                    onToggleExpand={toggleExpandRow}
+                    onPrint={handlePrint}
+                    onEdit={handleOpenEditDrawer}
+                    onDelete={handleDelete}
+                  />
+                ))}
 
                 {paginatedBills.length === 0 && (
                   <tr>
@@ -1363,7 +1421,7 @@ export default function BillEntry() {
                         <input
                           type="text"
                           value={formData.PartyBillNo}
-                          onChange={(e) => setFormData({ ...formData, PartyBillNo: e.target.value })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, PartyBillNo: e.target.value }))}
                           placeholder="Enter Party Bill No (optional)"
                           className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
@@ -1374,7 +1432,7 @@ export default function BillEntry() {
                         <input
                           type="date"
                           value={formData.AccDate}
-                          onChange={(e) => setFormData({ ...formData, AccDate: e.target.value })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, AccDate: e.target.value }))}
                           className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
@@ -1386,7 +1444,7 @@ export default function BillEntry() {
                         <input
                           type="date"
                           value={formData.BillDate}
-                          onChange={(e) => setFormData({ ...formData, BillDate: e.target.value })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, BillDate: e.target.value }))}
                           className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-medium"
                         />
                       </div>
@@ -1408,7 +1466,7 @@ export default function BillEntry() {
                       <label className="block text-base font-semibold text-slate-700 mb-2">Narration</label>
                       <textarea
                         value={formData.Narration}
-                        onChange={(e) => setFormData({ ...formData, Narration: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, Narration: e.target.value }))}
                         placeholder="Enter any accounting narration or remarks..."
                         rows={3}
                         className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base font-medium"
@@ -1463,7 +1521,7 @@ export default function BillEntry() {
                           <label className="block text-sm font-semibold text-slate-600 mb-1.5">Subtotal (Total)</label>
                           <input
                             type="number"
-                            value={formData.Total || 0}
+                            value={financialCalculations.total || 0}
                             disabled
                             className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-base font-bold cursor-not-allowed"
                           />
@@ -1476,7 +1534,7 @@ export default function BillEntry() {
                             step="any"
                             value={formData.Discount || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, Discount: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, Discount: e.target.value }))}
                             placeholder="0.00"
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
@@ -1489,7 +1547,7 @@ export default function BillEntry() {
                             step="any"
                             value={formData.GST || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, GST: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, GST: e.target.value }))}
                             placeholder="0.00"
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
@@ -1502,7 +1560,7 @@ export default function BillEntry() {
                             step="any"
                             value={formData.IGST || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, IGST: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, IGST: e.target.value }))}
                             placeholder="0.00"
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
@@ -1515,7 +1573,7 @@ export default function BillEntry() {
                             step="any"
                             value={formData.VAT_CST || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, VAT_CST: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, VAT_CST: e.target.value }))}
                             placeholder="0.00"
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
@@ -1528,7 +1586,7 @@ export default function BillEntry() {
                             step="any"
                             value={formData.P_F || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, P_F: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, P_F: e.target.value }))}
                             placeholder="0.00"
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
@@ -1541,7 +1599,7 @@ export default function BillEntry() {
                             step="any"
                             value={formData.LorryFreight || ''}
                             onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setFormData({ ...formData, LorryFreight: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, LorryFreight: e.target.value }))}
                             placeholder="0.00"
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-base font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
@@ -1562,7 +1620,7 @@ export default function BillEntry() {
                           </div>
                           <input
                             type="text"
-                            value={formatRoundOff(formData.RoundOff)}
+                            value={formatRoundOff(financialCalculations.roundOff)}
                             disabled
                             className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-base font-bold cursor-not-allowed"
                           />
@@ -1572,7 +1630,7 @@ export default function BillEntry() {
                       <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
                         <span className="text-base font-bold text-slate-700">Grand Total (Bill Amount)</span>
                         <span className="text-2xl font-extrabold text-emerald-600">
-                          ₹{(formData.GrandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          ₹{(financialCalculations.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
