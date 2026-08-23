@@ -1,8 +1,13 @@
 pipeline {
     agent any
 
-    options {
-        timestamps()
+    tools {
+        nodejs 'NodeJS 20'
+    }
+
+    triggers {
+        // Polls Git every 10 minutes for changes (or triggers immediately on Webhook)
+        pollSCM('H/10 * * * *')
     }
 
     environment {
@@ -10,37 +15,45 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Install Backend Dependencies') {
+        stage('Backend Setup') {
             steps {
                 dir('backend') {
-                    sh 'npm ci || npm install'
+                    script {
+                        if (isUnix()) {
+                            sh 'npm ci || npm install'
+                        } else {
+                            bat 'npm ci || npm install'
+                        }
+                    }
                 }
             }
         }
 
-        stage('Install Frontend Dependencies') {
+        stage('Frontend Build') {
             steps {
                 dir('frontend') {
-                    sh 'npm ci || npm install'
+                    script {
+                        if (isUnix()) {
+                            sh 'npm ci || npm install'
+                            sh 'npm run api:prod'
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm ci || npm install'
+                            bat 'npm run api:prod'
+                            bat 'npm run build'
+                        }
+                    }
                 }
             }
         }
 
-        stage('Build Frontend') {
-            steps {
-                dir('frontend') {
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Archive Frontend Build') {
+        stage('Archive Artifacts') {
             steps {
                 archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true
             }
@@ -49,10 +62,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build completed successfully.'
+            echo '🎉 Build completed successfully!'
         }
         failure {
-            echo 'Build failed. Check the console output for details.'
+            echo '❌ Build failed. Check console output.'
         }
     }
 }
