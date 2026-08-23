@@ -1002,15 +1002,11 @@ export default function BillEntry() {
       y += 5;
     }
 
-    // Party payable amount
-    const partyPayable = bill.GrandTotal !== undefined && bill.GrandTotal !== null
-      ? parseFloat(bill.GrandTotal)
-      : Math.round(totalAmount - discountAmt + gstAmount + igstAmount + vatCstAmt + pfAmt + lorryAmt);
+    // Original unrounded amount for display
+    const originalPayable = totalAmount - discountAmt + gstAmount + igstAmount + vatCstAmt + pfAmt + lorryAmt;
 
-    // Exact Round Off needed to balance Debit and Credit to 0.00 mismatch
-    const targetCredit = parseFloat((totalCredit + partyPayable).toFixed(2));
-    const currentDebit = parseFloat(totalDebit.toFixed(2));
-    const roundOff = parseFloat((targetCredit - currentDebit).toFixed(2));
+    // Round off = difference between rounded and original amount
+    const roundOff = parseFloat((Math.round(originalPayable) - originalPayable).toFixed(2));
 
     // Skip round off line if the bill was saved with "No Round Off" active
     const billHasNoRoundOff = bill.RoundOff !== undefined && bill.RoundOff !== null && Math.abs(parseFloat(bill.RoundOff) || 0) < 0.0001;
@@ -1022,16 +1018,17 @@ export default function BillEntry() {
         doc.text(fmt(roundOff), col3X + 30, y, { align: 'right' });
       } else {
         doc.text(fmt(Math.abs(roundOff)), col3X + 30, y, { align: 'right' });
-        totalCredit += Math.abs(roundOff);
+        
       }
       y += 5;
     }
 
-    // Party Name (Credit entry)
+    // Party Name (Credit entry) — show original unrounded amount
     doc.text('To', col1X, y);
     doc.text(bill.PartyName || '', col1X + 12, y);
-    doc.text(fmt(partyPayable), col3X + 30, y, { align: 'right' });
-    totalCredit = partyPayable;
+    doc.text(fmt(originalPayable), col3X + 30, y, { align: 'right' });
+    //totalCredit += Math.abs(roundOff);
+    totalCredit = Math.round(originalPayable);
     y += 3;
     drawLine(y);
     y += 5;
