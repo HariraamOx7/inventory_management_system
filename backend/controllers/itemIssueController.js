@@ -5,6 +5,23 @@ const ItemMaster = require('../models/ItemMaster');
 const Item = require('../models/Item');
 const sequelize = require('../config/db');
 
+// Get effective stock — same logic as Items page (getDisplayQuantity)
+// Prefers Quantity if non-zero, else falls back to OpeningQty
+const getEffectiveStock = (item) => {
+  const quantity = Number(item.Quantity);
+  const openingQty = Number(item.OpeningQty);
+
+  if (Number.isFinite(quantity) && quantity !== 0) {
+    return quantity;
+  }
+
+  if (Number.isFinite(openingQty)) {
+    return openingQty;
+  }
+
+  return 0;
+};
+
 // Get last issue number
 exports.getLastIssueNo = async (req, res) => {
   try {
@@ -100,7 +117,7 @@ exports.getItemsByDepartment = async (req, res) => {
 
     const items = await Item.findAll({
       where: { DepartmentId: dept.dept_id },
-      attributes: ['ItemCode', 'ItemName', 'OpeningQty', 'UOM'],
+      attributes: ['ItemCode', 'ItemName', 'Quantity', 'OpeningQty', 'UOM'],
       order: [['ItemName', 'ASC']]
     });
 
@@ -110,7 +127,7 @@ exports.getItemsByDepartment = async (req, res) => {
         ItemCode: it.ItemCode,
         ItemName: it.ItemName,
         Qty: 0,
-        OpeningQty: it.OpeningQty || 0,
+        OpeningQty: getEffectiveStock(it),
         UOM: it.UOM || '',
         EmpName: ''
       }))
@@ -220,14 +237,14 @@ exports.createItemIssue = async (req, res) => {
         });
       }
 
-      const currentStock = Number(item.OpeningQty || 0);
+      const currentStock = getEffectiveStock(item);
 
-      // Your rule: Qty always less than Stock
-      if (qty >= currentStock) {
+      // Allow issuing the full balance, including a single remaining unit.
+      if (qty > currentStock) {
         await t.rollback();
         return res.status(400).json({
           success: false,
-          message: 'Qty for ' + item.ItemName + ' must be less than stock (' + currentStock + ')'
+          message: 'Qty for ' + item.ItemName + ' cannot exceed stock (' + currentStock + ')'
         });
       }
 
@@ -322,7 +339,7 @@ exports.updateItemIssue = async (req, res) => {
       });
 
       if (item) {
-        const restored = Number(item.OpeningQty || 0) + Number(d.Qty || 0);
+        const restored = getEffectiveStock(item) + Number(d.Qty || 0);
         await item.update({ OpeningQty: restored, Quantity: restored }, { transaction: t });
       }
     }
@@ -367,13 +384,14 @@ exports.updateItemIssue = async (req, res) => {
         });
       }
 
-      const currentStock = Number(item.OpeningQty || 0);
+      const currentStock = getEffectiveStock(item);
 
-      if (qty >= currentStock) {
+      // Allow issuing the full balance, including a single remaining unit.
+      if (qty > currentStock) {
         await t.rollback();
         return res.status(400).json({
           success: false,
-          message: 'Qty for ' + item.ItemName + ' must be less than stock (' + currentStock + ')'
+          message: 'Qty for ' + item.ItemName + ' cannot exceed stock (' + currentStock + ')'
         });
       }
 
@@ -411,27 +429,64 @@ exports.updateItemIssue = async (req, res) => {
   }
 };
 
-// Delete item issue
+// Delete item issue with stock restoration
 exports.deleteItemIssue = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { issueNo } = req.params;
 
-    const issue = await ItemIssue.findByPk(issueNo);
+    const issue = await ItemIssue.findByPk(issueNo, { transaction: t });
     if (!issue) {
+      await t.rollback();
       return res.status(404).json({
         success: false,
         message: 'Item Issue not found'
       });
     }
 
-    await ItemIssueDetail.destroy({ where: { IssueNo: issueNo } });
-    await issue.destroy();
+    // Look up the department to find items by DepartmentId
+    const dept = await Department.findOne({
+      where: { dept_name: (issue.Department || '').trim() },
+      attributes: ['dept_id'],
+      transaction: t
+    });
 
+    // Restore stock for each issued item before deleting
+    const existingDetails = await ItemIssueDetail.findAll({
+      where: { IssueNo: issueNo },
+      transaction: t
+    });
+
+    if (dept) {
+      for (const d of existingDetails) {
+        const item = await Item.findOne({
+          where: {
+            ItemName: d.ItemName,
+            DepartmentId: dept.dept_id
+          },
+          transaction: t
+        });
+
+        if (item) {
+          const restored = getEffectiveStock(item) + Number(d.Qty || 0);
+          await item.update(
+            { OpeningQty: restored, Quantity: restored },
+            { transaction: t }
+          );
+        }
+      }
+    }
+
+    await ItemIssueDetail.destroy({ where: { IssueNo: issueNo }, transaction: t });
+    await issue.destroy({ transaction: t });
+
+    await t.commit();
     res.json({
       success: true,
       message: 'Item Issue deleted successfully'
     });
   } catch (error) {
+    await t.rollback();
     console.error('Error deleting item issue:', error);
     res.status(500).json({
       success: false,

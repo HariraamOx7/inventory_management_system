@@ -86,8 +86,7 @@ const startServer = async () => {
         await sequelize.authenticate();
         console.log('Database connection established');
 
-        // Use { force: true } to drop and recreate all tables
-        await sequelize.sync({ alter: true });
+        await sequelize.sync();
 
         console.log('Database synchronized');
 

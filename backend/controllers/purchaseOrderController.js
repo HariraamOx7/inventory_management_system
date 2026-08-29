@@ -238,19 +238,8 @@ exports.createPurchaseOrder = async (req, res) => {
         GrandTotal: parseDec(item.GrandTotal, 0),
         MRS_No: item.MRS_No || null
       });
-      // Update item stock by adding the quantity
-      const itemRecord = await Item.findOne({
-        where: { ItemName: item.ItemName }
-      });
-
-      if (itemRecord) {
-        // Add the quantity to existing stock
-        // Add PO quantity to OpeningQty instead of Stock
-        await itemRecord.update({
-          OpeningQty: parseFloat(itemRecord.OpeningQty || 0) + parseFloat(item.Qty || 0),
-          Quantity: parseFloat(itemRecord.Quantity || itemRecord.OpeningQty || 0) + parseFloat(item.Qty || 0)
-        });
-      }
+      // A purchase order does not change on-hand stock. Stock is updated only
+      // when the corresponding gate inward records the received quantity.
     }
 
     res.status(201).json({
@@ -408,6 +397,15 @@ exports.deletePurchaseOrder = async (req, res) => {
     });
     const inwardNos = gateInwards.map(row => row.InwardNo);
 
+    const inwardDetails = inwardNos.length > 0
+      ? await GateInwardDetail.findAll({
+          where: { InwardNo: { [Op.in]: inwardNos } },
+          attributes: ['ItemName', 'ReceivedQty'],
+          raw: true,
+          transaction: t
+        })
+      : [];
+
     const receipts = inwardNos.length > 0
       ? await Receipt.findAll({
           where: { GateInwardNo: { [Op.in]: inwardNos } },
@@ -439,23 +437,28 @@ exports.deletePurchaseOrder = async (req, res) => {
     }
 
     if (inwardNos.length > 0) {
-      await GateInwardDetail.destroy({ where: { InwardNo: { [Op.in]: inwardNos } }, transaction: t });
-      await GateInward.destroy({ where: { InwardNo: { [Op.in]: inwardNos } }, transaction: t });
-    }
+      // Gate inward is the only event that adds stock, so reversing a
+      // purchase-order cascade must remove the quantities actually received.
+      for (const detail of inwardDetails) {
+        const receivedQty = parseFloat(detail.ReceivedQty) || 0;
+        if (!detail.ItemName || receivedQty === 0) continue;
 
-    // Roll back the stock increase applied when the purchase order was created
-    for (const detail of orderDetails) {
-      const itemRecord = await Item.findOne({
-        where: { ItemName: detail.ItemName },
-        transaction: t
-      });
+        const itemRecord = await Item.findOne({
+          where: { ItemName: detail.ItemName },
+          transaction: t
+        });
+        if (!itemRecord) continue;
 
-      if (itemRecord) {
+        const currentQty = parseFloat(itemRecord.Quantity ?? itemRecord.OpeningQty) || 0;
+        const currentOpeningQty = parseFloat(itemRecord.OpeningQty) || 0;
         await itemRecord.update({
-          OpeningQty: parseFloat(itemRecord.OpeningQty || 0) - parseFloat(detail.Qty || 0),
-          Quantity: parseFloat(itemRecord.Quantity || itemRecord.OpeningQty || 0) - parseFloat(detail.Qty || 0)
+          Quantity: currentQty - receivedQty,
+          OpeningQty: currentOpeningQty - receivedQty
         }, { transaction: t });
       }
+
+      await GateInwardDetail.destroy({ where: { InwardNo: { [Op.in]: inwardNos } }, transaction: t });
+      await GateInward.destroy({ where: { InwardNo: { [Op.in]: inwardNos } }, transaction: t });
     }
 
     await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo }, transaction: t });

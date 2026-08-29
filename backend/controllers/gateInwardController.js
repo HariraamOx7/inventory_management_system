@@ -3,6 +3,29 @@ const GateInward = require('../models/GateInward');
 const GateInwardDetail = require('../models/GateInwardDetail');
 const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
+const Item = require('../models/Item');
+
+// Stock represents goods physically received.  A purchase order is only a
+// commitment, so inventory is adjusted exclusively when its gate inward lines
+// are created, changed, or removed.
+const adjustInventory = async (details = [], direction) => {
+  for (const detail of details) {
+    const receivedQty = parseFloat(detail.ReceivedQty) || 0;
+    if (!detail.ItemName || receivedQty === 0) continue;
+
+    const item = await Item.findOne({ where: { ItemName: detail.ItemName } });
+    if (!item) continue;
+
+    const currentQty = parseFloat(item.Quantity ?? item.OpeningQty) || 0;
+    const currentOpeningQty = parseFloat(item.OpeningQty) || 0;
+    const adjustment = receivedQty * direction;
+
+    await item.update({
+      Quantity: currentQty + adjustment,
+      OpeningQty: currentOpeningQty + adjustment
+    });
+  }
+};
 
 const findInvalidReceivedQtyItem = (items = []) => items.find((item) => {
   const pendingQty = parseFloat(item.PendingQty ?? item.Qty) || 0;
@@ -301,6 +324,8 @@ exports.createGateInward = async (req, res) => {
       });
     }
 
+    await adjustInventory(items, 1);
+
     // Recalculate PO status (Draft / Partial / Completed)
     for (const oNo of orderNos) {
       await recalcPOStatus(oNo);
@@ -382,6 +407,10 @@ exports.updateGateInward = async (req, res) => {
     });
 
     if (items && items.length > 0) {
+      const previousDetails = await GateInwardDetail.findAll({
+        where: { InwardNo: inwardNo },
+        raw: true
+      });
       await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
 
       const affectedOrderNos = new Set();
@@ -400,6 +429,9 @@ exports.updateGateInward = async (req, res) => {
       for (const oNo of affectedOrderNos) {
         await recalcPOStatus(oNo);
       }
+
+      await adjustInventory(previousDetails, -1);
+      await adjustInventory(items, 1);
     }
 
     res.json({
@@ -432,12 +464,13 @@ exports.deleteGateInward = async (req, res) => {
 
     const details = await GateInwardDetail.findAll({
       where: { InwardNo: inwardNo },
-      attributes: ['OrderNo'],
+      attributes: ['OrderNo', 'ItemName', 'ReceivedQty'],
       raw: true
     });
 
     const orderNos = [...new Set([inward.OrderNo, ...details.map(d => d.OrderNo)].filter(Boolean))];
 
+    await adjustInventory(details, -1);
     await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
     await inward.destroy();
 
@@ -736,6 +769,11 @@ exports.deleteGateInwardChain = async (req, res) => {
 
     // Layer 1: Delete GateInward + Details
     if (layers.gateInward) {
+      const details = await GateInwardDetail.findAll({
+        where: { InwardNo: inwardNo },
+        raw: true
+      });
+      await adjustInventory(details, -1);
       await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
       await inward.destroy();
       deletedLayers.push('GateInward');

@@ -181,7 +181,7 @@ exports.updateItem = async (req, res) => {
         const { code } = req.params;
         const {
             ItemName, Category, Commodity, UnitRate, MinStockLevel,
-            Quantity, OpeningQty, MaxStockLevel, OpenValue, Location, DepartmentId,
+            MaxStockLevel, OpenValue, Location, DepartmentId,
             HSNCode, SubHeadCode, UOM
         } = req.body;
 
@@ -196,16 +196,14 @@ exports.updateItem = async (req, res) => {
             });
         }
 
-        const resolvedQuantity = getQuantityValue(Quantity, OpeningQty, item.Quantity);
-
+        // Only update non-stock fields — preserve OpeningQty and Quantity
+        // so that issue/receipt deductions are not accidentally overwritten
         await item.update({ 
             ItemName: ItemName ? ItemName.trim() : item.ItemName,
             Category: Category ? Category.trim() : null,
             Commodity: Commodity ? Commodity.trim() : null,
             UnitRate: UnitRate || 0,
             MinStockLevel: MinStockLevel || 0,
-            OpeningQty: resolvedQuantity,
-            Quantity: resolvedQuantity,
             MaxStockLevel: MaxStockLevel || 0,
             OpenValue: OpenValue || 0,
             Location: Location ? Location.trim() : null,

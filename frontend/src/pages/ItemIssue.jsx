@@ -311,13 +311,13 @@ export default function ItemIssue() {
       return;
     }
 
-    // Validate that Qty < OpeningQty
+    // Quantity may use the full available stock.
     const invalid = issueItems.find(
-      (i) => Number(i.Qty) >= Number(i.OpeningQty)
+      (i) => Number(i.Qty) > Number(i.OpeningQty)
     );
     if (invalid) {
       showToast(
-        `Quantity (${invalid.Qty}) must be less than current stock (${invalid.OpeningQty}) for "${invalid.ItemName}"`,
+        `Quantity (${invalid.Qty}) cannot exceed current stock (${invalid.OpeningQty}) for "${invalid.ItemName}"`,
         'error'
       );
       return;
