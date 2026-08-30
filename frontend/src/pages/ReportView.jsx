@@ -1,8 +1,8 @@
-// frontend/src/pages/ReportView.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { jsPDF } from 'jspdf';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -588,8 +588,40 @@ export default function ReportView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [savingPdf, setSavingPdf] = useState(false);
+  const paperRef = useRef(null);
 
   const reportKey = `${category}/${report}`;
+
+  const handleSaveReport = async () => {
+    if (!paperRef.current || !data) return;
+    try {
+      setSavingPdf(true);
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const cleanTitle = (data.reportTitle || title || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `${cleanTitle}_${fromDate}_to_${toDate}.pdf`;
+
+      await doc.html(paperRef.current, {
+        callback: (pdf) => {
+          pdf.save(filename);
+        },
+        x: 15,
+        y: 15,
+        width: 810,
+        windowWidth: 1100,
+        autoPaging: 'text'
+      });
+    } catch (err) {
+      console.error('Error downloading report PDF:', err);
+    } finally {
+      setSavingPdf(false);
+    }
+  };
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -722,12 +754,18 @@ export default function ReportView() {
             </button>
             <span className="rv-title">{title}</span>
           </div>
-          <button className="rv-print" onClick={() => window.print()}>
-            <Printer size={16} /> Print
+          <button
+            className="rv-print"
+            onClick={handleSaveReport}
+            disabled={savingPdf || !data}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#059669', cursor: 'pointer' }}
+          >
+            {savingPdf ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            <span>{savingPdf ? 'Saving...' : 'Save Report'}</span>
           </button>
         </div>
 
-        <div className="rv-paper">
+        <div ref={paperRef} className="rv-paper">
           {loading ? (
             <div className="rv-loading"><Loader2 size={22} className="animate-spin" /> Loading report...</div>
           ) : error ? (
