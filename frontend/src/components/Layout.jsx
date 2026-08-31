@@ -19,10 +19,14 @@ import {
   Moon,
   Settings,
   XCircle,
-  FileCheck
+  FileCheck,
+  KeyRound,
+  Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToastStore } from '../store/toastStore';
+import { useAuthStore } from '../store/authStore';
+import ChangePasswordModal from './ChangePasswordModal';
 
 function ToastContainer({ toast, onClose }) {
   useEffect(() => {
@@ -123,10 +127,11 @@ const Layout = ({ children }) => {
 
   const toast = useToastStore(state => state.toast);
   const hideToast = useToastStore(state => state.hideToast);
+  const { logout } = useAuthStore();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
   };
 
@@ -320,6 +325,47 @@ const Layout = ({ children }) => {
           <span>Bill Verify</span>
         </button>
       </nav>
+
+      {/* User Profile & Account Footer */}
+      <div className="p-3 border-t border-[#1e2746]/60 bg-[#0d1326]">
+        <div className="flex items-center justify-between px-2 py-1.5 mb-2">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
+              {(user?.full_name || user?.username || 'U')[0].toUpperCase()}
+            </div>
+            <div className="truncate">
+              <div className="text-xs font-semibold text-white truncate">
+                {user?.full_name || user?.username || 'User'}
+              </div>
+              <div className="text-[10px] font-medium text-indigo-400 capitalize">
+                {user?.role || 'Operator'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsChangePasswordOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[#141b36] hover:bg-[#1e274c] text-slate-300 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+            title="Change Password"
+          >
+            <KeyRound size={13} className="text-indigo-400" />
+            <span>Password</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 text-xs font-medium transition-colors cursor-pointer"
+            title="Sign Out"
+          >
+            <LogOut size={13} className="text-rose-400" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 
@@ -359,6 +405,11 @@ const Layout = ({ children }) => {
       {toast && (
         <ToastContainer toast={toast} onClose={hideToast} />
       )}
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 };

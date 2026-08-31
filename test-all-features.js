@@ -14,10 +14,10 @@
  * Run with: node test-all-features.js (or npm test)
  */
 
-require('dotenv').config({ path: __dirname + '/backend/.env' });
 const path = require('path');
+require(path.resolve(__dirname, 'backend/node_modules/dotenv')).config({ path: __dirname + '/backend/.env' });
 const { jsPDF } = require(path.resolve(__dirname, 'frontend/node_modules/jspdf'));
-const { Op } = require('sequelize');
+const { Op } = require(path.resolve(__dirname, 'backend/node_modules/sequelize'));
 
 // Load Sequelize Models with all associations
 const {
@@ -48,10 +48,12 @@ const {
   GatePassIn,
   GatePassInDetail,
   CancelOrder,
-  BillVerify
+  BillVerify,
+  User
 } = require('./backend/models/index');
 
 // Load Controllers
+const authController = require('./backend/controllers/authController');
 const departmentController = require('./backend/controllers/departmentController');
 const subHeadController = require('./backend/controllers/subHeadController');
 const prodHeadController = require('./backend/controllers/prodHeadController');
@@ -620,11 +622,94 @@ async function main() {
   });
 
   // -------------------------------------------------------------------------
-  // SUITE 7: CLEANUP AUTOMATED TEST RECORDS
+  // SUITE 7: AUTHENTICATION, PASSWORD HASHING & SECURITY
   // -------------------------------------------------------------------------
-  console.log(`\n${colors.yellow}${colors.bright}7. Automated Cleanup of Test Records${colors.reset}`);
+  console.log(`\n${colors.yellow}${colors.bright}7. User Authentication & Password Security${colors.reset}`);
 
-  await runTest('Cleanup', 'Clean test chain (Bill Entry, Receipt, Gate Inward, PO, Items, Dept)', async () => {
+  let testUserId = null;
+  const testUsername = `sec_test_${Date.now()}`;
+  const testPassword = 'Password@123';
+  const newPassword = 'NewSecretPassword@456';
+
+  await runTest('Authentication', 'Register New User with Bcrypt Hashed Password', async () => {
+    const { req, res, getData, getStatus } = createMockReqRes({
+      body: {
+        username: testUsername,
+        password: testPassword,
+        full_name: 'Security Test User',
+        email: `${testUsername}@example.com`,
+        role: 'operator'
+      }
+    });
+    await authController.register(req, res);
+    const data = getData();
+    assert(getStatus() === 201 && data?.success, `User registration failed: ${data?.message}`);
+    assert(data.user?.id, 'User ID missing in registration response');
+    testUserId = data.user.id;
+  });
+
+  let testToken = null;
+  await runTest('Authentication', 'Login with Correct Credentials (JWT Token Generation)', async () => {
+    const { req, res, getData } = createMockReqRes({
+      body: { username: testUsername, password: testPassword }
+    });
+    await authController.login(req, res);
+    const data = getData();
+    assert(data?.success, 'Login failed with valid credentials');
+    assert(data?.token, 'JWT token missing in login response');
+    testToken = data.token;
+  });
+
+  await runTest('Authentication', 'Reject Login with Invalid Password', async () => {
+    const { req, res, getData, getStatus } = createMockReqRes({
+      body: { username: testUsername, password: 'WrongPassword999' }
+    });
+    await authController.login(req, res);
+    const data = getData();
+    assert(getStatus() === 401 && !data?.success, 'Login should have failed with invalid credentials');
+  });
+
+  await runTest('Authentication', 'Get Authenticated User Profile (/api/auth/me)', async () => {
+    const { req, res, getData } = createMockReqRes({
+      user: { id: testUserId }
+    });
+    await authController.getCurrentUser(req, res);
+    const data = getData();
+    assert(data?.success, 'Failed to fetch user profile');
+    assert(data.user?.username === testUsername, 'Username in profile mismatch');
+  });
+
+  await runTest('Authentication', 'Change Password (verify current, enforce complexity, re-hash)', async () => {
+    const { req, res, getData } = createMockReqRes({
+      user: { id: testUserId },
+      body: {
+        currentPassword: testPassword,
+        newPassword: newPassword,
+        confirmPassword: newPassword
+      }
+    });
+    await authController.changePassword(req, res);
+    const data = getData();
+    assert(data?.success, `Change password failed: ${data?.message}`);
+
+    // Verify new password works
+    const mockLogin = createMockReqRes({
+      body: { username: testUsername, password: newPassword }
+    });
+    await authController.login(mockLogin.req, mockLogin.res);
+    assert(mockLogin.getData()?.success, 'Login with new password failed');
+  });
+
+  // -------------------------------------------------------------------------
+  // SUITE 8: CLEANUP AUTOMATED TEST RECORDS
+  // -------------------------------------------------------------------------
+  console.log(`\n${colors.yellow}${colors.bright}8. Automated Cleanup of Test Records${colors.reset}`);
+
+  await runTest('Cleanup', 'Clean test chain (Bill Entry, Receipt, Gate Inward, PO, Items, User, Dept)', async () => {
+    // Clean test user
+    if (testUserId) {
+      await User.destroy({ where: { id: testUserId } });
+    }
     // Delete Bill Chain
     if (createdVoucherNo) {
       const mockDel = createMockReqRes({

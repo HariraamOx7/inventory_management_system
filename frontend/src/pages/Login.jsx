@@ -1,198 +1,147 @@
-// frontend/src/pages/Login.jsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Lock, User, Eye, EyeOff, ArrowRight, Loader2, AlertCircle, Info } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import logoImg from '../assets/logo.png';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [sessionAlert, setSessionAlert] = useState(false);
+
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const location = useLocation();
+  const { login, loading, error, clearError, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('session_expired') === 'true') {
+      setSessionAlert(true);
+    }
+  }, [isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // For testing - hardcoded login
-    if (username === 'admin' && password === 'admin123') {
-      const user = { id: 1, username: 'admin', fullName: 'Administrator' };
-      setAuth(user, 'fake-token-for-testing');
-      navigate('/dashboard');
-    } else {
-      alert('Invalid credentials. Use admin / admin123');
+    setFormError('');
+    clearError();
+
+    if (!username.trim() || !password) {
+      setFormError('Please enter username and password');
+      return;
+    }
+
+    const result = await login(username.trim(), password);
+    if (result.success) {
+      navigate('/dashboard', { replace: true });
     }
   };
 
+  const displayError = formError || error;
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom right, #4f46e5, #7c3aed)' }}>
-      <div style={{ background: 'white', padding: '40px', borderRadius: '10px', width: '400px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>Login</h2>
-        
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '5px' }}
-              placeholder="Enter username"
-            />
-          </div>
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-50 font-sans">
+      {/* Left Side: Logo */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-20 bg-white border-b lg:border-b-0 lg:border-r border-slate-200/80">
+        <div className="w-full max-w-lg flex items-center justify-center">
+          <img
+            src={logoImg}
+            alt="Logo"
+            className="w-full max-h-48 sm:max-h-64 object-contain select-none"
+          />
+        </div>
+      </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '5px' }}
-              placeholder="Enter password"
-            />
-          </div>
+      {/* Right Side: Sign In Box */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-16">
+        <div className="w-full max-w-sm bg-white border border-slate-200/90 rounded-2xl p-7 sm:p-8 shadow-xl shadow-slate-200/60">
+          {/* Session Alert */}
+          {sessionAlert && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs">
+              <Info size={16} className="shrink-0 text-amber-600" />
+              <span>Session expired. Please sign in.</span>
+            </div>
+          )}
 
-          <button
-            type="submit"
-            style={{ width: '100%', padding: '12px', background: 'linear-gradient(to right, #4f46e5, #7c3aed)', color: 'white', border: 'none', borderRadius: '5px', fontWeight: '600', cursor: 'pointer' }}
-          >
-            Sign In
-          </button>
-        </form>
+          {/* Error Banner */}
+          {displayError && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-800 text-xs">
+              <AlertCircle size={16} className="shrink-0 text-rose-600" />
+              <span>{displayError}</span>
+            </div>
+          )}
 
-        <p style={{ textAlign: 'center', marginTop: '15px', fontSize: '14px', color: '#6b7280' }}>
-          Demo: admin / admin123
-        </p>
+          {/* Simple Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <User size={18} />
+              </div>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (displayError) setFormError('');
+                }}
+                placeholder="Username"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
+                autoFocus
+                required
+              />
+            </div>
+
+            {/* Password */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <Lock size={18} />
+              </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (displayError) setFormError('');
+                }}
+                placeholder="Password"
+                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm font-medium focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/35 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight size={17} />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
 
 export default Login;
-
-// import { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-
-// const Login = () => {
-//   const [credentials, setCredentials] = useState({
-//     username: '',
-//     password: ''
-//   });
-//   const [error, setError] = useState('');
-//   const [loading, setLoading] = useState(false);
-//   const navigate = useNavigate();
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setError('');
-//     setLoading(true);
-
-//     try {
-//       const response = await axios.post('http://localhost:5000/api/auth/login', credentials);
-      
-//       if (response.data.success) {
-//         // Store token and user info
-//         localStorage.setItem('token', response.data.token);
-//         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-//         // Redirect to dashboard
-//         navigate('/dashboard');
-//       }
-//     } catch (err) {
-//       console.error('Login error:', err);
-//       setError(err.response?.data?.message || 'Login failed. Please try again.');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleChange = (e) => {
-//     setCredentials({
-//       ...credentials,
-//       [e.target.name]: e.target.value
-//     });
-//   };
-
-//   return (
-//     <div className="min-h-screen flex">
-//       {/* Left Side - Login Form */}
-//       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
-//         <div className="w-full max-w-md">
-//           <div className="text-center mb-8">
-//             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-//               Welcome Back
-//             </h1>
-//             <p className="text-gray-600">
-//               Sign in to access your dashboard
-//             </p>
-//           </div>
-
-//           {error && (
-//             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-//               <p className="text-sm text-red-600">{error}</p>
-//             </div>
-//           )}
-
-//           <form onSubmit={handleSubmit} className="space-y-6">
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">
-//                 Username
-//               </label>
-//               <input
-//                 type="text"
-//                 name="username"
-//                 value={credentials.username}
-//                 onChange={handleChange}
-//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-//                 placeholder="Enter your username"
-//                 required
-//               />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">
-//                 Password
-//               </label>
-//               <input
-//                 type="password"
-//                 name="password"
-//                 value={credentials.password}
-//                 onChange={handleChange}
-//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-//                 placeholder="Enter your password"
-//                 required
-//               />
-//             </div>
-
-//             <button
-//               type="submit"
-//               disabled={loading}
-//               className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
-//             >
-//               {loading ? 'Signing in...' : 'Sign In'}
-//             </button>
-//           </form>
-
-//           <div className="mt-6 text-center">
-//             <p className="text-sm text-gray-600">
-//               Test Credentials: <span className="font-semibold">admin / admin123</span>
-//             </p>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Right Side - Branding */}
-//       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700 items-center justify-center p-8">
-//         <div className="text-white text-center">
-//           <h2 className="text-4xl font-bold mb-4">
-//             Electrical Maintenance System
-//           </h2>
-//           <p className="text-xl text-indigo-100">
-//             Manage your machines and maintenance schedules efficiently
-//           </p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Login;

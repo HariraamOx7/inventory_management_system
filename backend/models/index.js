@@ -30,6 +30,7 @@ const GatePassIn = require('./GatePassIn');
 const GatePassInDetail = require('./GatePassInDetail');
 const CancelOrder = require('./CancelOrder');
 const BillVerify = require('./BillVerify');
+const User = require('./User');
 // Define associations (only those not already defined in model files)
 
 // PurchaseOrder associations
@@ -137,4 +138,5 @@ module.exports = {
   GatePassInDetail,
   CancelOrder,
   BillVerify,
+  User
 };

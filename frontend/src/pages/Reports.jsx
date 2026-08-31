@@ -2207,11 +2207,40 @@ const Reports = () => {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => window.print()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                    onClick={async () => {
+                      if (!printPaperRef.current || !reportData) return;
+                      try {
+                        setSavingPdf(true);
+                        const doc = new jsPDF({
+                          orientation: 'landscape',
+                          unit: 'pt',
+                          format: 'a4'
+                        });
+                        const cleanTitle = (reportData.reportTitle || activeReportTitle || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_');
+                        const filename = `${cleanTitle}_${fromDate}_to_${toDate}.pdf`;
+                        await doc.html(printPaperRef.current, {
+                          callback: (pdf) => {
+                            pdf.save(filename);
+                          },
+                          x: 15,
+                          y: 15,
+                          width: 810,
+                          windowWidth: 1100,
+                          autoPaging: 'text'
+                        });
+                        showToast('Report saved as PDF', 'success');
+                      } catch (err) {
+                        console.error('Error saving report PDF:', err);
+                        showToast('Failed to save PDF', 'error');
+                      } finally {
+                        setSavingPdf(false);
+                      }
+                    }}
+                    disabled={savingPdf}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Printer size={16} />
-                    <span>Print Report</span>
+                    {savingPdf ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    <span>{savingPdf ? 'Saving...' : 'Save Report'}</span>
                   </button>
                   <button
                     type="button"
@@ -2225,7 +2254,7 @@ const Reports = () => {
               </div>
 
               {/* Printable Paper Canvas */}
-              <div className="p-6 sm:p-8 lg:p-10 overflow-x-auto custom-scrollbar rv-paper-card">
+              <div ref={printPaperRef} className="p-6 sm:p-8 lg:p-10 overflow-x-auto custom-scrollbar rv-paper-card">
                 {/* Formal Report Header */}
                 <div className="mb-4 pb-3 border-b-2 border-rose-600">
                   <div className="text-base font-bold text-slate-900">
