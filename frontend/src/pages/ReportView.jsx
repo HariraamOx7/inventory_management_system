@@ -676,8 +676,8 @@ export default function ReportView() {
 .rv-bar .rv-print:hover { background:#1d4ed8; }
 
 /* ── Paper ─────────────────────────────────────────────────── */
-.rv-paper { max-width:1120px; margin:20px auto; background:#fff;
-  padding:36px 44px; box-shadow:0 1px 10px rgba(0,0,0,.07); border-radius:3px; }
+.rv-paper { max-width:98%; margin:20px auto; background:#fff;
+  padding:32px 40px; box-shadow:0 1px 10px rgba(0,0,0,.07); border-radius:6px; }
 
 .rv-hdr { margin-bottom:12px; }
 .rv-hdr-title { color:#1e3a5f; font-size:13.5px; font-weight:600; }

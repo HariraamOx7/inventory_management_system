@@ -37,8 +37,9 @@ const categoryIcons = {
   Billing: FileText,
   'Receipt Report': PackageCheck,
   'Stock Report': Boxes,
-  Others: ClipboardList,
-  'Issue Report': Send
+  'Issue Report': Send,
+  Others: ClipboardList
+
 };
 
 const reportOptions = {
@@ -84,16 +85,6 @@ const reportOptions = {
     { label: 'MaxLevel Stock Items', key: 'max-level' },
     { label: 'Item Wise Stock (Excel Export)', key: 'item-wise' }
   ],
-  Others: [
-    { label: 'Gate Pass Pending Report', key: 'gatepass-pending' },
-    { label: 'Party wise Gate Pass Pending Report', key: 'gatepass-pending-party', filterType: 'parties', filterLabel: 'Party', queryParam: 'parties' },
-    { label: 'Gate Pass Returnable/NonReturnable Report', key: 'gatepass-returnable-nonreturnable' },
-    { label: 'Gate Pass Returnable PartyWise', key: 'gatepass-returnable-party', filterType: 'parties', filterLabel: 'Party', queryParam: 'parties' },
-    { label: 'Gate Pass NonReturnable Report', key: 'gatepass-nonreturnable' },
-    { label: 'Gate Pass In Report', key: 'gatepass-in' },
-    { label: 'Gate Pass In PartyWise', key: 'gatepass-in-party', filterType: 'parties', filterLabel: 'Party', queryParam: 'parties' },
-    { label: 'Item Register Location wise Report', key: 'item-location' }
-  ],
   'Issue Report': [
     { label: 'Date wise issue register', key: 'date-wise' },
     { label: 'Item wise issue register', key: 'item-wise', filterType: 'items', filterLabel: 'Item', queryParam: 'items' },
@@ -103,6 +94,16 @@ const reportOptions = {
     { label: 'Month wise Item Movement Report (Department wise)', key: 'month-movement-dept', filterType: 'departments', filterLabel: 'Department', queryParam: 'departments' },
     { label: 'Month wise Item Movement Report (Subhead wise)', key: 'month-movement-subhead', filterType: 'subheads', filterLabel: 'Sub Head', queryParam: 'subheads' },
     { label: 'Department-Item wise issue register', key: 'department-item-wise', filterType: 'departments', filterLabel: 'Department', queryParam: 'departments' }
+  ],
+  Others: [
+    { label: 'Gate Pass Pending Report', key: 'gatepass-pending' },
+    { label: 'Party wise Gate Pass Pending Report', key: 'gatepass-pending-party', filterType: 'parties', filterLabel: 'Party', queryParam: 'parties' },
+    { label: 'Gate Pass Returnable/NonReturnable Report', key: 'gatepass-returnable-nonreturnable' },
+    { label: 'Gate Pass Returnable PartyWise', key: 'gatepass-returnable-party', filterType: 'parties', filterLabel: 'Party', queryParam: 'parties' },
+    { label: 'Gate Pass NonReturnable Report', key: 'gatepass-nonreturnable' },
+    { label: 'Gate Pass In Report', key: 'gatepass-in' },
+    { label: 'Gate Pass In PartyWise', key: 'gatepass-in-party', filterType: 'parties', filterLabel: 'Party', queryParam: 'parties' },
+    { label: 'Item Register Location wise Report', key: 'item-location' }
   ]
 };
 
@@ -111,8 +112,8 @@ const categoryApiPrefix = {
   Billing: 'billing',
   'Receipt Report': 'receipt',
   'Stock Report': 'stock',
-  Others: 'others',
-  'Issue Report': 'issue'
+  'Issue Report': 'issue',
+  Others: 'others'
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -1991,7 +1992,7 @@ const Reports = () => {
         }
       `}</style>
 
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full max-w-[98%] 2xl:max-w-[99%] mx-auto">
         {/* Navigation & Title Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
           <div>
@@ -1999,8 +2000,8 @@ const Reports = () => {
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 text-sm font-semibold mb-1.5 transition-colors cursor-pointer"
             >
-              <ArrowLeft size={16} />
-              <span>Back to Dashboard</span>
+               
+             
             </button>
             <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2.5">
               <FileText className="text-indigo-600 w-7 h-7" />
