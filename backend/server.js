@@ -106,7 +106,7 @@ app.use('/api/gate-pass-ins', auth, gatePassInRoutes);
 app.use('/api/cancel-orders', auth, cancelOrderRoutes);
 app.use('/api/bill-verify', auth, billVerifyRoutes);
 app.use('/api/reports', auth, heavyOpsLimiter, reportRoutes);
-app.use('/api', auth, purchaseTypeRoutes);
+app.use('/api/purchase-types', auth, purchaseTypeRoutes);
 
 // 5. Global Error Handler (Sanitized in production)
 app.use((err, req, res, next) => {

@@ -25,7 +25,7 @@ import Layout from '../components/Layout';
 import EntityFilterPanel from '../components/EntityFilterPanel';
 import { useToastStore } from '../store/toastStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
 
 const fmt = (v) => {
   const n = parseFloat(v) || 0;

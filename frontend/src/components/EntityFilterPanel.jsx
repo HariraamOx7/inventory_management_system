@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Search, CheckSquare, Square, MinusSquare, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
 
 /**
  * EntityFilterPanel provides dynamic entity selection (departments, parties, items, etc.)

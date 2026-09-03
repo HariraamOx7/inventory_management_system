@@ -7,7 +7,7 @@ import { useToastStore } from '../store/toastStore';
 
 const BillVerify = () => {
   const showToast = useToastStore(state => state.showToast);
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
   const [fromDate, setFromDate] = useState(
     new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
   );

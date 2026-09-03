@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
 
 const initialFormState = {
     Code: '',
