@@ -9,7 +9,10 @@ exports.getSuppliers = async (req, res) => {
 
     if (search && search.trim() !== '') {
       andConditions.push({
-        AccountName: { [Op.like]: `%${search.trim()}%` }
+        [Op.or]: [
+          { AccountName: { [Op.like]: `%${search.trim()}%` } },
+          { PartyCode: { [Op.like]: `%${search.trim()}%` } }
+        ]
       });
     }
 
@@ -40,7 +43,7 @@ exports.getSuppliers = async (req, res) => {
     }
 
     const queryOptions = {
-      order: [['AccCode', 'ASC']]
+      order: [['PartyCode', 'ASC']]
     };
 
     if (andConditions.length > 0) {
@@ -71,22 +74,21 @@ exports.getSuppliers = async (req, res) => {
   } catch (error) {
     console.error('Error fetching suppliers:', error);
     res.status(500).json({ 
-      success: false,
+      success: false, 
       message: 'Error fetching suppliers',
       error: error.message 
     });
   }
 };
 
-// Add this new function
 exports.getLastCode = async (req, res) => {
   try {
     const lastSupplier = await Supplier.findOne({
-      order: [['AccCode', 'DESC']],
-      attributes: ['AccCode']
+      order: [['PartyCode', 'DESC']],
+      attributes: ['PartyCode']
     });
     
-    const lastCode = lastSupplier ? lastSupplier.AccCode : 0;
+    const lastCode = lastSupplier ? lastSupplier.PartyCode : '';
     res.json({
       success: true,
       data: { lastCode: lastCode }
@@ -101,15 +103,23 @@ exports.getLastCode = async (req, res) => {
   }
 };
 
-// Update addSupplier to auto-generate AccCode
 exports.addSupplier = async (req, res) => {
   try {
     const {
+      PartyCode, AccCode,
       Description, AccountName, Place, Address, DeliveryAddress,
       OpeningCredit, OpeningDebit, TINNo, CSTNo, PhNo, Fax, CellNo, Email,
       WebSite, AccountNo, ContactPerson, Pincode, PanNumber, Department, GSTNo
     } = req.body;
     
+    const code = PartyCode || AccCode;
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'PartyCode is required'
+      });
+    }
+
     if (!AccountName) {
       return res.status(400).json({
         success: false,
@@ -118,6 +128,7 @@ exports.addSupplier = async (req, res) => {
     }
     
     const newSupplier = await Supplier.create({ 
+      PartyCode: String(code).trim(),
       Description: Description ? Description.trim() : null,
       AccountName: AccountName ? AccountName.trim() : null,
       Place: Place ? Place.trim() : null,
@@ -154,17 +165,16 @@ exports.addSupplier = async (req, res) => {
   }
 };
 
-// Update updateSupplier
 exports.updateSupplier = async (req, res) => {
   try {
-    const { accCode } = req.params;
+    const partyCode = req.params.partyCode || req.params.accCode;
     const {
       Description, AccountName, Place, Address, DeliveryAddress,
       OpeningCredit, OpeningDebit, TINNo, CSTNo, PhNo, Fax, CellNo, Email,
       WebSite, AccountNo, ContactPerson, Pincode, PanNumber, Department, GSTNo
     } = req.body;
 
-    const supplier = await Supplier.findByPk(parseInt(accCode));
+    const supplier = await Supplier.findByPk(partyCode);
     if (!supplier) {
       return res.status(404).json({
         success: false,
@@ -209,12 +219,11 @@ exports.updateSupplier = async (req, res) => {
   }
 };
 
-// Update deleteSupplier
 exports.deleteSupplier = async (req, res) => {
   try {
-    const { accCode } = req.params;
+    const partyCode = req.params.partyCode || req.params.accCode;
 
-    const supplier = await Supplier.findByPk(parseInt(accCode));
+    const supplier = await Supplier.findByPk(partyCode);
     if (!supplier) {
       return res.status(404).json({
         success: false,

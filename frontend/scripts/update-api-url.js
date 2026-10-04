@@ -6,7 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const LOCAL_URL = 'http://localhost:5000/api';
-const PROD_URL = 'https://krexports.org/krest';
+// The Express application mounts every endpoint below /api.  The reverse proxy
+// exposes the application at /krest, so production requests need both prefixes.
+const PROD_URL = 'https://krexports.org/krest/api';
 
 const srcDir = path.resolve(__dirname, '../src');
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Search, CheckSquare, Square, MinusSquare, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 /**
  * EntityFilterPanel provides dynamic entity selection (departments, parties, items, etc.)
@@ -11,6 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
 const EntityFilterPanel = ({
   filterType,
   filterLabel = 'Item',
+  reportKey,
   fromDate,
   toDate,
   selectedIds = [],
@@ -22,12 +23,12 @@ const EntityFilterPanel = ({
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchEntities = async () => {
-    if (!filterType) return;
+    if (!filterType || !reportKey) return;
     try {
       setLoading(true);
       setError('');
       const res = await axios.get(`${API_URL}/reports/filters/${filterType}`, {
-        params: { fromDate, toDate }
+        params: { fromDate, toDate, reportKey }
       });
       if (res.data?.success) {
         const list = res.data.data || [];
@@ -48,7 +49,7 @@ const EntityFilterPanel = ({
 
   useEffect(() => {
     fetchEntities();
-  }, [filterType, fromDate, toDate]);
+  }, [filterType, reportKey, fromDate, toDate]);
 
   // Filtered entities based on search input
   const filteredEntities = useMemo(() => {

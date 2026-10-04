@@ -60,86 +60,102 @@ const parseFilterParam = (param) => {
 exports.getFilterOptions = async (req, res) => {
   try {
     const { type } = req.params;
-    const { fromDate, toDate } = req.query;
+    const { fromDate, toDate, reportKey } = req.query;
     const from = fromDate || '1970-01-01';
     const to = toDate || '2099-12-31';
 
-    let data = [];
+    if (!reportKey) {
+      return res.status(400).json({ success: false, message: 'reportKey is required' });
+    }
 
-    switch (type) {
-      case 'departments': {
-        const rows = await Department.findAll({
-          attributes: ['dept_id', 'dept_name'],
-          order: [['dept_name', 'ASC']],
-          raw: true
-        });
-        data = rows.map(r => ({ id: String(r.dept_id), name: r.dept_name }));
-        break;
-      }
+    // Every query intentionally mirrors the source tables and date predicate of
+    // the report it serves. This prevents a master-record-only option from
+    // appearing when it cannot produce rows in the selected report period.
+    const filterQueries = {
+      'purchase/orderno-wise': {
+        orders: `SELECT po.OrderNo AS id, COALESCE(NULLIF(s.AccountName, ''), po.PartyCode) AS partyName, po.OrderDate
+          FROM purchase_orders po LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+          WHERE po.OrderDate BETWEEN :from AND :to ORDER BY po.OrderNo DESC`,
+        map: r => ({ id: String(r.id), name: `Order #${r.id} - ${r.partyName || ''} (${fmtDate(r.OrderDate)})` })
+      },
+      'purchase/supplier-wise': {
+        parties: `SELECT DISTINCT COALESCE(NULLIF(s.AccountName, ''), po.PartyCode) AS id
+          FROM purchase_orders po LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+          WHERE po.OrderDate BETWEEN :from AND :to AND COALESCE(NULLIF(s.AccountName, ''), po.PartyCode) IS NOT NULL
+          ORDER BY id ASC`
+      },
+      'purchase/department-wise': {
+        departments: `SELECT DISTINCT d.dept_id AS id, d.dept_name AS name
+          FROM purchase_orders po JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+          JOIN items i ON i.ItemCode = pod.ItemCode JOIN departments d ON d.dept_id = i.DepartmentId
+          WHERE po.OrderDate BETWEEN :from AND :to ORDER BY name ASC`
+      },
+      'purchase/price-comparison': {
+        items: `SELECT DISTINCT i.ItemName AS id, CONCAT(i.ItemName, ' (', i.ItemCode, ')') AS name
+          FROM purchase_orders po JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+          JOIN items i ON i.ItemCode = pod.ItemCode
+          WHERE po.OrderDate BETWEEN :from AND :to AND i.ItemName IS NOT NULL AND i.ItemName != '' ORDER BY name ASC`
+      },
+      'purchase/party-pending': {
+        parties: `SELECT DISTINCT COALESCE(NULLIF(s.AccountName, ''), po.PartyCode) AS id
+          FROM purchase_orders po JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+          LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+          LEFT JOIN (SELECT OrderNo, ItemCode, SUM(Qty) AS ReceivedQty FROM receipt_details GROUP BY OrderNo, ItemCode) recv
+            ON recv.OrderNo = po.OrderNo AND recv.ItemCode = pod.ItemCode
+          WHERE po.OrderDate BETWEEN :from AND :to AND (pod.Qty - COALESCE(recv.ReceivedQty, 0)) > 0
+          ORDER BY id ASC`
+      },
+      'billing/purchasetype-wise': { purchasetypes: `SELECT DISTINCT be.PurchaseType AS id FROM bill_entries be WHERE be.AccDate BETWEEN :from AND :to AND be.PurchaseType IS NOT NULL AND be.PurchaseType != '' ORDER BY id ASC` },
+      'billing/purchasetype-wise-abstract': { purchasetypes: `SELECT DISTINCT be.PurchaseType AS id FROM bill_entries be WHERE be.AccDate BETWEEN :from AND :to AND be.PurchaseType IS NOT NULL AND be.PurchaseType != '' ORDER BY id ASC` },
+      'billing/purchase-register': { purchasetypes: `SELECT DISTINCT be.PurchaseType AS id FROM bill_entries be WHERE be.AccDate BETWEEN :from AND :to AND be.PurchaseType IS NOT NULL AND be.PurchaseType != '' ORDER BY id ASC` },
+      'billing/party-wise': { parties: `SELECT DISTINCT COALESCE(NULLIF(s.AccountName, ''), be.PartyCode) AS id FROM bill_entries be LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode WHERE be.AccDate BETWEEN :from AND :to ORDER BY id ASC` },
+      'billing/party-wise-abstract': { parties: `SELECT DISTINCT COALESCE(NULLIF(s.AccountName, ''), be.PartyCode) AS id FROM bill_entries be LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode WHERE be.AccDate BETWEEN :from AND :to ORDER BY id ASC` },
+      'billing/department-wise': { departments: `SELECT DISTINCT d.dept_id AS id, d.dept_name AS name FROM bill_entries be JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo JOIN items i ON i.ItemCode = bed.ItemCode JOIN departments d ON d.dept_id = i.DepartmentId WHERE be.AccDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'billing/department-wise-abstract': { departments: `SELECT DISTINCT d.dept_id AS id, d.dept_name AS name FROM bill_entries be JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo JOIN items i ON i.ItemCode = bed.ItemCode JOIN departments d ON d.dept_id = i.DepartmentId WHERE be.AccDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'billing/subhead-wise': { subheads: `SELECT DISTINCT sh.code AS id, CONCAT(sh.sub_group_name, ' (', sh.code, ')') AS name FROM bill_entries be JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo JOIN items i ON i.ItemCode = bed.ItemCode JOIN sub_heads sh ON sh.code = i.SubHeadCode WHERE be.AccDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'billing/item-wise': { items: `SELECT DISTINCT i.ItemName AS id, CONCAT(i.ItemName, ' (', i.ItemCode, ')') AS name FROM bill_entries be JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo JOIN items i ON i.ItemCode = bed.ItemCode WHERE be.AccDate BETWEEN :from AND :to AND i.ItemName IS NOT NULL AND i.ItemName != '' ORDER BY name ASC` },
+      'receipt/party-wise': { parties: `SELECT DISTINCT COALESCE(NULLIF(s.AccountName, ''), r.PartyCode) AS id FROM receipts r LEFT JOIN suppliers s ON s.PartyCode = r.PartyCode WHERE r.InwardDate BETWEEN :from AND :to ORDER BY id ASC` },
+      'receipt/subhead-wise': { subheads: `SELECT DISTINCT sh.code AS id, CONCAT(sh.sub_group_name, ' (', sh.code, ')') AS name FROM receipts r JOIN receipt_details rd ON rd.GRNNo = r.GRNNo JOIN items i ON i.ItemCode = rd.ItemCode JOIN sub_heads sh ON sh.code = i.SubHeadCode WHERE r.InwardDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'receipt/department-wise': { departments: `SELECT DISTINCT d.dept_id AS id, d.dept_name AS name FROM receipts r JOIN receipt_details rd ON rd.GRNNo = r.GRNNo JOIN items i ON i.ItemCode = rd.ItemCode JOIN departments d ON d.dept_id = i.DepartmentId WHERE r.InwardDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'receipt/item-wise': { items: `SELECT DISTINCT i.ItemName AS id, CONCAT(i.ItemName, ' (', i.ItemCode, ')') AS name FROM receipts r JOIN receipt_details rd ON rd.GRNNo = r.GRNNo JOIN items i ON i.ItemCode = rd.ItemCode WHERE r.InwardDate BETWEEN :from AND :to AND i.ItemName IS NOT NULL AND i.ItemName != '' ORDER BY name ASC` },
+      'issue/item-wise': { items: `SELECT DISTINCT iid.ItemName AS id FROM item_issues ii JOIN item_issue_details iid ON iid.IssueNo = ii.IssueNo WHERE ii.IssueDate BETWEEN :from AND :to AND iid.ItemName IS NOT NULL AND iid.ItemName != '' ORDER BY id ASC` },
+      'issue/subhead-wise': { subheads: `SELECT DISTINCT sh.code AS id, CONCAT(sh.sub_group_name, ' (', sh.code, ')') AS name FROM item_issues ii JOIN item_issue_details iid ON iid.IssueNo = ii.IssueNo JOIN items i ON i.ItemName = iid.ItemName JOIN sub_heads sh ON sh.code = i.SubHeadCode WHERE ii.IssueDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'issue/department-wise': { departments: `SELECT DISTINCT ii.Department AS id FROM item_issues ii WHERE ii.IssueDate BETWEEN :from AND :to AND ii.Department IS NOT NULL AND ii.Department != '' ORDER BY id ASC` },
+      'issue/month-movement-item': { items: `SELECT DISTINCT id FROM (SELECT i.ItemName AS id FROM receipts r JOIN receipt_details rd ON rd.GRNNo = r.GRNNo JOIN items i ON i.ItemCode = rd.ItemCode WHERE r.InwardDate BETWEEN :from AND :to UNION SELECT iid.ItemName AS id FROM item_issues ii JOIN item_issue_details iid ON iid.IssueNo = ii.IssueNo WHERE ii.IssueDate BETWEEN :from AND :to) movements WHERE id IS NOT NULL AND id != '' ORDER BY id ASC` },
+      'issue/month-movement-dept': { departments: `SELECT DISTINCT ii.Department AS id FROM item_issues ii WHERE ii.IssueDate BETWEEN :from AND :to AND ii.Department IS NOT NULL AND ii.Department != '' ORDER BY id ASC` },
+      'issue/month-movement-subhead': { subheads: `SELECT DISTINCT sh.code AS id, CONCAT(sh.sub_group_name, ' (', sh.code, ')') AS name FROM item_issues ii JOIN item_issue_details iid ON iid.IssueNo = ii.IssueNo JOIN items i ON i.ItemName = iid.ItemName JOIN sub_heads sh ON sh.code = i.SubHeadCode WHERE ii.IssueDate BETWEEN :from AND :to ORDER BY name ASC` },
+      'issue/department-item-wise': { departments: `SELECT DISTINCT ii.Department AS id FROM item_issues ii WHERE ii.IssueDate BETWEEN :from AND :to AND ii.Department IS NOT NULL AND ii.Department != '' ORDER BY id ASC` },
+      'others/gatepass-pending-party': { parties: `SELECT DISTINCT gpo.PartyName AS id FROM gate_pass_outs gpo JOIN gate_pass_out_details gpod ON gpod.GpNo = gpo.GpNo LEFT JOIN (SELECT GpNo, ItemName, SUM(RecQty) AS ReturnedQty FROM gate_pass_in_details GROUP BY GpNo, ItemName) ret ON CAST(ret.GpNo AS UNSIGNED) = gpo.GpNo AND BINARY ret.ItemName = BINARY gpod.ItemName WHERE gpo.Returnable = 'Yes' AND gpo.GpDate BETWEEN :from AND :to AND (gpod.Qty - COALESCE(ret.ReturnedQty, 0)) > 0 AND gpo.PartyName IS NOT NULL AND gpo.PartyName != '' ORDER BY id ASC` },
+      'others/gatepass-returnable-party': { parties: `SELECT DISTINCT gpo.PartyName AS id FROM gate_pass_outs gpo JOIN gate_pass_out_details gpod ON gpod.GpNo = gpo.GpNo WHERE gpo.Returnable = 'Yes' AND gpo.GpDate BETWEEN :from AND :to AND gpo.PartyName IS NOT NULL AND gpo.PartyName != '' ORDER BY id ASC` },
+      'others/gatepass-in-party': { parties: `SELECT DISTINCT gpi.PartyName AS id FROM gate_pass_ins gpi JOIN gate_pass_in_details gpid ON gpid.InNo = gpi.InNo WHERE gpi.GiDate BETWEEN :from AND :to AND gpi.PartyName IS NOT NULL AND gpi.PartyName != '' ORDER BY id ASC` }
+    };
 
-      case 'parties': {
-        const rows = await sequelize.query(
-          `SELECT DISTINCT PartyName FROM (
-            SELECT PartyName FROM purchase_orders WHERE PartyName IS NOT NULL AND PartyName != ''
-            UNION
-            SELECT PartyName FROM receipts WHERE PartyName IS NOT NULL AND PartyName != ''
-            UNION
-            SELECT PartyName FROM bill_entries WHERE PartyName IS NOT NULL AND PartyName != ''
-            UNION
-            SELECT PartyName FROM gate_pass_outs WHERE PartyName IS NOT NULL AND PartyName != ''
-            UNION
-            SELECT PartyName FROM gate_pass_ins WHERE PartyName IS NOT NULL AND PartyName != ''
-          ) AS all_parties ORDER BY PartyName ASC`,
-          { type: sequelize.QueryTypes.SELECT }
-        );
-        data = rows.map(r => ({ id: r.PartyName, name: r.PartyName }));
-        break;
-      }
+    const stockFilterTypes = {
+      'stock/item-wise-report': 'items', 'stock/item-opening': 'items',
+      'stock/department-wise': 'departments', 'stock/department-closing': 'departments', 'stock/department-detail': 'departments',
+      'stock/subhead-wise': 'subheads', 'stock/subhead-detail': 'subheads'
+    };
 
-      case 'items': {
-        const rows = await Item.findAll({
-          attributes: ['ItemCode', 'ItemName'],
-          order: [['ItemName', 'ASC']],
-          raw: true
-        });
+    let data;
+    if (stockFilterTypes[reportKey] === type) {
+      // Stock reports display current master balances, so their selector is not date-scoped.
+      if (type === 'items') {
+        const rows = await Item.findAll({ attributes: ['ItemCode', 'ItemName'], order: [['ItemName', 'ASC']], raw: true });
         data = rows.map(r => ({ id: r.ItemName, name: `${r.ItemName} (${r.ItemCode})` }));
-        break;
-      }
-
-      case 'orders': {
-        const rows = await sequelize.query(
-          `SELECT OrderNo, PartyName, OrderDate 
-           FROM purchase_orders 
-           WHERE OrderDate BETWEEN :from AND :to 
-           ORDER BY OrderNo DESC`,
-          { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
-        );
-        data = rows.map(r => ({ id: String(r.OrderNo), name: `Order #${r.OrderNo} - ${r.PartyName} (${fmtDate(r.OrderDate)})` }));
-        break;
-      }
-
-      case 'subheads': {
-        const rows = await SubHead.findAll({
-          attributes: ['code', 'sub_group_name'],
-          order: [['sub_group_name', 'ASC']],
-          raw: true
-        });
+      } else if (type === 'departments') {
+        const rows = await Department.findAll({ attributes: ['dept_id', 'dept_name'], order: [['dept_name', 'ASC']], raw: true });
+        data = rows.map(r => ({ id: String(r.dept_id), name: r.dept_name }));
+      } else {
+        const rows = await SubHead.findAll({ attributes: ['code', 'sub_group_name'], order: [['sub_group_name', 'ASC']], raw: true });
         data = rows.map(r => ({ id: r.code, name: `${r.sub_group_name} (${r.code})` }));
-        break;
       }
-
-      case 'purchasetypes': {
-        const rows = await PurchaseType.findAll({
-          attributes: ['Code', 'PurchaseType'],
-          order: [['PurchaseType', 'ASC']],
-          raw: true
-        });
-        data = rows.map(r => ({ id: r.PurchaseType, name: r.PurchaseType }));
-        break;
+    } else {
+      const config = filterQueries[reportKey]?.[type];
+      if (!config) {
+        return res.status(400).json({ success: false, message: `Filter type '${type}' is not supported for report '${reportKey}'` });
       }
-
-      default:
-        return res.status(400).json({ success: false, message: `Invalid filter type: ${type}` });
+      const rows = await sequelize.query(config, { replacements: { from, to }, type: sequelize.QueryTypes.SELECT });
+      data = rows.map(config.map || (r => ({ id: String(r.id), name: r.name || String(r.id) })));
     }
 
     res.json({ success: true, data });
@@ -171,8 +187,8 @@ exports.getOrderNoWiseOrderDetails = async (req, res) => {
       SELECT
         po.OrderNo,
         po.OrderDate,
-        po.PartyName,
-        pod.ItemName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty,
         pod.UnitRate,
         pod.TotalAmount,
@@ -182,6 +198,8 @@ exports.getOrderNoWiseOrderDetails = async (req, res) => {
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       WHERE ${whereClause}
       ORDER BY po.OrderNo ASC, pod.DetailId ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
@@ -265,7 +283,7 @@ exports.getSupplierWiseOrderDetails = async (req, res) => {
     const replacements = { from, to };
 
     if (parties) {
-      whereClause += ` AND po.PartyName IN (:parties)`;
+      whereClause += ` AND (s.AccountName IN (:parties) OR po.PartyCode IN (:parties))`;
       replacements.parties = parties;
     }
 
@@ -273,8 +291,8 @@ exports.getSupplierWiseOrderDetails = async (req, res) => {
       SELECT
         po.OrderNo,
         po.OrderDate,
-        po.PartyName,
-        pod.ItemName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty,
         pod.UnitRate,
         pod.TotalAmount,
@@ -284,8 +302,10 @@ exports.getSupplierWiseOrderDetails = async (req, res) => {
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       WHERE ${whereClause}
-      ORDER BY po.PartyName ASC, po.OrderNo ASC, pod.DetailId ASC
+      ORDER BY PartyName ASC, po.OrderNo ASC, pod.DetailId ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const supplierMap = {};
@@ -383,7 +403,7 @@ exports.getDepartmentWiseOrderDetails = async (req, res) => {
       SELECT
         COALESCE(d.dept_name, 'Unassigned') AS departmentName,
         po.OrderDate,
-        pod.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty,
         pod.UnitRate,
         pod.TotalAmount,
@@ -393,7 +413,7 @@ exports.getDepartmentWiseOrderDetails = async (req, res) => {
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
-      LEFT JOIN items i ON i.ItemName = pod.ItemName
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       LEFT JOIN departments d ON d.dept_id = i.DepartmentId
       WHERE ${whereClause}
       ORDER BY departmentName ASC, po.OrderDate ASC, pod.DetailId ASC
@@ -462,8 +482,8 @@ exports.getPurchaseOrderPendingWise = async (req, res) => {
       SELECT
         po.OrderNo,
         po.OrderDate,
-        po.PartyName,
-        pod.ItemName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty AS OrderQty,
         COALESCE(recv.ReceivedQty, 0) AS ReceivedQty,
         (pod.Qty - COALESCE(recv.ReceivedQty, 0)) AS PendingQty,
@@ -471,11 +491,13 @@ exports.getPurchaseOrderPendingWise = async (req, res) => {
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       LEFT JOIN (
-        SELECT rd.OrderNo, rd.ItemName, SUM(rd.Qty) AS ReceivedQty
+        SELECT rd.OrderNo, rd.ItemCode, SUM(rd.Qty) AS ReceivedQty
         FROM receipt_details rd
-        GROUP BY rd.OrderNo, rd.ItemName
-      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemName = pod.ItemName
+        GROUP BY rd.OrderNo, rd.ItemCode
+      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemCode = pod.ItemCode
       WHERE po.OrderDate BETWEEN :from AND :to
         AND (pod.Qty - COALESCE(recv.ReceivedQty, 0)) > 0
       ORDER BY po.OrderNo ASC, pod.DetailId ASC
@@ -533,8 +555,8 @@ exports.getPurchaseOrderPendingDateWise = async (req, res) => {
       SELECT
         po.OrderNo,
         po.OrderDate,
-        po.PartyName,
-        pod.ItemName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty AS OrderQty,
         COALESCE(recv.ReceivedQty, 0) AS ReceivedQty,
         (pod.Qty - COALESCE(recv.ReceivedQty, 0)) AS PendingQty,
@@ -542,11 +564,13 @@ exports.getPurchaseOrderPendingDateWise = async (req, res) => {
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       LEFT JOIN (
-        SELECT rd.OrderNo, rd.ItemName, SUM(rd.Qty) AS ReceivedQty
+        SELECT rd.OrderNo, rd.ItemCode, SUM(rd.Qty) AS ReceivedQty
         FROM receipt_details rd
-        GROUP BY rd.OrderNo, rd.ItemName
-      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemName = pod.ItemName
+        GROUP BY rd.OrderNo, rd.ItemCode
+      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemCode = pod.ItemCode
       WHERE po.OrderDate BETWEEN :from AND :to
         AND (pod.Qty - COALESCE(recv.ReceivedQty, 0)) > 0
       ORDER BY po.OrderDate ASC, po.OrderNo ASC
@@ -629,24 +653,26 @@ exports.getPurchaseOrderPriceComparison = async (req, res) => {
     const replacements = { from, to };
 
     if (items) {
-      whereClause += ` AND pod.ItemName IN (:items)`;
+      whereClause += ` AND (i.ItemName IN (:items) OR pod.ItemCode IN (:items))`;
       replacements.items = items;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        pod.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         po.OrderNo,
         po.OrderDate,
-        po.PartyName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
         pod.Qty,
         pod.UnitRate,
         pod.TotalAmount,
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       WHERE ${whereClause}
-      ORDER BY pod.ItemName ASC, pod.UnitRate ASC
+      ORDER BY ItemName ASC, pod.UnitRate ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -713,16 +739,16 @@ exports.getPurchaseOrderPartyWisePending = async (req, res) => {
     const replacements = { from, to };
 
     if (parties) {
-      whereClause += ` AND po.PartyName IN (:parties)`;
+      whereClause += ` AND (s.AccountName IN (:parties) OR po.PartyCode IN (:parties))`;
       replacements.parties = parties;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        po.PartyName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
         po.OrderNo,
         po.OrderDate,
-        pod.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty AS OrderQty,
         COALESCE(recv.ReceivedQty, 0) AS ReceivedQty,
         (pod.Qty - COALESCE(recv.ReceivedQty, 0)) AS PendingQty,
@@ -730,14 +756,16 @@ exports.getPurchaseOrderPartyWisePending = async (req, res) => {
         pod.GrandTotal
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       LEFT JOIN (
-        SELECT rd.OrderNo, rd.ItemName, SUM(rd.Qty) AS ReceivedQty
+        SELECT rd.OrderNo, rd.ItemCode, SUM(rd.Qty) AS ReceivedQty
         FROM receipt_details rd
-        GROUP BY rd.OrderNo, rd.ItemName
-      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemName = pod.ItemName
+        GROUP BY rd.OrderNo, rd.ItemCode
+      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemCode = pod.ItemCode
       WHERE ${whereClause}
         AND (pod.Qty - COALESCE(recv.ReceivedQty, 0)) > 0
-      ORDER BY po.PartyName ASC, po.OrderNo ASC
+      ORDER BY PartyName ASC, po.OrderNo ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -819,10 +847,10 @@ exports.getDayBook = async (req, res) => {
       SELECT
         be.VoucherNo,
         be.AccDate,
-        be.PartyName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
         be.PartyBillNo,
         be.BillDate,
-        be.PurchaseType,
+        COALESCE(pt.PurchaseType, be.PurchaseType, '') AS PurchaseType,
         be.BillAmount,
         be.GST,
         be.IGST,
@@ -834,6 +862,8 @@ exports.getDayBook = async (req, res) => {
         be.TDS,
         be.TCS
       FROM bill_entries be
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN purchase_types pt ON pt.Code = be.PurchaseType
       WHERE be.AccDate BETWEEN :from AND :to
       ORDER BY be.AccDate ASC, be.VoucherNo ASC
     `, { replacements: { from, to }, type: sequelize.QueryTypes.SELECT });
@@ -932,27 +962,30 @@ exports.getBillReportPurchaseTypeWise = async (req, res) => {
     const replacements = { from, to };
 
     if (purchasetypes) {
-      whereClause += ` AND be.PurchaseType IN (:purchasetypes)`;
+      whereClause += ` AND (pt.PurchaseType IN (:purchasetypes) OR be.PurchaseType IN (:purchasetypes) OR pt.Code IN (:purchasetypes))`;
       replacements.purchasetypes = purchasetypes;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        COALESCE(be.PurchaseType, 'Unspecified') AS PurchaseType,
+        COALESCE(pt.PurchaseType, be.PurchaseType, 'Unspecified') AS PurchaseType,
         be.VoucherNo,
         be.AccDate,
-        be.PartyName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
         be.PartyBillNo,
         be.BillDate,
-        bed.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         bed.Qty,
         bed.UnitRate,
         bed.TotalAmount,
         be.GrandTotal
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
+      LEFT JOIN purchase_types pt ON pt.Code = be.PurchaseType
       WHERE ${whereClause}
-      ORDER BY be.PurchaseType ASC, be.VoucherNo ASC, bed.DetailId ASC
+      ORDER BY PurchaseType ASC, be.VoucherNo ASC, bed.DetailId ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -1027,21 +1060,22 @@ exports.getBillReportAbstractPurchaseTypeWise = async (req, res) => {
     const replacements = { from, to };
 
     if (purchasetypes) {
-      whereClause += ` AND be.PurchaseType IN (:purchasetypes)`;
+      whereClause += ` AND (pt.PurchaseType IN (:purchasetypes) OR be.PurchaseType IN (:purchasetypes) OR pt.Code IN (:purchasetypes))`;
       replacements.purchasetypes = purchasetypes;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        COALESCE(be.PurchaseType, 'Unspecified') AS purchaseType,
+        COALESCE(pt.PurchaseType, be.PurchaseType, 'Unspecified') AS purchaseType,
         COUNT(DISTINCT be.VoucherNo) AS voucherCount,
         SUM(COALESCE(be.BillAmount, 0)) AS totalBillAmount,
         SUM(COALESCE(be.GST, 0) + COALESCE(be.IGST, 0)) AS totalGST,
         SUM(COALESCE(be.Discount, 0)) AS totalDiscount,
         SUM(COALESCE(be.GrandTotal, 0)) AS totalGrandTotal
       FROM bill_entries be
+      LEFT JOIN purchase_types pt ON pt.Code = be.PurchaseType
       WHERE ${whereClause}
-      GROUP BY COALESCE(be.PurchaseType, 'Unspecified')
+      GROUP BY COALESCE(pt.PurchaseType, be.PurchaseType, 'Unspecified')
       ORDER BY purchaseType ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
@@ -1100,16 +1134,16 @@ exports.getPurchaseRegisterPurchaseTypeWise = async (req, res) => {
     const replacements = { from, to };
 
     if (purchasetypes) {
-      whereClause += ` AND be.PurchaseType IN (:purchasetypes)`;
+      whereClause += ` AND (pt.PurchaseType IN (:purchasetypes) OR be.PurchaseType IN (:purchasetypes) OR pt.Code IN (:purchasetypes))`;
       replacements.purchasetypes = purchasetypes;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        COALESCE(be.PurchaseType, 'Unspecified') AS purchaseType,
+        COALESCE(pt.PurchaseType, be.PurchaseType, 'Unspecified') AS purchaseType,
         be.VoucherNo,
         be.AccDate,
-        be.PartyName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
         be.PartyBillNo,
         be.BillDate,
         be.BillAmount,
@@ -1124,6 +1158,8 @@ exports.getPurchaseRegisterPurchaseTypeWise = async (req, res) => {
         be.TDS,
         be.TCS
       FROM bill_entries be
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN purchase_types pt ON pt.Code = be.PurchaseType
       WHERE ${whereClause}
       ORDER BY purchaseType ASC, be.AccDate ASC, be.VoucherNo ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
@@ -1205,16 +1241,18 @@ exports.getBillReportDateWise = async (req, res) => {
       SELECT
         be.AccDate,
         be.VoucherNo,
-        be.PartyName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
         be.PartyBillNo,
         be.BillDate,
-        bed.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         bed.Qty,
         bed.UnitRate,
         bed.TotalAmount,
         be.GrandTotal
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
       WHERE be.AccDate BETWEEN :from AND :to
       ORDER BY be.AccDate ASC, be.VoucherNo ASC, bed.DetailId ASC
     `, { replacements: { from, to }, type: sequelize.QueryTypes.SELECT });
@@ -1291,26 +1329,28 @@ exports.getBillReportPartyWise = async (req, res) => {
     const replacements = { from, to };
 
     if (parties) {
-      whereClause += ` AND be.PartyName IN (:parties)`;
+      whereClause += ` AND (s.AccountName IN (:parties) OR be.PartyCode IN (:parties))`;
       replacements.parties = parties;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        be.PartyName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
         be.VoucherNo,
         be.AccDate,
         be.PartyBillNo,
         be.BillDate,
-        bed.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         bed.Qty,
         bed.UnitRate,
         bed.TotalAmount,
         be.GrandTotal
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
       WHERE ${whereClause}
-      ORDER BY be.PartyName ASC, be.VoucherNo ASC, bed.DetailId ASC
+      ORDER BY PartyName ASC, be.VoucherNo ASC, bed.DetailId ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -1384,19 +1424,20 @@ exports.getBillReportAbstractPartyWise = async (req, res) => {
     const replacements = { from, to };
 
     if (parties) {
-      whereClause += ` AND be.PartyName IN (:parties)`;
+      whereClause += ` AND (s.AccountName IN (:parties) OR be.PartyCode IN (:parties))`;
       replacements.parties = parties;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        be.PartyName AS partyName,
+        COALESCE(s.AccountName, be.PartyCode) AS partyName,
         COUNT(DISTINCT be.VoucherNo) AS voucherCount,
         SUM(COALESCE(be.BillAmount, 0)) AS totalBillAmount,
         SUM(COALESCE(be.GrandTotal, 0)) AS totalGrandTotal
       FROM bill_entries be
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
       WHERE ${whereClause}
-      GROUP BY be.PartyName
+      GROUP BY COALESCE(s.AccountName, be.PartyCode)
       ORDER BY partyName ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
@@ -1453,14 +1494,15 @@ exports.getBillReportDepartmentWise = async (req, res) => {
         COALESCE(d.dept_name, 'Unassigned') AS departmentName,
         be.VoucherNo,
         be.AccDate,
-        be.PartyName,
-        bed.ItemName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         bed.Qty,
         bed.UnitRate,
         bed.TotalAmount
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
-      LEFT JOIN items i ON i.ItemName = bed.ItemName
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
       LEFT JOIN departments d ON d.dept_id = i.DepartmentId
       WHERE ${whereClause}
       ORDER BY departmentName ASC, be.VoucherNo ASC, bed.DetailId ASC
@@ -1547,7 +1589,7 @@ exports.getBillReportAbstractDepartmentWise = async (req, res) => {
         SUM(COALESCE(bed.Qty, 0)) AS totalQty
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
-      LEFT JOIN items i ON i.ItemName = bed.ItemName
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
       LEFT JOIN departments d ON d.dept_id = i.DepartmentId
       WHERE ${whereClause}
       GROUP BY COALESCE(d.dept_name, 'Unassigned')
@@ -1607,14 +1649,15 @@ exports.getBillReportSubHeadWise = async (req, res) => {
         COALESCE(sh.sub_group_name, 'Unassigned') AS subHeadName,
         be.VoucherNo,
         be.AccDate,
-        be.PartyName,
-        bed.ItemName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         bed.Qty,
         bed.UnitRate,
         bed.TotalAmount
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
-      LEFT JOIN items i ON i.ItemName = bed.ItemName
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
       LEFT JOIN sub_heads sh ON sh.code = i.SubHeadCode
       WHERE ${whereClause}
       ORDER BY subHeadName ASC, be.VoucherNo ASC, bed.DetailId ASC
@@ -1689,24 +1732,26 @@ exports.getBillReportItemWise = async (req, res) => {
     const replacements = { from, to };
 
     if (items) {
-      whereClause += ` AND bed.ItemName IN (:items)`;
+      whereClause += ` AND (i.ItemName IN (:items) OR bed.ItemCode IN (:items))`;
       replacements.items = items;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        bed.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         be.VoucherNo,
         be.AccDate,
-        be.PartyName,
+        COALESCE(s.AccountName, be.PartyCode) AS PartyName,
         be.PartyBillNo,
         bed.Qty,
         bed.UnitRate,
         bed.TotalAmount
       FROM bill_entries be
       JOIN bill_entry_details bed ON bed.VoucherNo = be.VoucherNo
+      LEFT JOIN suppliers s ON s.PartyCode = be.PartyCode
+      LEFT JOIN items i ON i.ItemCode = bed.ItemCode
       WHERE ${whereClause}
-      ORDER BY bed.ItemName ASC, be.AccDate ASC, be.VoucherNo ASC
+      ORDER BY ItemName ASC, be.AccDate ASC, be.VoucherNo ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -1780,19 +1825,20 @@ exports.getDateWiseReceiptRegister = async (req, res) => {
     const rows = await sequelize.query(`
       SELECT
         r.GRNNo,
-        r.PartyName,
+        COALESCE(s.AccountName, r.PartyCode) AS PartyName,
         r.InwardDate,
         r.InvoiceNo,
         r.InvoiceDate,
         r.GrandTotal   AS ReceiptGrandTotal,
-        rd.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         rd.Qty,
         rd.UnitRate,
         rd.TotalAmount,
         COALESCE(i.UOM, '') AS UOM
       FROM receipts r
       JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
-      LEFT JOIN items i ON i.ItemName = rd.ItemName
+      LEFT JOIN suppliers s ON s.PartyCode = r.PartyCode
+      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
       WHERE r.InwardDate BETWEEN :from AND :to
       ORDER BY r.InwardDate ASC, r.GRNNo ASC, rd.DetailId ASC
     `, {
@@ -1875,27 +1921,28 @@ exports.getPartyWiseReceiptRegister = async (req, res) => {
     const replacements = { from, to };
 
     if (parties) {
-      whereClause += ` AND r.PartyName IN (:parties)`;
+      whereClause += ` AND (s.AccountName IN (:parties) OR r.PartyCode IN (:parties))`;
       replacements.parties = parties;
     }
 
     const rows = await sequelize.query(`
       SELECT
         r.GRNNo,
-        r.PartyName,
+        COALESCE(s.AccountName, r.PartyCode) AS PartyName,
         r.InwardDate,
         r.InvoiceNo,
         r.InvoiceDate,
-        rd.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         rd.Qty,
         rd.UnitRate,
         rd.TotalAmount,
         COALESCE(i.UOM, '') AS UOM
       FROM receipts r
       JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
-      LEFT JOIN items i ON i.ItemName = rd.ItemName
+      LEFT JOIN suppliers s ON s.PartyCode = r.PartyCode
+      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
       WHERE ${whereClause}
-      ORDER BY r.PartyName ASC, r.GRNNo ASC, rd.DetailId ASC
+      ORDER BY PartyName ASC, r.GRNNo ASC, rd.DetailId ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -1976,8 +2023,8 @@ exports.getSubHeadWiseReceiptRegister = async (req, res) => {
     const rows = await sequelize.query(`
       SELECT
         COALESCE(sh.sub_group_name, 'Unassigned') AS subHeadName,
-        rd.ItemName,
-        r.PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
+        COALESCE(s.AccountName, r.PartyCode) AS PartyName,
         r.InvoiceNo,
         r.InvoiceDate,
         r.GRNNo,
@@ -1987,7 +2034,8 @@ exports.getSubHeadWiseReceiptRegister = async (req, res) => {
         COALESCE(i.UOM, '') AS UOM
       FROM receipts r
       JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
-      LEFT JOIN items i ON i.ItemName = rd.ItemName
+      LEFT JOIN suppliers s ON s.PartyCode = r.PartyCode
+      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
       LEFT JOIN sub_heads sh ON sh.code = i.SubHeadCode
       WHERE ${whereClause}
       ORDER BY subHeadName ASC, r.InwardDate ASC
@@ -2075,7 +2123,7 @@ exports.getDepartmentWiseReceiptRegister = async (req, res) => {
         SUM(rd.TotalAmount) AS grandTotal
       FROM receipts r
       JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
-      LEFT JOIN items i ON i.ItemName = rd.ItemName
+      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
       LEFT JOIN departments d ON d.dept_id = i.DepartmentId
       WHERE ${whereClause}
       GROUP BY COALESCE(d.dept_name, 'Unassigned')
@@ -2124,15 +2172,15 @@ exports.getItemWiseReceiptRegister = async (req, res) => {
     const replacements = { from, to };
 
     if (items) {
-      whereClause += ` AND rd.ItemName IN (:items)`;
+      whereClause += ` AND (i.ItemName IN (:items) OR rd.ItemCode IN (:items))`;
       replacements.items = items;
     }
 
     const rows = await sequelize.query(`
       SELECT
-        rd.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         r.GRNNo,
-        r.PartyName,
+        COALESCE(s.AccountName, r.PartyCode) AS PartyName,
         r.InvoiceNo,
         r.InvoiceDate,
         r.InwardDate,
@@ -2142,9 +2190,10 @@ exports.getItemWiseReceiptRegister = async (req, res) => {
         COALESCE(i.UOM, '') AS UOM
       FROM receipts r
       JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
-      LEFT JOIN items i ON i.ItemName = rd.ItemName
+      LEFT JOIN suppliers s ON s.PartyCode = r.PartyCode
+      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
       WHERE ${whereClause}
-      ORDER BY rd.ItemName ASC, r.InwardDate ASC
+      ORDER BY ItemName ASC, r.InwardDate ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 
     const grouped = {};
@@ -2217,19 +2266,21 @@ exports.getReceiptReturnPending = async (req, res) => {
       SELECT
         po.OrderNo,
         po.OrderDate,
-        po.PartyName,
-        pod.ItemName,
+        COALESCE(s.AccountName, po.PartyCode) AS PartyName,
+        COALESCE(i.ItemName, '') AS ItemName,
         pod.Qty AS OrderQty,
         COALESCE(recv.ReceivedQty, 0) AS ReceivedQty,
         (pod.Qty - COALESCE(recv.ReceivedQty, 0)) AS PendingQty,
         pod.UnitRate
       FROM purchase_orders po
       JOIN purchase_order_details pod ON pod.OrderNo = po.OrderNo
+      LEFT JOIN suppliers s ON s.PartyCode = po.PartyCode
+      LEFT JOIN items i ON i.ItemCode = pod.ItemCode
       LEFT JOIN (
-        SELECT rd.OrderNo, rd.ItemName, SUM(rd.Qty) AS ReceivedQty
+        SELECT rd.OrderNo, rd.ItemCode, SUM(rd.Qty) AS ReceivedQty
         FROM receipt_details rd
-        GROUP BY rd.OrderNo, rd.ItemName
-      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemName = pod.ItemName
+        GROUP BY rd.OrderNo, rd.ItemCode
+      ) recv ON recv.OrderNo = po.OrderNo AND recv.ItemCode = pod.ItemCode
       WHERE po.OrderDate BETWEEN :from AND :to
         AND (pod.Qty - COALESCE(recv.ReceivedQty, 0)) > 0
       ORDER BY po.OrderNo ASC, pod.DetailId ASC
@@ -2953,7 +3004,7 @@ exports.getGatePassPendingReport = async (req, res) => {
         SELECT gpid.GpNo, gpid.ItemName, SUM(gpid.RecQty) AS ReturnedQty
         FROM gate_pass_in_details gpid
         GROUP BY gpid.GpNo, gpid.ItemName
-      ) ret ON ret.GpNo = CAST(gpo.GpNo AS CHAR) AND ret.ItemName = gpod.ItemName
+      ) ret ON CAST(ret.GpNo AS UNSIGNED) = gpo.GpNo AND BINARY ret.ItemName = BINARY gpod.ItemName
       WHERE gpo.Returnable = 'Yes'
         AND gpo.GpDate BETWEEN :from AND :to
         AND (gpod.Qty - COALESCE(ret.ReturnedQty, 0)) > 0
@@ -3032,7 +3083,7 @@ exports.getPartyWiseGatePassPending = async (req, res) => {
         SELECT gpid.GpNo, gpid.ItemName, SUM(gpid.RecQty) AS ReturnedQty
         FROM gate_pass_in_details gpid
         GROUP BY gpid.GpNo, gpid.ItemName
-      ) ret ON ret.GpNo = CAST(gpo.GpNo AS CHAR) AND ret.ItemName = gpod.ItemName
+      ) ret ON CAST(ret.GpNo AS UNSIGNED) = gpo.GpNo AND BINARY ret.ItemName = BINARY gpod.ItemName
       WHERE ${whereClause}
         AND (gpod.Qty - COALESCE(ret.ReturnedQty, 0)) > 0
       ORDER BY gpo.PartyName ASC, gpo.GpDate ASC
@@ -3898,21 +3949,22 @@ exports.getMonthWiseItemMovementItemWise = async (req, res) => {
     const replacements = { from, to };
 
     if (itemsFilter) {
-      whereReceipt += ` AND rd.ItemName IN (:itemsFilter)`;
+      whereReceipt += ` AND (i.ItemName IN (:itemsFilter) OR rd.ItemCode IN (:itemsFilter))`;
       whereIssue += ` AND iid.ItemName IN (:itemsFilter)`;
       replacements.itemsFilter = itemsFilter;
     }
 
     const receipts = await sequelize.query(`
       SELECT
-        rd.ItemName,
+        COALESCE(i.ItemName, '') AS ItemName,
         DATE_FORMAT(r.InwardDate, '%Y-%m') AS monthKey,
         DATE_FORMAT(r.InwardDate, '%b %Y') AS monthLabel,
         SUM(rd.Qty) AS qty
       FROM receipts r
       JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
+      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
       WHERE ${whereReceipt}
-      GROUP BY rd.ItemName, monthKey, monthLabel
+      GROUP BY COALESCE(i.ItemName, ''), monthKey, monthLabel
       ORDER BY monthKey ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
 

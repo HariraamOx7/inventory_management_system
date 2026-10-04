@@ -1,6 +1,7 @@
 // backend/controllers/cancelOrderController.js
 const CancelOrder = require('../models/CancelOrder');
 const PurchaseOrder = require('../models/PurchaseOrder');
+const Supplier = require('../models/Supplier');
 
 // Get last cancel number (for auto-increment)
 exports.getLastCancelNo = async (req, res) => {
@@ -48,13 +49,28 @@ exports.getCancelOrders = async (req, res) => {
 exports.getPurchaseOrders = async (req, res) => {
   try {
     const orders = await PurchaseOrder.findAll({
-      attributes: ['OrderNo', 'OrderDate', 'PartyName'],
+      attributes: ['OrderNo', 'OrderDate', 'PartyCode'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
       order: [['OrderNo', 'DESC']]
     });
     
     res.json({
       success: true,
-      data: orders
+      data: orders.map(o => {
+        const p = o.toJSON();
+        return {
+          OrderNo: p.OrderNo,
+          OrderDate: p.OrderDate,
+          PartyCode: p.PartyCode,
+          PartyName: p.supplier?.AccountName || p.PartyCode
+        };
+      })
     });
   } catch (error) {
     console.error('Error fetching purchase orders:', error);
@@ -79,7 +95,14 @@ exports.getPurchaseOrderByNo = async (req, res) => {
     }
 
     const order = await PurchaseOrder.findByPk(orderNo, {
-      attributes: ['OrderNo', 'OrderDate', 'PartyName', 'Address']
+      attributes: ['OrderNo', 'OrderDate', 'PartyCode', 'Address'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ]
     });
 
     if (!order) {
@@ -89,9 +112,12 @@ exports.getPurchaseOrderByNo = async (req, res) => {
       });
     }
 
+    const p = order.toJSON();
+    p.PartyName = p.supplier?.AccountName || p.PartyCode;
+
     res.json({
       success: true,
-      data: order
+      data: p
     });
   } catch (error) {
     console.error('Error fetching purchase order:', error);

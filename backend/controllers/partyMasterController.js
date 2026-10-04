@@ -79,12 +79,16 @@ exports.getSupplierByName = async (req, res) => {
 exports.getSuppliers = async (req, res) => {
     try {
         const suppliers = await Supplier.findAll({
-            attributes: ['AccCode', 'AccountName'],
+            attributes: ['PartyCode', 'AccountName'],
             order: [['AccountName', 'ASC']]
         });
         res.json({
             success: true,
-            data: suppliers
+            data: suppliers.map(s => ({
+                PartyCode: s.PartyCode,
+                AccCode: s.PartyCode,
+                AccountName: s.AccountName
+            }))
         });
     } catch (error) {
         console.error('Error fetching suppliers:', error);

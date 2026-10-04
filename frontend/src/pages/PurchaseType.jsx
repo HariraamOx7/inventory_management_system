@@ -6,7 +6,7 @@ import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import PurchaseTypeModal from '../components/PurchaseTypeModal';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 export default function PurchaseType() {
   const navigate = useNavigate();

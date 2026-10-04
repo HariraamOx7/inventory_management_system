@@ -14,7 +14,7 @@ GateInward.init({
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  PartyName: {
+  PartyCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },

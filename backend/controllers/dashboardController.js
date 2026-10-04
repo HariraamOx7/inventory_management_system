@@ -8,6 +8,7 @@ const {
   Receipt,
   BillVerify,
   BillEntry,
+  Supplier,
   sequelize
 } = require('../models/index');
 const { Op } = require('sequelize');
@@ -163,11 +164,16 @@ exports.getDashboardStats = async (req, res) => {
       });
     }
 
-    // 8. Recent Gate Inward Log (Real Database records with original InwardNo)
+    // 8. Recent Gate Inward Log
     const recentInwardRecords = await GateInward.findAll({
       limit: 6,
       order: [['createdAt', 'DESC']],
       include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
         {
           model: GateInwardDetail,
           as: 'details',
@@ -184,7 +190,6 @@ exports.getDashboardStats = async (req, res) => {
         year: 'numeric'
       }) : '-';
 
-      // Determine real status dynamically (InwardCreated vs Draft vs Cancelled)
       let computedStatus = 'Draft';
       if (gi.Status === 'Cancelled') {
         computedStatus = 'Cancelled';
@@ -199,8 +204,8 @@ exports.getDashboardStats = async (req, res) => {
       return {
         entryNo: `GI-${String(gi.InwardNo).padStart(3, '0')}`,
         date: formattedDate,
-        supplier: gi.PartyName || 'N/A',
-        vehicleNo: gi.DCNo ? `DC-${gi.DCNo}` : (gi.InvoiceNo ? `INV-${gi.InvoiceNo}` : '-'),
+        supplier: gi.supplier?.AccountName || gi.PartyCode || 'N/A',
+        vehicleNo: gi.InvoiceNo ? `INV-${gi.InvoiceNo}` : '-',
         items: gi.details ? gi.details.length : 0,
         status: computedStatus
       };
@@ -211,19 +216,28 @@ exports.getDashboardStats = async (req, res) => {
       where: {
         Status: { [Op.or]: ['Draft', 'Pending', 'Awaiting Approval', 'InwardCreated'] }
       },
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
       order: [['OrderNo', 'DESC']],
-      limit: 50,
-      raw: true
+      limit: 50
     }).catch(() => []);
 
-    const awaitingApprovalPOsList = awaitingApprovalPOsListRaw.map(po => ({
-      orderNo: po.OrderNo,
-      partyName: po.PartyName || 'N/A',
-      orderDate: po.OrderDate ? new Date(po.OrderDate).toLocaleDateString('en-GB') : '-',
-      refNo: po.RefNo || '-',
-      grandTotal: po.GrandTotal || 0,
-      status: po.Status || 'Draft'
-    }));
+    const awaitingApprovalPOsList = awaitingApprovalPOsListRaw.map(po => {
+      const p = po.toJSON ? po.toJSON() : po;
+      return {
+        orderNo: p.OrderNo,
+        partyName: p.supplier?.AccountName || p.PartyCode || 'N/A',
+        orderDate: p.OrderDate ? new Date(p.OrderDate).toLocaleDateString('en-GB') : '-',
+        refNo: p.RefNo || '-',
+        grandTotal: p.GrandTotal || 0,
+        status: p.Status || 'Draft'
+      };
+    });
 
     const lowStockItemsListRaw = await Item.findAll({
       where: {
@@ -247,20 +261,29 @@ exports.getDashboardStats = async (req, res) => {
       where: {
         InwardNo: { [Op.notIn]: Array.from(verifiedInwardNoSet) }
       },
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
       order: [['InwardNo', 'DESC']],
-      limit: 50,
-      raw: true
+      limit: 50
     }).catch(() => []);
 
-    const pendingVerificationsList = pendingGateRecords.map(gi => ({
-      id: `GI-${String(gi.InwardNo).padStart(3, '0')}`,
-      rawId: gi.InwardNo,
-      type: 'Gate Inward',
-      partyName: gi.PartyName || 'N/A',
-      date: gi.InwardDate ? new Date(gi.InwardDate).toLocaleDateString('en-GB') : '-',
-      refNo: gi.DCNo ? `DC-${gi.DCNo}` : (gi.InvoiceNo ? `INV-${gi.InvoiceNo}` : '-'),
-      status: 'Pending Verification'
-    }));
+    const pendingVerificationsList = pendingGateRecords.map(gi => {
+      const p = gi.toJSON ? gi.toJSON() : gi;
+      return {
+        id: `GI-${String(p.InwardNo).padStart(3, '0')}`,
+        rawId: p.InwardNo,
+        type: 'Gate Inward',
+        partyName: p.supplier?.AccountName || p.PartyCode || 'N/A',
+        date: p.InwardDate ? new Date(p.InwardDate).toLocaleDateString('en-GB') : '-',
+        refNo: p.InvoiceNo ? `INV-${p.InvoiceNo}` : '-',
+        status: 'Pending Verification'
+      };
+    });
 
     res.json({
       success: true,

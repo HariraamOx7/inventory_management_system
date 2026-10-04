@@ -185,8 +185,8 @@ const Layout = ({ children }) => {
             setSidebarOpen(false);
           }}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${location.pathname === '/dashboard'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
             }`}
         >
           <LayoutDashboard size={18} />
@@ -198,8 +198,8 @@ const Layout = ({ children }) => {
           <button
             onClick={() => setMastersOpen(!mastersOpen)}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${isMastersPath
-                ? 'text-white bg-[#141b36]'
-                : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
+              ? 'text-white bg-[#141b36]'
+              : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
               }`}
           >
             <div className="flex items-center gap-3">
@@ -225,8 +225,8 @@ const Layout = ({ children }) => {
                       setSidebarOpen(false);
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive
-                        ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
+                      ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
                       }`}
                   >
                     {sub.name}
@@ -242,8 +242,8 @@ const Layout = ({ children }) => {
           <button
             onClick={() => setTransactionsOpen(!transactionsOpen)}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${isTransactionsPath
-                ? 'text-white bg-[#141b36]'
-                : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
+              ? 'text-white bg-[#141b36]'
+              : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
               }`}
           >
             <div className="flex items-center gap-3">
@@ -269,8 +269,8 @@ const Layout = ({ children }) => {
                       setSidebarOpen(false);
                     }}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive
-                        ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
+                      ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
                       }`}
                   >
                     {sub.name}
@@ -287,8 +287,8 @@ const Layout = ({ children }) => {
             setSidebarOpen(false);
           }}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${location.pathname === '/reports'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
             }`}
         >
           <FileText size={18} />
@@ -302,8 +302,8 @@ const Layout = ({ children }) => {
             setSidebarOpen(false);
           }}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${location.pathname === '/cancel-order'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
             }`}
         >
           <XCircle size={18} />
@@ -317,8 +317,8 @@ const Layout = ({ children }) => {
             setSidebarOpen(false);
           }}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${location.pathname === '/bill-verify'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
             }`}
         >
           <FileCheck size={18} />

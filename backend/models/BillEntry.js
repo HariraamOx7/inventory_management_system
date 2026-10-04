@@ -21,7 +21,7 @@ BillEntry.init({
     type: DataTypes.INTEGER,
     allowNull: true
   },
-  PartyName: {
+  PartyCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },

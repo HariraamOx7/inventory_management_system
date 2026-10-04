@@ -18,7 +18,7 @@ ReceiptDetail.init({
     type: DataTypes.INTEGER,
     allowNull: true
   },
-  ItemName: {
+  ItemCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },

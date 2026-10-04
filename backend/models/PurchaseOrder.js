@@ -6,7 +6,7 @@ class PurchaseOrder extends Model {}
 
 PurchaseOrder.init({
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true
   },
@@ -15,8 +15,8 @@ PurchaseOrder.init({
     allowNull: false,
     defaultValue: DataTypes.NOW
   },
-  PartyName: {
-    type: DataTypes.STRING(255),
+  PartyCode: {
+    type: DataTypes.STRING(30),
     allowNull: false
   },
   Address: {

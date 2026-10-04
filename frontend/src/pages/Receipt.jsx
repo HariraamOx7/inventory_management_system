@@ -11,7 +11,7 @@ import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
 import { useToastStore } from '../store/toastStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const formatRoundOff = (val) => {
   const num = parseFloat(val) || 0;

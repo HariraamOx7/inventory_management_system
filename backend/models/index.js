@@ -107,6 +107,36 @@ SubHead.belongsTo(Department, {
     onDelete: 'SET NULL'
 });
 
+// Supplier associations
+PurchaseOrder.belongsTo(Supplier, { foreignKey: 'PartyCode', targetKey: 'PartyCode', as: 'supplier', constraints: false });
+Supplier.hasMany(PurchaseOrder, { foreignKey: 'PartyCode', sourceKey: 'PartyCode', as: 'purchaseOrders', constraints: false });
+
+GateInward.belongsTo(Supplier, { foreignKey: 'PartyCode', targetKey: 'PartyCode', as: 'supplier', constraints: false });
+Supplier.hasMany(GateInward, { foreignKey: 'PartyCode', sourceKey: 'PartyCode', as: 'gateInwards', constraints: false });
+
+Receipt.belongsTo(Supplier, { foreignKey: 'PartyCode', targetKey: 'PartyCode', as: 'supplier', constraints: false });
+Supplier.hasMany(Receipt, { foreignKey: 'PartyCode', sourceKey: 'PartyCode', as: 'receipts', constraints: false });
+
+BillEntry.belongsTo(Supplier, { foreignKey: 'PartyCode', targetKey: 'PartyCode', as: 'supplier', constraints: false });
+Supplier.hasMany(BillEntry, { foreignKey: 'PartyCode', sourceKey: 'PartyCode', as: 'billEntries', constraints: false });
+
+// Item associations
+PurchaseOrderDetail.belongsTo(Item, { foreignKey: 'ItemCode', targetKey: 'ItemCode', as: 'item', constraints: false });
+Item.hasMany(PurchaseOrderDetail, { foreignKey: 'ItemCode', sourceKey: 'ItemCode', as: 'poDetails', constraints: false });
+
+GateInwardDetail.belongsTo(Item, { foreignKey: 'ItemCode', targetKey: 'ItemCode', as: 'item', constraints: false });
+Item.hasMany(GateInwardDetail, { foreignKey: 'ItemCode', sourceKey: 'ItemCode', as: 'gateInwardDetails', constraints: false });
+
+ReceiptDetail.belongsTo(Item, { foreignKey: 'ItemCode', targetKey: 'ItemCode', as: 'item', constraints: false });
+Item.hasMany(ReceiptDetail, { foreignKey: 'ItemCode', sourceKey: 'ItemCode', as: 'receiptDetails', constraints: false });
+
+BillEntryDetail.belongsTo(Item, { foreignKey: 'ItemCode', targetKey: 'ItemCode', as: 'item', constraints: false });
+Item.hasMany(BillEntryDetail, { foreignKey: 'ItemCode', sourceKey: 'ItemCode', as: 'billEntryDetails', constraints: false });
+
+// PurchaseType associations
+BillEntry.belongsTo(PurchaseType, { foreignKey: 'PurchaseType', targetKey: 'Code', as: 'purchaseTypeMaster', constraints: false });
+PurchaseType.hasMany(BillEntry, { foreignKey: 'PurchaseType', sourceKey: 'Code', as: 'billEntries', constraints: false });
+
 
 
 module.exports = {

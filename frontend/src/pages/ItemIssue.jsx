@@ -30,7 +30,7 @@ import FilterPanel from '../components/ui/FilterPanel';
 import PaginationBar from '../components/ui/PaginationBar';
 import { useToastStore } from '../store/toastStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialFormState = {
   IssueNo: '',

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 // Create a configured Axios instance
 const api = axios.create({
@@ -33,7 +33,7 @@ api.interceptors.response.use(
       
       // Avoid redirect loops if already on login page
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        window.location.href = '/login?session_expired=true';
+        window.location.href = '/?session_expired=true';
       }
     }
     return Promise.reject(error);
@@ -59,7 +59,7 @@ axios.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        window.location.href = '/login?session_expired=true';
+        window.location.href = '/?session_expired=true';
       }
     }
     return Promise.reject(error);

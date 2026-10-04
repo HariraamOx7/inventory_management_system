@@ -8,7 +8,9 @@ const {
   GateInwardDetail,
   PurchaseOrder,
   PurchaseOrderDetail,
-  PurchaseType
+  PurchaseType,
+  Supplier,
+  Item
 } = require('../models/index');
 
 const parseDec = (val, defaultVal = 0) => {
@@ -17,17 +19,71 @@ const parseDec = (val, defaultVal = 0) => {
   return isNaN(parsed) ? defaultVal : parsed;
 };
 
+const cleanDate = (d) => {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString().split('T')[0];
+};
+
+const cleanOrderNo = (val) => {
+  if (!val) return null;
+  const num = parseInt(String(val).replace(/\D/g, ''), 10);
+  return isNaN(num) ? null : num;
+};
+
+const resolvePartyCode = async (partyCode, partyName) => {
+  if (partyCode && String(partyCode).trim()) {
+    return String(partyCode).trim();
+  }
+  if (partyName && String(partyName).trim()) {
+    const trimmed = String(partyName).trim();
+    const sup = await Supplier.findOne({
+      where: {
+        [Op.or]: [
+          { AccountName: trimmed },
+          { PartyCode: trimmed }
+        ]
+      }
+    });
+    if (sup) return sup.PartyCode;
+    return trimmed;
+  }
+  return null;
+};
+
+const resolveItemCode = async (itemCode, itemName) => {
+  if (itemCode && String(itemCode).trim()) {
+    return String(itemCode).trim();
+  }
+  if (itemName && String(itemName).trim()) {
+    const found = await Item.findOne({ where: { ItemName: String(itemName).trim() } });
+    if (found) return found.ItemCode;
+  }
+  return null;
+};
+
+const resolvePurchaseTypeCode = async (typeInput) => {
+  if (!typeInput) return null;
+  const str = String(typeInput).trim();
+  if (/^\d+$/.test(str)) {
+    const pt = await PurchaseType.findByPk(parseInt(str, 10));
+    if (pt) return String(pt.Code);
+  }
+  const ptByName = await PurchaseType.findOne({ where: { PurchaseType: str } });
+  if (ptByName) return String(ptByName.Code);
+  return str;
+};
+
 // Get parties that have unbilled Receipts (GRNs)
 exports.getAvailableParties = async (req, res) => {
   try {
-    // 1. Get all GRN numbers that are already billed
     const billedBills = await BillEntry.findAll({
       attributes: ['GRNNo'],
       raw: true
     });
     const billedGRNs = billedBills.map(b => b.GRNNo).filter(Boolean);
 
-    // 2. Find receipts that are not already billed
     const receiptWhere = {};
     if (billedGRNs.length > 0) {
       receiptWhere.GRNNo = { [Op.notIn]: billedGRNs };
@@ -35,11 +91,19 @@ exports.getAvailableParties = async (req, res) => {
 
     const receipts = await Receipt.findAll({
       where: receiptWhere,
-      attributes: ['PartyName'],
-      raw: true
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ]
     });
 
-    const parties = [...new Set(receipts.map(r => r.PartyName ? r.PartyName.trim() : '').filter(Boolean))].sort();
+    const parties = [...new Set(receipts.map(r => {
+      const p = r.toJSON();
+      return p.supplier?.AccountName || p.PartyCode;
+    }).filter(Boolean))].sort();
 
     res.json({ success: true, data: parties });
   } catch (error) {
@@ -55,16 +119,16 @@ exports.getAvailableParties = async (req, res) => {
 // Get available Gate Inwards for bill entry (kept for backward compatibility)
 exports.getAvailableGateInwards = async (req, res) => {
   try {
-    const { partyName } = req.query;
+    const { partyName, partyCode } = req.query;
 
-    if (!partyName) {
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (!resolvedPartyCode) {
       return res.status(400).json({
         success: false,
-        message: 'Party name is required'
+        message: 'Party name or party code is required'
       });
     }
 
-    // 1. Get already billed GRNNos and GateInwardNos
     const billedBills = await BillEntry.findAll({
       attributes: ['GateInwardNo', 'GRNNo'],
       raw: true
@@ -72,9 +136,8 @@ exports.getAvailableGateInwards = async (req, res) => {
     const usedInwardNos = billedBills.map(v => v.GateInwardNo).filter(Boolean);
     const billedGRNs = billedBills.map(v => v.GRNNo).filter(Boolean);
 
-    // 2. Find receipts for this party that are not billed
     const receiptWhere = {
-      PartyName: partyName.trim(),
+      PartyCode: resolvedPartyCode,
       GateInwardNo: { [Op.ne]: null }
     };
     if (billedGRNs.length > 0) {
@@ -98,7 +161,7 @@ exports.getAvailableGateInwards = async (req, res) => {
     const gateInwards = await GateInward.findAll({
       where: {
         InwardNo: { [Op.in]: candidateInwardNos },
-        PartyName: partyName.trim()
+        PartyCode: resolvedPartyCode
       },
       attributes: ['InwardNo', 'InwardDate'],
       order: [['InwardNo', 'DESC']],
@@ -122,12 +185,13 @@ exports.getAvailableGateInwards = async (req, res) => {
 // Get available GRNs for party (must have a receipt and not already billed)
 exports.getAvailableGRNs = async (req, res) => {
   try {
-    const { partyName, gateInwardNo } = req.query;
+    const { partyName, partyCode, gateInwardNo } = req.query;
 
-    if (!partyName) {
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (!resolvedPartyCode) {
       return res.status(400).json({
         success: false,
-        message: 'Party name is required'
+        message: 'Party name or party code is required'
       });
     }
 
@@ -138,7 +202,7 @@ exports.getAvailableGRNs = async (req, res) => {
     const billedGRNs = billed.map(b => b.GRNNo).filter(Boolean);
 
     const receiptWhere = {
-      PartyName: partyName.trim()
+      PartyCode: resolvedPartyCode
     };
     if (gateInwardNo) {
       receiptWhere.GateInwardNo = gateInwardNo;
@@ -149,16 +213,22 @@ exports.getAvailableGRNs = async (req, res) => {
 
     const receipts = await Receipt.findAll({
       where: receiptWhere,
-      attributes: ['GRNNo', 'InwardDate', 'InvoiceNo', 'BillAmount', 'GrandTotal', 'GateInwardNo'],
-      include: [{
-        model: ReceiptDetail,
-        as: 'details',
-        attributes: ['OrderNo']
-      }],
+      attributes: ['GRNNo', 'InwardDate', 'InvoiceNo', 'BillAmount', 'GrandTotal', 'GateInwardNo', 'PartyCode'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: ReceiptDetail,
+          as: 'details',
+          attributes: ['OrderNo']
+        }
+      ],
       order: [['GRNNo', 'DESC']]
     });
 
-    // Collect all orderNos and gateInwardNos across candidate receipts
     const allOrderNos = new Set();
     const allInwardNos = new Set();
     for (const r of receipts) {
@@ -217,6 +287,8 @@ exports.getAvailableGRNs = async (req, res) => {
 
       return {
         GRNNo: rData.GRNNo,
+        PartyCode: rData.PartyCode,
+        PartyName: rData.supplier?.AccountName || rData.PartyCode,
         InwardDate: rData.InwardDate,
         InvoiceNo: rData.InvoiceNo,
         BillAmount: rData.BillAmount,
@@ -258,7 +330,18 @@ exports.getGRNDetails = async (req, res) => {
     }
 
     const receipt = await Receipt.findByPk(grnNo, {
-      include: [{ model: ReceiptDetail, as: 'details' }]
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: ReceiptDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ]
     });
 
     if (!receipt) {
@@ -269,9 +352,9 @@ exports.getGRNDetails = async (req, res) => {
     }
 
     const receiptData = receipt.toJSON();
+    receiptData.PartyName = receiptData.supplier?.AccountName || receiptData.PartyCode;
     const details = receiptData.details || [];
 
-    // Collect all potential OrderNos
     const orderNos = new Set();
     details.forEach(d => { if (d.OrderNo) orderNos.add(d.OrderNo); });
     if (receiptData.GateInwardNo) {
@@ -289,18 +372,19 @@ exports.getGRNDetails = async (req, res) => {
 
     const poMap = {};
     poDetails.forEach(poD => {
-      poMap[`${poD.OrderNo}_${poD.ItemName}`] = poD;
-      if (!poMap[poD.ItemName]) poMap[poD.ItemName] = poD;
+      poMap[`${poD.OrderNo}_${poD.ItemCode}`] = poD;
+      if (!poMap[poD.ItemCode]) poMap[poD.ItemCode] = poD;
     });
 
     receiptData.details = details.map(d => {
-      const poD = poMap[`${d.OrderNo}_${d.ItemName}`] || poMap[d.ItemName] || {};
+      const poD = poMap[`${d.OrderNo}_${d.ItemCode}`] || poMap[d.ItemCode] || {};
       const gstPct = parseFloat(poD.GSTPct) ||
         ((parseFloat(poD.SGSTPct) || 0) + (parseFloat(poD.CGSTPct) || 0)) ||
         (parseFloat(poD.IGSTPct) || 0);
       const isIGST = (parseFloat(poD.IGSTPct) || 0) > 0 || (parseFloat(poD.IGST) || 0) > 0;
       return {
         ...d,
+        ItemName: d.item?.ItemName || '',
         GRNNo: receiptData.GRNNo,
         GSTType: poD.GSTType || (isIGST ? `IGST [${gstPct} %]` : (gstPct > 0 ? `GST [${gstPct} %]` : 'GST [0 %]')),
         GSTPct: gstPct,
@@ -312,7 +396,6 @@ exports.getGRNDetails = async (req, res) => {
       };
     });
 
-    // Fetch all Gate Inward batches linked to these POs or GateInwardNo
     const orConditions = [];
     if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
     if (receiptData.GateInwardNo) orConditions.push({ InwardNo: receiptData.GateInwardNo });
@@ -320,12 +403,24 @@ exports.getGRNDetails = async (req, res) => {
     const gateInwards = orConditions.length > 0
       ? await GateInward.findAll({
           where: { [Op.or]: orConditions },
-          include: [{ model: GateInwardDetail, as: 'details' }],
+          include: [
+            {
+              model: GateInwardDetail,
+              as: 'details',
+              include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+            }
+          ],
           order: [['InwardNo', 'ASC']]
         })
       : [];
 
-    receiptData.gateInwards = gateInwards.map(gi => gi.toJSON ? gi.toJSON() : gi);
+    receiptData.gateInwards = gateInwards.map(gi => {
+      const json = gi.toJSON ? gi.toJSON() : gi;
+      if (json.details) {
+        json.details = json.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
+      }
+      return json;
+    });
     const giNos = receiptData.gateInwards.map(g => g.InwardNo);
     receiptData.GateInwardNos = giNos;
     receiptData.GateInwardDisplay = giNos.length > 0 ? giNos.map(n => `GI-${String(n).padStart(3, '0')}`).join(', ') : (receiptData.GateInwardNo ? `GI-${String(receiptData.GateInwardNo).padStart(3, '0')}` : '');
@@ -365,25 +460,25 @@ exports.getLastVoucherNo = async (req, res) => {
   }
 };
 
-// Create bill entry with voucher = gate inward number
+// Create bill entry
 exports.createBillEntry = async (req, res) => {
   try {
     const {
-      GateInwardNo: rawGateInwardNo, GRNNo, PartyName, AccDate, PartyBillNo, BillDate,
+      GateInwardNo: rawGateInwardNo, GRNNo, PartyCode, PartyName, AccDate, PartyBillNo, BillDate,
       PurchaseType, BillAmount, TDS, Narration, Total, Discount, GST,
       IGST, VAT_CST, P_F, LorryFreight, RoundOff, TaxRndOff, GrandTotal, items
     } = req.body;
 
-    if (!GRNNo || !PartyName) {
+    const resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName);
+    if (!GRNNo || !resolvedPartyCode) {
       return res.status(400).json({
         success: false,
-        message: 'GRN number and party name are required'
+        message: 'GRN number and party code/name are required'
       });
     }
 
-    // Resolve GRN and auto-fill GateInwardNo if not provided
     const receipt = await Receipt.findOne({
-      where: { GRNNo, PartyName: PartyName.trim() }
+      where: { GRNNo, PartyCode: resolvedPartyCode }
     });
     if (!receipt) {
       return res.status(400).json({
@@ -394,7 +489,6 @@ exports.createBillEntry = async (req, res) => {
 
     const resolvedGateInwardNo = rawGateInwardNo || receipt.GateInwardNo;
 
-    // Check GRN not already billed
     const existingByGRN = await BillEntry.findOne({ where: { GRNNo } });
     if (existingByGRN) {
       return res.status(400).json({
@@ -403,13 +497,11 @@ exports.createBillEntry = async (req, res) => {
       });
     }
 
-    // Check for duplicate PartyBillNo per party (skip if blank)
     if (PartyBillNo && PartyBillNo.trim()) {
       const duplicateBill = await BillEntry.findOne({
-        where: { PartyName: PartyName.trim(), PartyBillNo: PartyBillNo.trim() }
+        where: { PartyCode: resolvedPartyCode, PartyBillNo: PartyBillNo.trim() }
       });
       if (duplicateBill) {
-        // Build chain info for frontend confirmation flow
         const dupReceipt = duplicateBill.GRNNo
           ? await Receipt.findByPk(duplicateBill.GRNNo, { raw: true })
           : null;
@@ -422,10 +514,10 @@ exports.createBillEntry = async (req, res) => {
 
         return res.status(409).json({
           success: false,
-          message: `A bill entry already exists for party "${PartyName.trim()}" with bill number "${PartyBillNo.trim()}".`,
+          message: `A bill entry already exists for party "${resolvedPartyCode}" with bill number "${PartyBillNo.trim()}".`,
           duplicate: {
             VoucherNo: duplicateBill.VoucherNo,
-            PartyName: duplicateBill.PartyName,
+            PartyCode: duplicateBill.PartyCode,
             PartyBillNo: duplicateBill.PartyBillNo,
             GRNNo: duplicateBill.GRNNo,
             GateInwardNo: duplicateBill.GateInwardNo,
@@ -438,19 +530,20 @@ exports.createBillEntry = async (req, res) => {
       }
     }
 
-    // Generate next VoucherNo
     const lastBill = await BillEntry.findOne({ order: [['VoucherNo', 'DESC']] });
     const nextVoucherNo = lastBill ? lastBill.VoucherNo + 1 : 1;
+
+    const resolvedPurchaseType = await resolvePurchaseTypeCode(PurchaseType);
 
     const newBill = await BillEntry.create({
       VoucherNo: nextVoucherNo,
       GateInwardNo: (resolvedGateInwardNo === '' || resolvedGateInwardNo === null || resolvedGateInwardNo === undefined) ? null : parseInt(resolvedGateInwardNo, 10),
       GRNNo: parseInt(GRNNo, 10),
-      PartyName: PartyName.trim(),
+      PartyCode: resolvedPartyCode,
       AccDate: AccDate || new Date(),
       PartyBillNo: PartyBillNo ? PartyBillNo.trim() : null,
       BillDate: BillDate || new Date(),
-      PurchaseType: PurchaseType || null,
+      PurchaseType: resolvedPurchaseType || null,
       BillAmount: parseDec(BillAmount, 0),
       TDS: parseDec(TDS, 0),
       Narration: Narration ? Narration.trim() : null,
@@ -467,28 +560,30 @@ exports.createBillEntry = async (req, res) => {
       Status: 'Billed'
     });
 
-    // Build item-to-order map from receipt details
     const rcptDetails = await ReceiptDetail.findAll({
       where: { GRNNo },
-      attributes: ['ItemName', 'OrderNo'],
+      attributes: ['ItemCode', 'OrderNo'],
       raw: true
     });
     const itemOrderMap = {};
     rcptDetails.forEach(rd => {
-      if (rd.ItemName && rd.OrderNo) itemOrderMap[rd.ItemName] = rd.OrderNo;
+      if (rd.ItemCode && rd.OrderNo) itemOrderMap[rd.ItemCode] = rd.OrderNo;
     });
     const defaultOrderNo = rcptDetails[0]?.OrderNo || null;
 
     const billItems = (items && items.length > 0) ? items : [];
     for (const item of billItems) {
+      const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
+      if (!itemCode) continue;
+
       const qty = parseFloat(item.Qty || item.ReceivedQty) || 0;
       const unitRate = parseFloat(item.UnitRate) || 0;
-      const resolvedOrderNo = item.OrderNo || itemOrderMap[item.ItemName] || defaultOrderNo;
+      const resolvedOrderNo = item.OrderNo || itemOrderMap[itemCode] || defaultOrderNo;
 
       await BillEntryDetail.create({
         VoucherNo: newBill.VoucherNo,
-        OrderNo: resolvedOrderNo,
-        ItemName: item.ItemName,
+        OrderNo: cleanOrderNo(resolvedOrderNo),
+        ItemCode: itemCode,
         Qty: qty,
         UnitRate: unitRate,
         TotalAmount: item.TotalAmount || (qty * unitRate)
@@ -524,7 +619,7 @@ exports.updateBillEntry = async (req, res) => {
     }
 
     const {
-      PartyName, AccDate, PartyBillNo, BillDate, PurchaseType, BillAmount,
+      PartyCode, PartyName, AccDate, PartyBillNo, BillDate, PurchaseType, BillAmount,
       TDS, Narration, Total, Discount, GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff,
       TaxRndOff, GrandTotal, items
     } = req.body;
@@ -537,25 +632,22 @@ exports.updateBillEntry = async (req, res) => {
       });
     }
 
-    const cleanDate = (d) => {
-      if (!d) return null;
-      const dt = new Date(d);
-      if (isNaN(dt.getTime())) return null;
-      return dt.toISOString().split('T')[0];
-    };
+    let resolvedPartyCode = billEntry.PartyCode;
+    if (PartyCode || PartyName) {
+      resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName) || billEntry.PartyCode;
+    }
 
-    const cleanOrderNo = (val) => {
-      if (!val) return null;
-      const num = parseInt(String(val).replace(/\D/g, ''), 10);
-      return isNaN(num) ? null : num;
-    };
+    let resolvedPurchaseType = billEntry.PurchaseType;
+    if (PurchaseType !== undefined) {
+      resolvedPurchaseType = await resolvePurchaseTypeCode(PurchaseType);
+    }
 
     const updateData = {
-      PartyName: PartyName ? PartyName.trim() : billEntry.PartyName,
+      PartyCode: resolvedPartyCode,
       AccDate: cleanDate(AccDate) || billEntry.AccDate || cleanDate(new Date()),
       PartyBillNo: PartyBillNo !== undefined ? (PartyBillNo ? PartyBillNo.trim() : null) : billEntry.PartyBillNo,
       BillDate: cleanDate(BillDate) || billEntry.BillDate || cleanDate(new Date()),
-      PurchaseType: PurchaseType || billEntry.PurchaseType,
+      PurchaseType: resolvedPurchaseType,
       BillAmount: BillAmount !== undefined ? parseDec(BillAmount, 0) : billEntry.BillAmount,
       TDS: TDS !== undefined ? parseDec(TDS, 0) : billEntry.TDS,
       Narration: Narration !== undefined ? (Narration ? Narration.trim() : null) : billEntry.Narration,
@@ -582,11 +674,11 @@ exports.updateBillEntry = async (req, res) => {
         try {
           const rcptDetails = await ReceiptDetail.findAll({
             where: { GRNNo: billEntry.GRNNo },
-            attributes: ['ItemName', 'OrderNo'],
+            attributes: ['ItemCode', 'OrderNo'],
             raw: true
           });
           rcptDetails.forEach(rd => {
-            if (rd.ItemName && rd.OrderNo) itemOrderMap[rd.ItemName] = rd.OrderNo;
+            if (rd.ItemCode && rd.OrderNo) itemOrderMap[rd.ItemCode] = rd.OrderNo;
           });
           defaultOrderNo = rcptDetails[0]?.OrderNo || null;
         } catch (err) {
@@ -595,16 +687,18 @@ exports.updateBillEntry = async (req, res) => {
       }
 
       for (const item of items) {
-        if (!item || !item.ItemName) continue;
+        const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
+        if (!itemCode) continue;
+
         const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
         const unitRate = parseDec(item.UnitRate, 0);
-        const rawOrderNo = item.OrderNo || itemOrderMap[item.ItemName] || defaultOrderNo;
+        const rawOrderNo = item.OrderNo || itemOrderMap[itemCode] || defaultOrderNo;
         const resolvedOrderNo = cleanOrderNo(rawOrderNo);
 
         await BillEntryDetail.create({
           VoucherNo: vNo,
           OrderNo: resolvedOrderNo,
-          ItemName: String(item.ItemName).trim(),
+          ItemCode: itemCode,
           Qty: qty,
           UnitRate: unitRate,
           TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
@@ -661,11 +755,26 @@ exports.deleteBillEntry = async (req, res) => {
 exports.getBillEntries = async (req, res) => {
   try {
     const bills = await BillEntry.findAll({
-      include: [{ model: BillEntryDetail, as: 'details' }],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: PurchaseType,
+          as: 'purchaseTypeMaster',
+          attributes: ['Code', 'PurchaseType', 'Description']
+        },
+        {
+          model: BillEntryDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ],
       order: [['VoucherNo', 'DESC']]
     });
 
-    // Collect all GRNNos, GateInwardNos, and OrderNos from bills
     const grnNos = new Set();
     const inwardNos = new Set();
     const orderNos = new Set();
@@ -678,7 +787,6 @@ exports.getBillEntries = async (req, res) => {
       }
     }
 
-    // Map Receipts by GRNNo
     const grnReceiptMap = new Map();
     if (grnNos.size > 0) {
       const receipts = await Receipt.findAll({
@@ -690,7 +798,7 @@ exports.getBillEntries = async (req, res) => {
         const rOrderNos = [...new Set((rJson.details || []).map(d => d.OrderNo).filter(Boolean))];
         const itemOrderMap = {};
         (rJson.details || []).forEach(d => {
-          if (d.ItemName && d.OrderNo) itemOrderMap[d.ItemName] = d.OrderNo;
+          if (d.ItemCode && d.OrderNo) itemOrderMap[d.ItemCode] = d.OrderNo;
         });
 
         grnReceiptMap.set(rJson.GRNNo, {
@@ -704,7 +812,6 @@ exports.getBillEntries = async (req, res) => {
       }
     }
 
-    // Also look up GateInwards to see if any have OrderNos that weren't in orderNos
     if (inwardNos.size > 0) {
       const giRecords = await GateInward.findAll({
         where: { InwardNo: { [Op.in]: Array.from(inwardNos) } },
@@ -716,7 +823,6 @@ exports.getBillEntries = async (req, res) => {
       }
     }
 
-    // Fetch all Gate Inwards matching any of the resolved OrderNos or InwardNos
     const orConditions = [];
     if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
     if (inwardNos.size > 0) orConditions.push({ InwardNo: { [Op.in]: Array.from(inwardNos) } });
@@ -724,7 +830,13 @@ exports.getBillEntries = async (req, res) => {
     const gateInwards = orConditions.length > 0
       ? await GateInward.findAll({
           where: { [Op.or]: orConditions },
-          include: [{ model: GateInwardDetail, as: 'details' }],
+          include: [
+            {
+              model: GateInwardDetail,
+              as: 'details',
+              include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+            }
+          ],
           order: [['InwardNo', 'ASC']]
         })
       : [];
@@ -733,6 +845,9 @@ exports.getBillEntries = async (req, res) => {
     const giByInward = new Map();
     for (const gi of gateInwards) {
       const json = gi.toJSON ? gi.toJSON() : gi;
+      if (json.details) {
+        json.details = json.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
+      }
       if (gi.OrderNo) {
         if (!giByOrder.has(gi.OrderNo)) giByOrder.set(gi.OrderNo, []);
         giByOrder.get(gi.OrderNo).push(json);
@@ -742,9 +857,9 @@ exports.getBillEntries = async (req, res) => {
 
     const result = bills.map(b => {
       const bJson = b.toJSON ? b.toJSON() : b;
+      bJson.PartyName = bJson.supplier?.AccountName || bJson.PartyCode;
       const receiptInfo = bJson.GRNNo ? grnReceiptMap.get(bJson.GRNNo) : null;
 
-      // Resolve all PO Order numbers for this bill
       const billOrderNos = new Set();
       (bJson.details || []).forEach(d => {
         if (d.OrderNo) billOrderNos.add(d.OrderNo);
@@ -757,17 +872,16 @@ exports.getBillEntries = async (req, res) => {
         if (oNo) billOrderNos.add(oNo);
       }
 
-      // Enrich details with OrderNo if missing
       const primaryOrderNo = Array.from(billOrderNos)[0] || null;
       const enrichedDetails = (bJson.details || []).map(d => {
-        const itemOrderNo = d.OrderNo || (receiptInfo?.itemOrderMap && receiptInfo.itemOrderMap[d.ItemName]) || primaryOrderNo;
+        const itemOrderNo = d.OrderNo || (receiptInfo?.itemOrderMap && receiptInfo.itemOrderMap[d.ItemCode]) || primaryOrderNo;
         return {
           ...d,
+          ItemName: d.item?.ItemName || '',
           OrderNo: itemOrderNo
         };
       });
 
-      // Gather all linked Gate Inwards across all PO orders for this bill
       let linkedGIs = [];
       const seenGIs = new Set();
 
@@ -792,11 +906,15 @@ exports.getBillEntries = async (req, res) => {
         linkedGIs.push(giByInward.get(receiptInfo.GateInwardNo));
       }
 
-      // Sort linked gate inwards by InwardNo ascending
       linkedGIs.sort((x, y) => (x.InwardNo || 0) - (y.InwardNo || 0));
+
+      const ptName = bJson.purchaseTypeMaster?.PurchaseType || bJson.PurchaseType || '';
 
       return {
         ...bJson,
+        PurchaseTypeCode: bJson.PurchaseType,
+        PurchaseTypeName: ptName,
+        PurchaseType: ptName,
         details: enrichedDetails,
         OrderNo: primaryOrderNo,
         gateInwards: linkedGIs
@@ -823,7 +941,23 @@ exports.getBillEntry = async (req, res) => {
     const { voucherNo } = req.params;
 
     const billEntry = await BillEntry.findByPk(voucherNo, {
-      include: [{ model: BillEntryDetail, as: 'details' }]
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: PurchaseType,
+          as: 'purchaseTypeMaster',
+          attributes: ['Code', 'PurchaseType', 'Description']
+        },
+        {
+          model: BillEntryDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ]
     });
 
     if (!billEntry) {
@@ -834,6 +968,19 @@ exports.getBillEntry = async (req, res) => {
     }
 
     const bJson = billEntry.toJSON();
+    bJson.PartyName = bJson.supplier?.AccountName || bJson.PartyCode;
+    const ptName = bJson.purchaseTypeMaster?.PurchaseType || bJson.PurchaseType || '';
+    bJson.PurchaseTypeCode = bJson.PurchaseType;
+    bJson.PurchaseTypeName = ptName;
+    bJson.PurchaseType = ptName;
+
+    if (bJson.details) {
+      bJson.details = bJson.details.map(d => ({
+        ...d,
+        ItemName: d.item?.ItemName || ''
+      }));
+    }
+
     const billOrderNos = new Set((bJson.details || []).map(d => d.OrderNo).filter(Boolean));
     let receiptInfo = null;
 
@@ -863,12 +1010,24 @@ exports.getBillEntry = async (req, res) => {
     const gateInwards = orConditions.length > 0
       ? await GateInward.findAll({
           where: { [Op.or]: orConditions },
-          include: [{ model: GateInwardDetail, as: 'details' }],
+          include: [
+            {
+              model: GateInwardDetail,
+              as: 'details',
+              include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+            }
+          ],
           order: [['InwardNo', 'ASC']]
         })
       : [];
 
-    bJson.gateInwards = gateInwards.map(g => g.toJSON ? g.toJSON() : g);
+    bJson.gateInwards = gateInwards.map(g => {
+      const json = g.toJSON ? g.toJSON() : g;
+      if (json.details) {
+        json.details = json.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
+      }
+      return json;
+    });
 
     res.json({
       success: true,
@@ -887,24 +1046,45 @@ exports.getBillEntry = async (req, res) => {
 // Get bill entries by party
 exports.getBillEntriesByParty = async (req, res) => {
   try {
-    const { partyName } = req.query;
+    const { partyName, partyCode } = req.query;
 
-    if (!partyName) {
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (!resolvedPartyCode) {
       return res.status(400).json({
         success: false,
-        message: 'Party name is required'
+        message: 'Party name or party code is required'
       });
     }
 
     const bills = await BillEntry.findAll({
-      where: { PartyName: partyName },
-      include: [{ model: BillEntryDetail, as: 'details' }],
+      where: { PartyCode: resolvedPartyCode },
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: BillEntryDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ],
       order: [['VoucherNo', 'DESC']]
+    });
+
+    const formatted = bills.map(b => {
+      const json = b.toJSON();
+      json.PartyName = json.supplier?.AccountName || json.PartyCode;
+      if (json.details) {
+        json.details = json.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
+      }
+      return json;
     });
 
     res.json({
       success: true,
-      data: bills
+      data: formatted
     });
   } catch (error) {
     console.error('Error fetching bill entries by party:', error);
@@ -922,7 +1102,18 @@ exports.getPrintData = async (req, res) => {
     const { voucherNo } = req.params;
 
     const billEntry = await BillEntry.findByPk(voucherNo, {
-      include: [{ model: BillEntryDetail, as: 'details' }]
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: BillEntryDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ]
     });
 
     if (!billEntry) {
@@ -933,9 +1124,13 @@ exports.getPrintData = async (req, res) => {
     }
 
     const billData = billEntry.toJSON();
-    const items = billData.details || [];
+    billData.PartyName = billData.supplier?.AccountName || billData.PartyCode;
+    const items = (billData.details || []).map(d => ({
+      ...d,
+      ItemName: d.item?.ItemName || ''
+    }));
+    billData.details = items;
 
-    // Collect all unique OrderNos (from BillEntryDetail, GateInward, Receipt)
     const orderNos = new Set();
     items.forEach(d => { if (d.OrderNo) orderNos.add(d.OrderNo); });
 
@@ -952,17 +1147,15 @@ exports.getPrintData = async (req, res) => {
       rcptDetails.forEach(rd => { if (rd.OrderNo) orderNos.add(rd.OrderNo); });
     }
 
-    // Fetch PO details
     let poDetails = [];
     if (orderNos.size > 0) {
       poDetails = await PurchaseOrderDetail.findAll({
         where: { OrderNo: { [Op.in]: Array.from(orderNos) } },
         raw: true
       });
-    } else if (billData.PartyName) {
-      // Fallback: search by PartyName's POs
+    } else if (billData.PartyCode) {
       const partyPOs = await PurchaseOrder.findAll({
-        where: { PartyName: billData.PartyName.trim() },
+        where: { PartyCode: billData.PartyCode },
         attributes: ['OrderNo'],
         raw: true
       });
@@ -977,19 +1170,24 @@ exports.getPrintData = async (req, res) => {
 
     const poMap = {};
     poDetails.forEach(poD => {
-      poMap[`${poD.OrderNo}_${poD.ItemName}`] = poD;
-      if (!poMap[poD.ItemName]) poMap[poD.ItemName] = poD;
+      poMap[`${poD.OrderNo}_${poD.ItemCode}`] = poD;
+      if (!poMap[poD.ItemCode]) poMap[poD.ItemCode] = poD;
     });
 
-    // Lookup PurchaseType description/ledger
     let purchaseTypeObj = null;
     if (billData.PurchaseType) {
+      const ptVal = String(billData.PurchaseType).trim();
+      const orConditions = [{ PurchaseType: ptVal }];
+      if (!isNaN(parseInt(ptVal, 10))) {
+        orConditions.push({ Code: parseInt(ptVal, 10) });
+      }
       purchaseTypeObj = await PurchaseType.findOne({
-        where: { PurchaseType: billData.PurchaseType.trim() },
+        where: { [Op.or]: orConditions },
         raw: true
       });
     }
     billData.PurchaseAccountName = purchaseTypeObj?.Description || purchaseTypeObj?.PurchaseType || billData.PurchaseType || 'PURCHASE OF MATERIALS';
+    billData.PurchaseTypeName = purchaseTypeObj?.PurchaseType || billData.PurchaseType || '';
 
     const totalAmount = parseFloat(billData.Total) || 0;
     const discountAmount = parseFloat(billData.Discount) || 0;
@@ -999,11 +1197,10 @@ exports.getPrintData = async (req, res) => {
     const gstAmount = parseFloat(billData.GST) || 0;
     const igstAmount = parseFloat(billData.IGST) || 0;
 
-    // Group items by GST rate
     const gstBuckets = {};
 
     items.forEach(item => {
-      const poD = poMap[`${item.OrderNo}_${item.ItemName}`] || poMap[item.ItemName] || {};
+      const poD = poMap[`${item.OrderNo}_${item.ItemCode}`] || poMap[item.ItemCode] || {};
       const qty = parseFloat(item.Qty) || 0;
       const unitRate = parseFloat(item.UnitRate) || 0;
       const lineGross = qty * unitRate;
@@ -1057,7 +1254,6 @@ exports.getPrintData = async (req, res) => {
       }
     });
 
-    // Fallback if no buckets populated from items
     if (Object.keys(gstBuckets).length === 0) {
       if (gstAmount > 0 && taxableBase > 0) {
         const autoRate = parseFloat(((gstAmount / 2 / taxableBase) * 100).toFixed(2));
@@ -1121,7 +1317,6 @@ exports.getPrintData = async (req, res) => {
     });
 
     billData.taxBreakdown = taxBreakdown;
-    // Set top percentage for backwards compatibility
     const firstSgst = taxBreakdown.find(t => t.type === 'SGST');
     const firstIgst = taxBreakdown.find(t => t.type === 'IGST');
     billData.SGSTPct = firstSgst ? firstSgst.rate : 0;
@@ -1144,17 +1339,18 @@ exports.getPrintData = async (req, res) => {
   }
 };
 
-// Check for duplicate bill entry by PartyName + PartyBillNo
+// Check for duplicate bill entry by Party + PartyBillNo
 exports.checkDuplicateBillEntry = async (req, res) => {
   try {
-    const { partyName, partyBillNo } = req.query;
+    const { partyName, partyCode, partyBillNo } = req.query;
 
-    if (!partyName || !partyBillNo) {
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (!resolvedPartyCode || !partyBillNo) {
       return res.json({ success: true, duplicate: null });
     }
 
     const duplicateBill = await BillEntry.findOne({
-      where: { PartyName: partyName.trim(), PartyBillNo: partyBillNo.trim() }
+      where: { PartyCode: resolvedPartyCode, PartyBillNo: partyBillNo.trim() }
     });
 
     if (!duplicateBill) {
@@ -1169,7 +1365,7 @@ exports.checkDuplicateBillEntry = async (req, res) => {
       success: true,
       duplicate: {
         VoucherNo: duplicateBill.VoucherNo,
-        PartyName: duplicateBill.PartyName,
+        PartyCode: duplicateBill.PartyCode,
         PartyBillNo: duplicateBill.PartyBillNo,
         GRNNo: duplicateBill.GRNNo,
         GateInwardNo: duplicateBill.GateInwardNo,
@@ -1225,7 +1421,6 @@ exports.deleteBillChain = async (req, res) => {
       const gi = await GateInward.findByPk(billEntry.GateInwardNo);
       const orderNo = gi ? gi.OrderNo : null;
       if (orderNo) {
-        // Check no other gate inwards reference this PO
         const otherGI = await GateInwardDetail.findOne({
           where: { OrderNo: orderNo, InwardNo: { [Op.ne]: billEntry.GateInwardNo } }
         });

@@ -3,9 +3,8 @@ const sequelize = require('../config/db');
 
 const Item = sequelize.define('Item', {
     ItemCode: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(255),
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false
     },
     ItemName: {

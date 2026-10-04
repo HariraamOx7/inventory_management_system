@@ -25,7 +25,7 @@ import Layout from '../components/Layout';
 import EntityFilterPanel from '../components/EntityFilterPanel';
 import { useToastStore } from '../store/toastStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const fmt = (v) => {
   const n = parseFloat(v) || 0;
@@ -2096,6 +2096,7 @@ const Reports = () => {
             <EntityFilterPanel
               filterType={currentReportConfig.filterType}
               filterLabel={currentReportConfig.filterLabel}
+              reportKey={`${categoryApiPrefix[selectedCategory]}/${selectedReportKey}`}
               fromDate={fromDate}
               toDate={toDate}
               selectedIds={selectedEntities}

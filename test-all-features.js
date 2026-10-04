@@ -619,6 +619,38 @@ async function main() {
     assert(headers['Content-Type']?.includes('spreadsheetml'), 'Excel content type header missing');
   });
 
+  await runTest('Reports & Analytics', 'Date-scoped report filter options use the selected report context', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const getOptions = async (type, reportKey) => {
+      const mock = createMockReqRes({
+        params: { type },
+        query: { reportKey, fromDate: today, toDate: today }
+      });
+      await reportController.getFilterOptions(mock.req, mock.res);
+      assert(mock.getData()?.success, `${reportKey} ${type} filter options failed`);
+      return mock.getData().data;
+    };
+
+    const purchaseParties = await getOptions('parties', 'purchase/supplier-wise');
+    assert(purchaseParties.some(option => option.id === testPartyName), 'In-range purchase supplier is missing');
+
+    const billingItems = await getOptions('items', 'billing/item-wise');
+    assert(billingItems.some(option => option.id === testItemName1), 'In-range billed item is missing');
+
+    const issueDepartments = await getOptions('departments', 'issue/department-wise');
+    assert(issueDepartments.some(option => option.id === `Test_Dept_${testTag}`), 'In-range issue department is missing');
+
+    const gatePassInParties = await getOptions('parties', 'others/gatepass-in-party');
+    assert(gatePassInParties.some(option => option.id === testPartyName), 'In-range gate-pass-in party is missing');
+
+    const pendingParties = await getOptions('parties', 'others/gatepass-pending-party');
+    assert(!pendingParties.some(option => option.id === testPartyName), 'Fully returned gate pass must not be listed as pending');
+
+    const missingContext = createMockReqRes({ params: { type: 'items' }, query: { fromDate: today, toDate: today } });
+    await reportController.getFilterOptions(missingContext.req, missingContext.res);
+    assert(missingContext.getStatusCode() === 400, 'Filter endpoint must require report context');
+  });
+
   // -------------------------------------------------------------------------
   // SUITE 7: CLEANUP AUTOMATED TEST RECORDS
   // -------------------------------------------------------------------------

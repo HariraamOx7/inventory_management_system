@@ -18,7 +18,7 @@ GateInwardDetail.init({
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  ItemName: {
+  ItemCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },

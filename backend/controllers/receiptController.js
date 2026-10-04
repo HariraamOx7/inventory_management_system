@@ -2,6 +2,7 @@ const { Op, fn, col } = require('sequelize');
 const Receipt = require('../models/Receipt');
 const ReceiptDetail = require('../models/ReceiptDetail');
 const Supplier = require('../models/Supplier');
+const Item = require('../models/Item');
 const GateInward = require('../models/GateInward');
 const GateInwardDetail = require('../models/GateInwardDetail');
 const PurchaseOrder = require('../models/PurchaseOrder');
@@ -26,31 +27,62 @@ const cleanOrderNo = (val) => {
   return isNaN(num) ? null : num;
 };
 
+const resolvePartyCode = async (partyCode, partyName) => {
+  if (partyCode && String(partyCode).trim()) {
+    return String(partyCode).trim();
+  }
+  if (partyName && String(partyName).trim()) {
+    const trimmed = String(partyName).trim();
+    const sup = await Supplier.findOne({
+      where: {
+        [Op.or]: [
+          { AccountName: trimmed },
+          { PartyCode: trimmed }
+        ]
+      }
+    });
+    if (sup) return sup.PartyCode;
+    return trimmed;
+  }
+  return null;
+};
+
+const resolveItemCode = async (itemCode, itemName) => {
+  if (itemCode && !isNaN(parseInt(itemCode, 10))) {
+    return parseInt(itemCode, 10);
+  }
+  if (itemName && String(itemName).trim()) {
+    const found = await Item.findOne({ where: { ItemName: String(itemName).trim() } });
+    if (found) return found.ItemCode;
+  }
+  return null;
+};
+
 const getPurchaseOrderUnitRateMap = async (orderNos = []) => {
   if (orderNos.length === 0) return new Map();
 
   const poDetails = await PurchaseOrderDetail.findAll({
     where: { OrderNo: { [Op.in]: orderNos } },
-    attributes: ['OrderNo', 'ItemName', 'UnitRate'],
+    attributes: ['OrderNo', 'ItemCode', 'UnitRate'],
     raw: true
   });
 
   return new Map(
     poDetails.map((detail) => [
-      `${detail.OrderNo}::${detail.ItemName}`,
+      `${detail.OrderNo}::${detail.ItemCode}`,
       parseFloat(detail.UnitRate) || 0
     ])
   );
 };
 
-const resolveUnitRate = (item, unitRateMap) => {
+const resolveUnitRate = (item, itemCode, unitRateMap) => {
   const hasSubmittedRate = item.UnitRate !== undefined && item.UnitRate !== null && item.UnitRate !== '';
   if (hasSubmittedRate) {
     const submittedRate = parseFloat(item.UnitRate);
     return Number.isFinite(submittedRate) ? submittedRate : 0;
   }
 
-  return unitRateMap.get(`${item.OrderNo}::${item.ItemName}`) || 0;
+  return unitRateMap.get(`${cleanOrderNo(item.OrderNo)}::${itemCode}`) || 0;
 };
 
 // Get last GRN number
@@ -77,7 +109,6 @@ exports.getLastGRNNo = async (req, res) => {
 // Get all parties (suppliers) who have at least one Completed Purchase Order and NO receipt created yet
 exports.getParties = async (req, res) => {
   try {
-    // Find all Gate Inwards that are already linked in an existing Receipt
     const usedReceipts = await Receipt.findAll({
       attributes: ['GateInwardNo'],
       where: { GateInwardNo: { [Op.ne]: null } },
@@ -85,7 +116,6 @@ exports.getParties = async (req, res) => {
     });
     const usedInwardNos = usedReceipts.map(r => r.GateInwardNo);
 
-    // Find all POs that already have a Receipt created (via any of their Gate Inwards)
     const usedGIs = usedInwardNos.length > 0
       ? await GateInward.findAll({
           where: { InwardNo: { [Op.in]: usedInwardNos } },
@@ -95,21 +125,30 @@ exports.getParties = async (req, res) => {
       : [];
     const usedOrderNos = [...new Set(usedGIs.map(g => g.OrderNo).filter(Boolean))];
 
-    // Find distinct PartyNames for POs that are 'Completed' and not yet in usedOrderNos
     const completedPOs = await PurchaseOrder.findAll({
-      attributes: ['PartyName'],
+      attributes: ['PartyCode'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
       where: {
         Status: 'Completed',
         ...(usedOrderNos.length > 0 ? { OrderNo: { [Op.notIn]: usedOrderNos } } : {})
       },
-      group: ['PartyName'],
-      order: [['PartyName', 'ASC']],
-      raw: true
+      group: ['PurchaseOrder.PartyCode', 'supplier.PartyCode', 'supplier.AccountName'],
+      order: [['PartyCode', 'ASC']]
     });
 
     res.json({
       success: true,
-      data: completedPOs.map(p => ({ name: p.PartyName }))
+      data: completedPOs.map(p => ({
+        PartyCode: p.PartyCode,
+        name: p.supplier?.AccountName || p.PartyCode,
+        AccountName: p.supplier?.AccountName || p.PartyCode
+      }))
     });
   } catch (error) {
     console.error('Error fetching parties for receipt:', error);
@@ -124,9 +163,8 @@ exports.getParties = async (req, res) => {
 // Get available purchase orders (Completed with Gate Inwards, not yet having a Receipt)
 exports.getAvailablePurchaseOrders = async (req, res) => {
   try {
-    const { partyName } = req.query;
+    const { partyName, partyCode } = req.query;
 
-    // Find all Gate Inwards that are already linked in an existing Receipt
     const usedReceipts = await Receipt.findAll({
       attributes: ['GateInwardNo'],
       where: { GateInwardNo: { [Op.ne]: null } },
@@ -134,7 +172,6 @@ exports.getAvailablePurchaseOrders = async (req, res) => {
     });
     const usedInwardNos = usedReceipts.map(r => r.GateInwardNo);
 
-    // Find all POs that already have a Receipt created (via any of their Gate Inwards)
     const usedGIs = usedInwardNos.length > 0
       ? await GateInward.findAll({
           where: { InwardNo: { [Op.in]: usedInwardNos } },
@@ -147,18 +184,32 @@ exports.getAvailablePurchaseOrders = async (req, res) => {
     const whereClause = {
       Status: 'Completed'
     };
-    if (partyName) whereClause.PartyName = partyName.trim();
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (resolvedPartyCode) whereClause.PartyCode = resolvedPartyCode;
     if (usedOrderNos.length > 0) whereClause.OrderNo = { [Op.notIn]: usedOrderNos };
 
     const completedPOs = await PurchaseOrder.findAll({
       where: whereClause,
-      attributes: ['OrderNo', 'PartyName', 'OrderDate', 'Total', 'GrandTotal', 'Status'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
+      attributes: ['OrderNo', 'PartyCode', 'OrderDate', 'Total', 'GrandTotal', 'Status'],
       order: [['OrderNo', 'DESC']]
+    });
+
+    const formatted = completedPOs.map(p => {
+      const plain = p.toJSON();
+      plain.PartyName = plain.supplier?.AccountName || plain.PartyCode;
+      return plain;
     });
 
     res.json({
       success: true,
-      data: completedPOs
+      data: formatted
     });
   } catch (error) {
     console.error('Error fetching available purchase orders for receipt:', error);
@@ -182,7 +233,15 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
       });
     }
 
-    const po = await PurchaseOrder.findByPk(orderNo, { raw: true });
+    const po = await PurchaseOrder.findByPk(orderNo, {
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ]
+    });
     if (!po) {
       return res.status(404).json({
         success: false,
@@ -190,10 +249,15 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
       });
     }
 
-    // Find all Gate Inwards linked to this PO
     const gateInwards = await GateInward.findAll({
       where: { OrderNo: orderNo },
-      include: [{ model: GateInwardDetail, as: 'details' }],
+      include: [
+        {
+          model: GateInwardDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ],
       order: [['InwardNo', 'ASC']]
     });
 
@@ -207,34 +271,39 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
       RoundOff: parseFloat(po.RoundOff) || 0
     };
 
-    // Fetch all PO item definitions for this order
     const poDetails = await PurchaseOrderDetail.findAll({
       where: { OrderNo: orderNo },
-      attributes: ['OrderNo', 'ItemName', 'Qty', 'UnitRate', 'TotalAmount'],
-      order: [['DetailId', 'ASC']],
-      raw: true
+      include: [
+        {
+          model: Item,
+          as: 'item',
+          attributes: ['ItemCode', 'ItemName']
+        }
+      ],
+      order: [['DetailId', 'ASC']]
     });
 
-    // Sum total received quantities across ALL Gate Inwards for this OrderNo
     const giSums = await GateInwardDetail.findAll({
       where: { OrderNo: orderNo },
       attributes: [
-        'ItemName',
+        'ItemCode',
         [fn('SUM', col('ReceivedQty')), 'totalReceived']
       ],
-      group: ['ItemName'],
+      group: ['ItemCode'],
       raw: true
     });
     const receivedMap = {};
     for (const row of giSums) {
-      receivedMap[row.ItemName] = parseFloat(row.totalReceived) || 0;
+      receivedMap[row.ItemCode] = parseFloat(row.totalReceived) || 0;
     }
 
-    const itemsForReceipt = poDetails.map(d => {
-      const qtyVal = receivedMap[d.ItemName] !== undefined ? receivedMap[d.ItemName] : (parseFloat(d.Qty) || 0);
+    const itemsForReceipt = poDetails.map(dInstance => {
+      const d = dInstance.toJSON();
+      const qtyVal = receivedMap[d.ItemCode] !== undefined ? receivedMap[d.ItemCode] : (parseFloat(d.Qty) || 0);
       const rateVal = parseFloat(d.UnitRate) || 0;
       return {
-        ItemName: d.ItemName,
+        ItemCode: d.ItemCode,
+        ItemName: d.item?.ItemName || '',
         OrderNo: d.OrderNo,
         PendingQty: 0,
         ReceivedQty: qtyVal,
@@ -244,19 +313,25 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
       };
     });
 
-    // Primary Gate Inward (pick the one with an InvoiceNo, or latest)
     const primaryGI = gateInwards.find(gi => gi.InvoiceNo && gi.InvoiceNo.trim()) || (gateInwards.length > 0 ? gateInwards[gateInwards.length - 1] : null);
 
     res.json({
       success: true,
       data: {
         OrderNo: po.OrderNo,
-        PartyName: po.PartyName,
+        PartyCode: po.PartyCode,
+        PartyName: po.supplier?.AccountName || po.PartyCode,
         GateInwardNo: primaryGI ? primaryGI.InwardNo : (gateInwards[0]?.InwardNo || null),
         InvoiceNo: primaryGI ? primaryGI.InvoiceNo : '',
         InvoiceDate: primaryGI ? primaryGI.InvoiceDate : null,
         InwardDate: primaryGI ? primaryGI.InwardDate : null,
-        gateInwards: gateInwards.map(gi => gi.toJSON()),
+        gateInwards: gateInwards.map(gi => {
+          const p = gi.toJSON();
+          if (p.details) {
+            p.details = p.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
+          }
+          return p;
+        }),
         details: itemsForReceipt,
         POTotals: poTotals
       }
@@ -271,12 +346,11 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
   }
 };
 
-// New: Get available gate inwards not yet used in receipt (only for 100% completed POs, 1 receipt per PO)
+// Get available gate inwards not yet used in receipt (only for 100% completed POs, 1 receipt per PO)
 exports.getAvailableGateInwards = async (req, res) => {
   try {
-    const { partyName } = req.query;
+    const { partyName, partyCode } = req.query;
 
-    // Find all Gate Inwards that are already linked in an existing Receipt
     const usedReceipts = await Receipt.findAll({
       attributes: ['GateInwardNo'],
       where: {
@@ -286,7 +360,6 @@ exports.getAvailableGateInwards = async (req, res) => {
     });
     const usedInwardNos = usedReceipts.map(r => r.GateInwardNo);
 
-    // Find all POs that already have a Receipt created (via any of their Gate Inwards)
     const usedGIs = usedInwardNos.length > 0
       ? await GateInward.findAll({
           where: { InwardNo: { [Op.in]: usedInwardNos } },
@@ -296,7 +369,6 @@ exports.getAvailableGateInwards = async (req, res) => {
       : [];
     const usedOrderNos = [...new Set(usedGIs.map(g => g.OrderNo).filter(Boolean))];
 
-    // Only allow Gate Inwards whose Purchase Order is fully received ('Completed') and has no Receipt yet
     const completedOrders = await PurchaseOrder.findAll({
       attributes: ['OrderNo'],
       where: {
@@ -308,7 +380,8 @@ exports.getAvailableGateInwards = async (req, res) => {
     const completedOrderNos = completedOrders.map(o => o.OrderNo);
 
     const whereClause = {};
-    if (partyName) whereClause.PartyName = partyName;
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (resolvedPartyCode) whereClause.PartyCode = resolvedPartyCode;
     if (completedOrderNos.length > 0) {
       whereClause.OrderNo = { [Op.in]: completedOrderNos };
     } else {
@@ -317,18 +390,26 @@ exports.getAvailableGateInwards = async (req, res) => {
 
     const gateInwards = await GateInward.findAll({
       where: whereClause,
-      attributes: ['InwardNo', 'OrderNo', 'PartyName', 'InwardDate', 'InvoiceNo', 'InvoiceDate'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
+      attributes: ['InwardNo', 'OrderNo', 'PartyCode', 'InwardDate', 'InvoiceNo', 'InvoiceDate'],
       order: [['InwardNo', 'DESC']]
     });
 
-    // Group by OrderNo so each completed PO is represented once (by its latest Gate Inward)
     const uniqueByOrder = [];
     const seenOrders = new Set();
     for (const gi of gateInwards) {
       const oKey = gi.OrderNo || gi.InwardNo;
       if (!seenOrders.has(oKey)) {
         seenOrders.add(oKey);
-        uniqueByOrder.push(gi);
+        const p = gi.toJSON();
+        p.PartyName = p.supplier?.AccountName || p.PartyCode;
+        uniqueByOrder.push(p);
       }
     }
 
@@ -346,7 +427,7 @@ exports.getAvailableGateInwards = async (req, res) => {
   }
 };
 
-// New: Get gate inward with details, aggregating all received quantities across all batches for this PO
+// Get gate inward with details, aggregating all received quantities across all batches for this PO
 exports.getGateInwardDetails = async (req, res) => {
   try {
     const { inwardNo } = req.query;
@@ -359,7 +440,18 @@ exports.getGateInwardDetails = async (req, res) => {
     }
 
     const gateInward = await GateInward.findByPk(inwardNo, {
-      include: [{ model: GateInwardDetail, as: 'details' }]
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: GateInwardDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ]
     });
 
     if (!gateInward) {
@@ -388,35 +480,33 @@ exports.getGateInwardDetails = async (req, res) => {
         };
       }
 
-      // Fetch all PO item definitions for this order
       const poDetails = await PurchaseOrderDetail.findAll({
         where: { OrderNo: targetOrderNo },
-        attributes: ['OrderNo', 'ItemName', 'Qty', 'UnitRate', 'TotalAmount'],
-        order: [['DetailId', 'ASC']],
-        raw: true
+        include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }],
+        order: [['DetailId', 'ASC']]
       });
 
-      // Sum total received quantities across ALL Gate Inwards for this OrderNo (all batches)
       const giSums = await GateInwardDetail.findAll({
         where: { OrderNo: targetOrderNo },
         attributes: [
-          'ItemName',
+          'ItemCode',
           [fn('SUM', col('ReceivedQty')), 'totalReceived']
         ],
-        group: ['ItemName'],
+        group: ['ItemCode'],
         raw: true
       });
       const receivedMap = {};
       for (const row of giSums) {
-        receivedMap[row.ItemName] = parseFloat(row.totalReceived) || 0;
+        receivedMap[row.ItemCode] = parseFloat(row.totalReceived) || 0;
       }
 
-      // Build complete item list for receipt: total received quantity across all batches
-      itemsForReceipt = poDetails.map(d => {
-        const qtyVal = receivedMap[d.ItemName] !== undefined ? receivedMap[d.ItemName] : (parseFloat(d.Qty) || 0);
+      itemsForReceipt = poDetails.map(dInstance => {
+        const d = dInstance.toJSON();
+        const qtyVal = receivedMap[d.ItemCode] !== undefined ? receivedMap[d.ItemCode] : (parseFloat(d.Qty) || 0);
         const rateVal = parseFloat(d.UnitRate) || 0;
         return {
-          ItemName: d.ItemName,
+          ItemCode: d.ItemCode,
+          ItemName: d.item?.ItemName || '',
           OrderNo: d.OrderNo,
           PendingQty: 0,
           ReceivedQty: qtyVal,
@@ -426,17 +516,24 @@ exports.getGateInwardDetails = async (req, res) => {
         };
       });
     } else {
-      itemsForReceipt = (gateInward.details || []).map(d => ({
-        ...d.toJSON(),
-        Qty: d.ReceivedQty || d.Qty || 0,
-        TotalAmount: (d.ReceivedQty || d.Qty || 0) * (d.UnitRate || 0)
-      }));
+      itemsForReceipt = (gateInward.details || []).map(d => {
+        const json = d.toJSON();
+        return {
+          ...json,
+          ItemName: json.item?.ItemName || '',
+          Qty: json.ReceivedQty || json.Qty || 0,
+          TotalAmount: (json.ReceivedQty || json.Qty || 0) * (json.UnitRate || 0)
+        };
+      });
     }
+
+    const plain = gateInward.toJSON();
+    plain.PartyName = plain.supplier?.AccountName || plain.PartyCode;
 
     res.json({
       success: true,
       data: {
-        ...gateInward.toJSON(),
+        ...plain,
         details: itemsForReceipt,
         POTotals: poTotals
       }
@@ -451,20 +548,21 @@ exports.getGateInwardDetails = async (req, res) => {
   }
 };
 
-// Existing legacy endpoint
+// Existing endpoint: get gate inwards by party
 exports.getGateInwardsByParty = async (req, res) => {
   try {
-    const { partyName } = req.query;
+    const { partyName, partyCode } = req.query;
 
-    if (!partyName) {
+    const resolvedPartyCode = await resolvePartyCode(partyCode, partyName);
+    if (!resolvedPartyCode) {
       return res.status(400).json({
         success: false,
-        message: 'Party name is required'
+        message: 'Party code/name is required'
       });
     }
 
     const gateInwards = await GateInward.findAll({
-      where: { PartyName: partyName },
+      where: { PartyCode: resolvedPartyCode },
       attributes: ['InwardNo', 'OrderNo', 'InwardDate'],
       order: [['InwardNo', 'DESC']]
     });
@@ -483,7 +581,7 @@ exports.getGateInwardsByParty = async (req, res) => {
   }
 };
 
-// Existing legacy endpoint
+// Existing endpoint: get gate inward items
 exports.getGateInwardItems = async (req, res) => {
   try {
     const { inwardNo } = req.query;
@@ -497,13 +595,19 @@ exports.getGateInwardItems = async (req, res) => {
 
     const items = await GateInwardDetail.findAll({
       where: { InwardNo: inwardNo },
-      attributes: ['ItemName', 'PendingQty', 'ReceivedQty', 'OrderNo'],
+      include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }],
       order: [['DetailId', 'ASC']]
+    });
+
+    const formatted = items.map(i => {
+      const plain = i.toJSON();
+      plain.ItemName = plain.item?.ItemName || '';
+      return plain;
     });
 
     res.json({
       success: true,
-      data: items
+      data: formatted
     });
   } catch (error) {
     console.error('Error fetching inward items:', error);
@@ -519,11 +623,21 @@ exports.getGateInwardItems = async (req, res) => {
 exports.getReceipts = async (req, res) => {
   try {
     const receipts = await Receipt.findAll({
-      include: [{ model: ReceiptDetail, as: 'details' }],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        },
+        {
+          model: ReceiptDetail,
+          as: 'details',
+          include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+        }
+      ],
       order: [['GRNNo', 'DESC']]
     });
 
-    // Collect all OrderNos and GateInwardNos
     const orderNos = new Set();
     const inwardNos = new Set();
     for (const r of receipts) {
@@ -533,7 +647,6 @@ exports.getReceipts = async (req, res) => {
       }
     }
 
-    // Fetch gate inwards for these POs and InwardNos
     const orConditions = [];
     if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
     if (inwardNos.size > 0) orConditions.push({ InwardNo: { [Op.in]: Array.from(inwardNos) } });
@@ -541,16 +654,24 @@ exports.getReceipts = async (req, res) => {
     const gateInwards = orConditions.length > 0
       ? await GateInward.findAll({
           where: { [Op.or]: orConditions },
-          include: [{ model: GateInwardDetail, as: 'details' }],
+          include: [
+            {
+              model: GateInwardDetail,
+              as: 'details',
+              include: [{ model: Item, as: 'item', attributes: ['ItemCode', 'ItemName'] }]
+            }
+          ],
           order: [['InwardNo', 'ASC']]
         })
       : [];
 
-    // Map gate inwards by OrderNo and by InwardNo
     const giByOrder = new Map();
     const giByInward = new Map();
     for (const gi of gateInwards) {
       const json = gi.toJSON();
+      if (json.details) {
+        json.details = json.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
+      }
       if (gi.OrderNo) {
         if (!giByOrder.has(gi.OrderNo)) giByOrder.set(gi.OrderNo, []);
         giByOrder.get(gi.OrderNo).push(json);
@@ -560,6 +681,14 @@ exports.getReceipts = async (req, res) => {
 
     const result = receipts.map(r => {
       const rJson = r.toJSON();
+      rJson.PartyName = rJson.supplier?.AccountName || rJson.PartyCode;
+      if (rJson.details) {
+        rJson.details = rJson.details.map(d => ({
+          ...d,
+          ItemName: d.item?.ItemName || ''
+        }));
+      }
+
       const rOrderNo = (rJson.details && rJson.details[0]?.OrderNo) || null;
       let linkedGIs = [];
       if (rOrderNo && giByOrder.has(rOrderNo)) {
@@ -591,21 +720,22 @@ exports.getReceipts = async (req, res) => {
 exports.createReceipt = async (req, res) => {
   try {
     const {
-      PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
+      PartyCode, PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
       DCNo, DCDate, FormType, BillAmount, Total, Discount,
       GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items,
       DutyWithoutPF, VatWithPF
     } = req.body;
 
-    if (!PartyName || !GateInwardNo || !items || items.length === 0) {
+    const resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName);
+    if (!resolvedPartyCode || !GateInwardNo || !items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Party name, gate inward number, and items are required'
+        message: 'Party code/name, gate inward number, and items are required'
       });
     }
 
     const gateInward = await GateInward.findByPk(GateInwardNo);
-    if (!gateInward || gateInward.PartyName !== PartyName.trim()) {
+    if (!gateInward || gateInward.PartyCode !== resolvedPartyCode) {
       return res.status(400).json({
         success: false,
         message: 'Invalid gate inward selected for party'
@@ -656,7 +786,7 @@ exports.createReceipt = async (req, res) => {
     const unitRateMap = await getPurchaseOrderUnitRateMap(orderNos);
 
     const newReceipt = await Receipt.create({
-      PartyName: PartyName.trim(),
+      PartyCode: resolvedPartyCode,
       GateInwardNo: GateInwardNo ? parseInt(GateInwardNo, 10) : null,
       InwardDate: cleanDate(InwardDate) || cleanDate(gateInward.InwardDate) || cleanDate(new Date()),
       InvoiceNo: InvoiceNo ? InvoiceNo.trim() : (gateInward.InvoiceNo ? gateInward.InvoiceNo.trim() : null),
@@ -680,13 +810,15 @@ exports.createReceipt = async (req, res) => {
     });
 
     for (const item of items) {
-      if (!item || !item.ItemName) continue;
+      const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
+      if (!itemCode) continue;
+
       const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
-      const unitRate = resolveUnitRate(item, unitRateMap);
+      const unitRate = resolveUnitRate(item, itemCode, unitRateMap);
       await ReceiptDetail.create({
         GRNNo: newReceipt.GRNNo,
         OrderNo: cleanOrderNo(item.OrderNo),
-        ItemName: String(item.ItemName).trim(),
+        ItemCode: itemCode,
         Qty: qty,
         UnitRate: unitRate,
         TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
@@ -722,7 +854,7 @@ exports.updateReceipt = async (req, res) => {
     }
 
     const {
-      PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
+      PartyCode, PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
       DCNo, DCDate, FormType, BillAmount, Total, Discount,
       GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items,
       DutyWithoutPF, VatWithPF
@@ -736,8 +868,13 @@ exports.updateReceipt = async (req, res) => {
       });
     }
 
+    let resolvedPartyCode = receipt.PartyCode;
+    if (PartyCode || PartyName) {
+      resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName) || receipt.PartyCode;
+    }
+
     const updateData = {
-      PartyName: PartyName ? PartyName.trim() : receipt.PartyName,
+      PartyCode: resolvedPartyCode,
       GateInwardNo: GateInwardNo !== undefined ? (GateInwardNo ? parseInt(GateInwardNo, 10) : null) : receipt.GateInwardNo,
       InwardDate: cleanDate(InwardDate) || receipt.InwardDate || cleanDate(new Date()),
       InvoiceNo: InvoiceNo !== undefined ? (InvoiceNo ? InvoiceNo.trim() : null) : receipt.InvoiceNo,
@@ -768,13 +905,15 @@ exports.updateReceipt = async (req, res) => {
       await ReceiptDetail.destroy({ where: { GRNNo: gNo } });
 
       for (const item of items) {
-        if (!item || !item.ItemName) continue;
+        const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
+        if (!itemCode) continue;
+
         const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
-        const unitRate = resolveUnitRate(item, unitRateMap);
+        const unitRate = resolveUnitRate(item, itemCode, unitRateMap);
         await ReceiptDetail.create({
           GRNNo: gNo,
           OrderNo: cleanOrderNo(item.OrderNo),
-          ItemName: String(item.ItemName).trim(),
+          ItemCode: itemCode,
           Qty: qty,
           UnitRate: unitRate,
           TotalAmount: parseDec(item.TotalAmount, qty * unitRate)

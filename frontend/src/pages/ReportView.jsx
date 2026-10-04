@@ -4,7 +4,7 @@ import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const fmt = (v) => {
   const n = parseFloat(v) || 0;

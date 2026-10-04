@@ -16,7 +16,7 @@ const DETAIL_VARIABLES = [
   '[TCS]'
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialPTFormState = {
   Code: '',
