@@ -18,6 +18,23 @@ ItemIssueDetail.init({
     type: DataTypes.STRING(255),
     allowNull: false
   },
+  ItemCode: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  UnitRate: {
+    type: DataTypes.DECIMAL(20, 8),
+    allowNull: true
+  },
+  TotalAmount: {
+    type: DataTypes.DECIMAL(20, 6),
+    allowNull: true
+  },
+  SourceKey: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    unique: true
+  },
   CatNo: {
     type: DataTypes.STRING(100),
     allowNull: true

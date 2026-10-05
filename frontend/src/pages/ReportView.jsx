@@ -534,8 +534,6 @@ function DeptWiseStockReport({ data }) {
         <tr>
           <th style={{width:50}}>Sl. No.</th>
           <th>Department Name</th>
-          <th className="r">Item Count</th>
-          <th className="r">Total Qty</th>
           <th className="r">Total Value</th>
         </tr>
       </thead>
@@ -544,14 +542,11 @@ function DeptWiseStockReport({ data }) {
           <tr key={it.slNo}>
             <td className="c">{it.slNo}</td>
             <td>{it.departmentName}</td>
-            <td className="r">{it.itemCount}</td>
-            <td className="r">{fmt(it.totalQty)}</td>
             <td className="r">{fmt(it.totalValue)}</td>
           </tr>
         ))}
         <tr className="row-grand">
-          <td colSpan={3}></td>
-          <td className="r">{fmt(data.reportTotalQty)}</td>
+          <td colSpan={2}></td>
           <td className="r red dbl">{fmt(data.reportTotalValue)}</td>
         </tr>
       </tbody>

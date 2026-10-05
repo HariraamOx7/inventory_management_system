@@ -250,7 +250,10 @@ exports.createItemIssue = async (req, res) => {
 
       await ItemIssueDetail.create({
         IssueNo: newIssue.IssueNo,
+        ItemCode: item.ItemCode,
         ItemName: item.ItemName,
+        UnitRate: Number(item.UnitRate || 0),
+        TotalAmount: Number((qty * Number(item.UnitRate || 0)).toFixed(6)),
         CatNo: row.CatNo || null,
         DrawNo: row.DrawNo || null,
         Qty: qty,
@@ -397,7 +400,10 @@ exports.updateItemIssue = async (req, res) => {
 
       await ItemIssueDetail.create({
         IssueNo: issueNo,
+        ItemCode: item.ItemCode,
         ItemName: item.ItemName,
+        UnitRate: Number(item.UnitRate || 0),
+        TotalAmount: Number((qty * Number(item.UnitRate || 0)).toFixed(6)),
         CatNo: row.CatNo || null,
         DrawNo: row.DrawNo || null,
         Qty: qty,

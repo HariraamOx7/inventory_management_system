@@ -1009,8 +1009,6 @@ function StockAbstractReport({ data, groupLabel = 'Department' }) {
         <tr>
           <th style={{ width: 50 }}>Sl. No.</th>
           <th>{groupLabel} Name</th>
-          <th className="r">Item Count</th>
-          <th className="r">Total Qty</th>
           <th className="r">Total Value</th>
         </tr>
       </thead>
@@ -1019,14 +1017,11 @@ function StockAbstractReport({ data, groupLabel = 'Department' }) {
           <tr key={it.slNo}>
             <td className="c">{it.slNo}</td>
             <td className="font-semibold">{it.departmentName || it.subHeadName}</td>
-            <td className="r">{it.itemCount}</td>
-            <td className="r">{fmt(it.totalQty || it.closingQty)}</td>
             <td className="r">{fmt(it.totalValue || it.closingValue)}</td>
           </tr>
         ))}
         <tr className="row-grand">
-          <td colSpan={3} className="lbl r">Total:</td>
-          <td className="r">{fmt(data.reportTotalQty)}</td>
+          <td colSpan={2} className="lbl r">Total:</td>
           <td className="r red dbl">{fmt(data.reportTotalValue)}</td>
         </tr>
       </tbody>

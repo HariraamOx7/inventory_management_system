@@ -11,6 +11,7 @@ const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 const ItemIssue = require('../models/ItemIssue');
 const ItemIssueDetail = require('../models/ItemIssueDetail');
+const { getHistoricalDepartmentStock } = require('../services/historicalStock');
 const BillEntry = require('../models/BillEntry');
 const BillEntryDetail = require('../models/BillEntryDetail');
 const GatePassOut = require('../models/GatePassOut');
@@ -2117,15 +2118,61 @@ exports.getDepartmentWiseReceiptRegister = async (req, res) => {
     }
 
     const rows = await sequelize.query(`
+      WITH ranked_receipts AS (
+        SELECT
+          rd.DetailId,
+          rd.GRNNo,
+          COALESCE(rd.OrderNo, gi.OrderNo) AS effectiveOrderNo,
+          rd.ItemCode,
+          rd.Qty,
+          rd.UnitRate,
+          rd.TotalAmount,
+          ROW_NUMBER() OVER (
+            PARTITION BY
+              rd.GRNNo,
+              COALESCE(rd.OrderNo, gi.OrderNo),
+              rd.ItemCode,
+              rd.Qty,
+              rd.UnitRate,
+              rd.TotalAmount
+            ORDER BY rd.DetailId
+          ) AS duplicateRank
+        FROM receipts r
+        JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
+        LEFT JOIN gate_inwards gi ON gi.InwardNo = r.GateInwardNo
+        LEFT JOIN items i ON i.ItemCode = rd.ItemCode
+        LEFT JOIN departments d ON d.dept_id = i.DepartmentId
+        WHERE ${whereClause}
+      ),
+      po_values AS (
+        SELECT
+          pod.OrderNo,
+          pod.ItemCode,
+          SUM(COALESCE(pod.TotalAmount, pod.Qty * pod.UnitRate)) AS poGrossValue,
+          SUM(COALESCE(
+            NULLIF(pod.DiscountAmt, 0),
+            (COALESCE(pod.TotalAmount, pod.Qty * pod.UnitRate) * COALESCE(pod.DiscountPct, 0) / 100)
+          )) AS poDiscountValue
+        FROM purchase_order_details pod
+        GROUP BY pod.OrderNo, pod.ItemCode
+      )
       SELECT
         COALESCE(d.dept_name, 'Unassigned') AS departmentName,
-        SUM(rd.TotalAmount) AS totalAmount,
-        SUM(rd.TotalAmount) AS grandTotal
-      FROM receipts r
-      JOIN receipt_details rd ON rd.GRNNo = r.GRNNo
-      LEFT JOIN items i ON i.ItemCode = rd.ItemCode
+        SUM(rr.TotalAmount) AS totalAmount,
+        SUM(
+          rr.TotalAmount - CASE
+            WHEN COALESCE(pv.poGrossValue, 0) > 0
+              THEN rr.TotalAmount * pv.poDiscountValue / pv.poGrossValue
+            ELSE 0
+          END
+        ) AS grandTotal
+      FROM ranked_receipts rr
+      LEFT JOIN items i ON i.ItemCode = rr.ItemCode
       LEFT JOIN departments d ON d.dept_id = i.DepartmentId
-      WHERE ${whereClause}
+      LEFT JOIN po_values pv
+        ON pv.OrderNo = rr.effectiveOrderNo
+       AND pv.ItemCode = rr.ItemCode
+      WHERE rr.duplicateRank = 1
       GROUP BY COALESCE(d.dept_name, 'Unassigned')
       ORDER BY departmentName ASC
     `, { replacements, type: sequelize.QueryTypes.SELECT });
@@ -2464,6 +2511,35 @@ exports.getItemWiseOpeningStock = async (req, res) => {
 exports.getDepartmentWiseStock = async (req, res) => {
   try {
     const departments = parseFilterParam(req.query.departments);
+
+    // Historical periods use the verified stock ledger. The legacy fallback
+    // below remains available for periods that have no verified snapshot yet.
+    if (req.query.fromDate && req.query.toDate) {
+      try {
+        const historical = await getHistoricalDepartmentStock({
+          from: req.query.fromDate,
+          to: req.query.toDate,
+          departments
+        });
+        return res.json({
+          success: true,
+          data: {
+            reportTitle: historical.reportTitle,
+            period: `${fmtDateFull(req.query.fromDate)} to ${fmtDateFull(req.query.toDate)}`,
+            historical: true,
+            valuationBasis: historical.valuationBasis,
+            items: historical.items,
+            reportTotalQty: historical.reportTotalQty,
+            reportTotalValue: historical.reportTotalValue,
+            totals: historical.totals,
+            reconciliationAdjustment: historical.reconciliationAdjustment
+          }
+        });
+      } catch (historicalError) {
+        if (historicalError.status !== 422) throw historicalError;
+      }
+    }
+
     let whereClause = `1=1`;
     const replacements = {};
 

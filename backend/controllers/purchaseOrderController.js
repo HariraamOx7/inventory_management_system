@@ -23,7 +23,15 @@ const resolveLineUnitRate = (item) => {
   const unitRate = parseFloat(item.UnitRate) || 0;
   const totalAmount = parseFloat(item.TotalAmount) || 0;
 
-  if (qty > 0 && totalAmount > 0 && Math.abs(totalAmount - (qty * unitRate)) > 0.005) {
+  // UnitRate is the value explicitly entered for this PO line. Do not let a
+  // stale client-side TotalAmount silently change a user-entered rate.
+  const hasSubmittedUnitRate = item.UnitRate !== undefined
+    && item.UnitRate !== null
+    && item.UnitRate !== '';
+  if (hasSubmittedUnitRate) return Number.isFinite(unitRate) ? unitRate : 0;
+
+  // Imported/legacy rows may omit UnitRate but still have a line amount.
+  if (qty > 0 && totalAmount > 0) {
     return totalAmount / qty;
   }
 

@@ -37,9 +37,47 @@ const resolveItemCode = async (itemCode, itemName) => {
   return null;
 };
 
+// Resolve the effective cost for a received PO line. The PO unit rate is the
+// entered transaction rate; discounts reduce the cost used for inventory
+// valuation, but never overwrite the rate stored on the PO/receipt line.
+const getPurchaseOrderNetUnitRate = async (detail) => {
+  if (!detail || !detail.OrderNo || !detail.ItemCode) return null;
+
+  const poLines = await PurchaseOrderDetail.findAll({
+    where: {
+      OrderNo: detail.OrderNo,
+      ItemCode: detail.ItemCode
+    },
+    attributes: ['Qty', 'UnitRate', 'TotalAmount', 'DiscountPct', 'DiscountAmt'],
+    raw: true
+  });
+
+  let orderedQty = 0;
+  let grossValue = 0;
+  let discountValue = 0;
+
+  for (const line of poLines) {
+    const qty = parseFloat(line.Qty) || 0;
+    const unitRate = parseFloat(line.UnitRate) || 0;
+    const gross = parseFloat(line.TotalAmount) || (qty * unitRate);
+    const discount = line.DiscountAmt !== null && line.DiscountAmt !== undefined
+      ? (parseFloat(line.DiscountAmt) || 0)
+      : (gross * (parseFloat(line.DiscountPct) || 0) / 100);
+
+    orderedQty += qty;
+    grossValue += gross;
+    discountValue += discount;
+  }
+
+  if (orderedQty <= 0) return null;
+  return Math.max(0, (grossValue - discountValue) / orderedQty);
+};
+
 // Stock represents goods physically received. A purchase order is only a
 // commitment, so inventory is adjusted exclusively when its gate inward lines
-// are created, changed, or removed.
+// are created, changed, or removed. Every receipt also updates the moving
+// weighted-average rate. This is deliberately reversible for edit/delete:
+// the same line cost is added or removed from the current inventory value.
 const adjustInventory = async (details = [], direction) => {
   for (const detail of details) {
     const receivedQty = parseFloat(detail.ReceivedQty) || 0;
@@ -57,10 +95,20 @@ const adjustInventory = async (details = [], direction) => {
     const currentQty = parseFloat(item.Quantity ?? item.OpeningQty) || 0;
     const currentOpeningQty = parseFloat(item.OpeningQty) || 0;
     const adjustment = receivedQty * direction;
+    const currentRate = parseFloat(item.UnitRate) || 0;
+    const receiptNetRate = await getPurchaseOrderNetUnitRate(detail);
+    const valuationRate = receiptNetRate === null ? currentRate : receiptNetRate;
+    const currentValue = currentQty * currentRate;
+    const nextQty = currentQty + adjustment;
+    const nextValue = currentValue + (adjustment * valuationRate);
+    const nextRate = nextQty > 0
+      ? Math.max(0, nextValue / nextQty)
+      : 0;
 
     await item.update({
-      Quantity: currentQty + adjustment,
-      OpeningQty: currentOpeningQty + adjustment
+      Quantity: nextQty,
+      OpeningQty: currentOpeningQty + adjustment,
+      UnitRate: Number(nextRate.toFixed(6))
     });
   }
 };

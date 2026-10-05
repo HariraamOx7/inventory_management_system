@@ -34,14 +34,19 @@ const formatRate = (val) => {
   return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 };
 
-// The line total is calculated from the rate the user entered. If a default rate
-// ever replaces that value in state, keep the rate consistent with the total.
+// UnitRate is the value entered for this PO line. TotalAmount is derived from
+// it, so a stale line total must never overwrite a user's edited rate.
 const resolveLineUnitRate = ({ Qty, UnitRate, TotalAmount }) => {
   const qty = parseFloat(Qty) || 0;
   const unitRate = parseFloat(UnitRate) || 0;
   const totalAmount = parseFloat(TotalAmount) || 0;
 
-  if (qty > 0 && totalAmount > 0 && Math.abs(totalAmount - (qty * unitRate)) > 0.005) {
+  const hasSubmittedUnitRate = UnitRate !== undefined
+    && UnitRate !== null
+    && UnitRate !== '';
+  if (hasSubmittedUnitRate) return Number.isFinite(unitRate) ? unitRate : 0;
+
+  if (qty > 0 && totalAmount > 0) {
     return totalAmount / qty;
   }
 
