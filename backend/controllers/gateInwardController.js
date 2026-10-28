@@ -5,6 +5,8 @@ const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 const Supplier = require('../models/Supplier');
 const Item = require('../models/Item');
+const sequelize = require('../config/db');
+const resolveItemIdentifier = require('../services/resolveItemCode');
 
 const resolvePartyCode = async (partyCode, partyName) => {
   if (partyCode && String(partyCode).trim()) {
@@ -27,20 +29,13 @@ const resolvePartyCode = async (partyCode, partyName) => {
 };
 
 const resolveItemCode = async (itemCode, itemName) => {
-  if (itemCode && !isNaN(parseInt(itemCode, 10))) {
-    return parseInt(itemCode, 10);
-  }
-  if (itemName && String(itemName).trim()) {
-    const found = await Item.findOne({ where: { ItemName: String(itemName).trim() } });
-    if (found) return found.ItemCode;
-  }
-  return null;
+  return resolveItemIdentifier(Item, itemCode, itemName);
 };
 
 // Resolve the effective cost for a received PO line. The PO unit rate is the
 // entered transaction rate; discounts reduce the cost used for inventory
 // valuation, but never overwrite the rate stored on the PO/receipt line.
-const getPurchaseOrderNetUnitRate = async (detail) => {
+const getPurchaseOrderNetUnitRate = async (detail, transaction) => {
   if (!detail || !detail.OrderNo || !detail.ItemCode) return null;
 
   const poLines = await PurchaseOrderDetail.findAll({
@@ -49,7 +44,8 @@ const getPurchaseOrderNetUnitRate = async (detail) => {
       ItemCode: detail.ItemCode
     },
     attributes: ['Qty', 'UnitRate', 'TotalAmount', 'DiscountPct', 'DiscountAmt'],
-    raw: true
+    raw: true,
+    transaction
   });
 
   let orderedQty = 0;
@@ -78,29 +74,53 @@ const getPurchaseOrderNetUnitRate = async (detail) => {
 // are created, changed, or removed. Every receipt also updates the moving
 // weighted-average rate. This is deliberately reversible for edit/delete:
 // the same line cost is added or removed from the current inventory value.
-const adjustInventory = async (details = [], direction) => {
+const priceInwardDetails = async (details, previousDetails = [], transaction) => {
+  const previous = new Map();
+  for (const detail of previousDetails) {
+    const key = `${detail.OrderNo}\u0000${detail.ItemCode}`;
+    if (!previous.has(key)) previous.set(key, []);
+    previous.get(key).push(detail);
+  }
+  const priced = [];
+  for (const detail of details) {
+    const key = `${detail.OrderNo}\u0000${detail.ItemCode}`;
+    const old = previous.get(key)?.shift();
+    if (old && old.StockUnitRate == null) throw new Error(`Missing recorded inward cost for ${detail.ItemCode}`);
+    const item = await Item.findByPk(detail.ItemCode, { transaction, lock: transaction?.LOCK.UPDATE });
+    if (!item) throw new Error(`Unknown item ${detail.ItemCode}`);
+    const orderRate = old ? Number(old.StockUnitRate) : await getPurchaseOrderNetUnitRate(detail, transaction);
+    const rate = orderRate === null ? Number(item.UnitRate || 0) : orderRate;
+    const qty = Number(detail.ReceivedQty || 0);
+    // Preserve exact legacy value for unchanged lines, including source rounding.
+    const value = old && Number(old.ReceivedQty) === qty && old.StockValue != null
+      ? Number(old.StockValue) : Number((qty * rate).toFixed(6));
+    priced.push({ ...detail, StockUnitRate: Number(rate.toFixed(8)), StockValue: value });
+  }
+  return priced;
+};
+
+const adjustInventory = async (details = [], direction, transaction) => {
   for (const detail of details) {
     const receivedQty = parseFloat(detail.ReceivedQty) || 0;
     if (receivedQty === 0) continue;
 
     let item = null;
     if (detail.ItemCode) {
-      item = await Item.findByPk(detail.ItemCode);
+      item = await Item.findByPk(detail.ItemCode, { transaction, lock: transaction?.LOCK.UPDATE });
     } else if (detail.ItemName) {
-      item = await Item.findOne({ where: { ItemName: detail.ItemName } });
+      item = await Item.findOne({ where: { ItemName: detail.ItemName }, transaction, lock: transaction?.LOCK.UPDATE });
     }
 
-    if (!item) continue;
+    if (!item) throw new Error(`Unknown item ${detail.ItemCode || detail.ItemName}`);
 
     const currentQty = parseFloat(item.Quantity ?? item.OpeningQty) || 0;
     const currentOpeningQty = parseFloat(item.OpeningQty) || 0;
     const adjustment = receivedQty * direction;
     const currentRate = parseFloat(item.UnitRate) || 0;
-    const receiptNetRate = await getPurchaseOrderNetUnitRate(detail);
-    const valuationRate = receiptNetRate === null ? currentRate : receiptNetRate;
+    if (detail.StockValue == null) throw new Error(`Missing recorded inward value for ${detail.ItemCode}`);
     const currentValue = currentQty * currentRate;
     const nextQty = currentQty + adjustment;
-    const nextValue = currentValue + (adjustment * valuationRate);
+    const nextValue = currentValue + (direction * Number(detail.StockValue));
     const nextRate = nextQty > 0
       ? Math.max(0, nextValue / nextQty)
       : 0;
@@ -109,7 +129,7 @@ const adjustInventory = async (details = [], direction) => {
       Quantity: nextQty,
       OpeningQty: currentOpeningQty + adjustment,
       UnitRate: Number(nextRate.toFixed(6))
-    });
+    }, { transaction });
   }
 };
 
@@ -126,13 +146,14 @@ const findInvalidReceivedQtyItem = (items = []) => items.find((item) => {
  *   Partial   — some qty received, more pending
  *   Completed — all qty fully received
  */
-const recalcPOStatus = async (orderNo) => {
+const recalcPOStatus = async (orderNo, transaction) => {
   if (!orderNo) return;
 
   const poDetails = await PurchaseOrderDetail.findAll({
     where: { OrderNo: orderNo },
     attributes: ['ItemCode', 'Qty'],
-    raw: true
+    raw: true,
+    transaction
   });
 
   if (!poDetails || poDetails.length === 0) return;
@@ -141,7 +162,8 @@ const recalcPOStatus = async (orderNo) => {
     where: { OrderNo: orderNo },
     attributes: ['ItemCode', [fn('SUM', col('ReceivedQty')), 'totalReceived']],
     group: ['ItemCode'],
-    raw: true
+    raw: true,
+    transaction
   });
 
   const receivedMap = {};
@@ -175,7 +197,7 @@ const recalcPOStatus = async (orderNo) => {
 
   await PurchaseOrder.update(
     { Status: newStatus },
-    { where: { OrderNo: orderNo } }
+    { where: { OrderNo: orderNo }, transaction }
   );
 };
 
@@ -481,27 +503,19 @@ exports.createGateInward = async (req, res) => {
       });
     }
 
-    const newInward = await GateInward.create({
-      OrderNo: orderNos[0],
-      PartyCode: resolvedPartyCode,
-      InwardDate: InwardDate || new Date(),
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : null,
-      InvoiceDate: InvoiceDate || null
+    if (preparedItems.length !== items.length) throw new Error('Every inward line requires a valid item code');
+    const newInward = await sequelize.transaction(async transaction => {
+      const priced = await priceInwardDetails(preparedItems, [], transaction);
+      const created = await GateInward.create({
+        OrderNo: orderNos[0], PartyCode: resolvedPartyCode,
+        InwardDate: InwardDate || new Date(),
+        InvoiceNo: InvoiceNo ? InvoiceNo.trim() : null, InvoiceDate: InvoiceDate || null
+      }, { transaction });
+      for (const item of priced) await GateInwardDetail.create({ InwardNo: created.InwardNo, ...item }, { transaction });
+      await adjustInventory(priced, 1, transaction);
+      for (const oNo of orderNos) await recalcPOStatus(oNo, transaction);
+      return created;
     });
-
-    for (const item of preparedItems) {
-      await GateInwardDetail.create({
-        InwardNo: newInward.InwardNo,
-        ...item
-      });
-    }
-
-    await adjustInventory(preparedItems, 1);
-
-    // Recalculate PO status (Draft / Partial / Completed)
-    for (const oNo of orderNos) {
-      await recalcPOStatus(oNo);
-    }
 
     res.status(201).json({
       success: true,
@@ -575,49 +589,32 @@ exports.updateGateInward = async (req, res) => {
     }
 
     const firstItemOrderNo = items && items.length > 0 ? items[0].OrderNo : null;
-    await inward.update({
-      OrderNo: OrderNo || firstItemOrderNo || inward.OrderNo,
-      PartyCode: resolvedPartyCode,
-      InwardDate: InwardDate || inward.InwardDate,
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : inward.InvoiceNo,
-      InvoiceDate: InvoiceDate || inward.InvoiceDate
+    await sequelize.transaction(async transaction => {
+      await inward.update({
+        OrderNo: OrderNo || firstItemOrderNo || inward.OrderNo,
+        PartyCode: resolvedPartyCode, InwardDate: InwardDate || inward.InwardDate,
+        InvoiceNo: InvoiceNo ? InvoiceNo.trim() : inward.InvoiceNo,
+        InvoiceDate: InvoiceDate || inward.InvoiceDate
+      }, { transaction });
+      if (items && items.length > 0) {
+        const previousDetails = await GateInwardDetail.findAll({ where: { InwardNo: inwardNo }, raw: true, transaction, lock: transaction.LOCK.UPDATE });
+        const affectedOrderNos = new Set(previousDetails.map(d => d.OrderNo).filter(Boolean));
+        const preparedItems = [];
+        for (const item of items) {
+          const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
+          if (!itemCode) throw new Error('Every inward line requires a valid item code');
+          preparedItems.push({ InwardNo: inwardNo, OrderNo: item.OrderNo, ItemCode: itemCode,
+            PendingQty: item.PendingQty || item.Qty || 0, ReceivedQty: item.ReceivedQty || 0 });
+          if (item.OrderNo) affectedOrderNos.add(item.OrderNo);
+        }
+        const priced = await priceInwardDetails(preparedItems, previousDetails, transaction);
+        await adjustInventory(previousDetails, -1, transaction);
+        await GateInwardDetail.destroy({ where: { InwardNo: inwardNo }, transaction });
+        for (const detail of priced) await GateInwardDetail.create(detail, { transaction });
+        await adjustInventory(priced, 1, transaction);
+        for (const oNo of affectedOrderNos) await recalcPOStatus(oNo, transaction);
+      }
     });
-
-    if (items && items.length > 0) {
-      const previousDetails = await GateInwardDetail.findAll({
-        where: { InwardNo: inwardNo },
-        raw: true
-      });
-      await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
-
-      const affectedOrderNos = new Set();
-      const preparedItems = [];
-      for (const item of items) {
-        const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-        if (!itemCode) continue;
-
-        preparedItems.push({
-          InwardNo: inwardNo,
-          OrderNo: item.OrderNo,
-          ItemCode: itemCode,
-          PendingQty: item.PendingQty || item.Qty || 0,
-          ReceivedQty: item.ReceivedQty || 0
-        });
-        if (item.OrderNo) affectedOrderNos.add(item.OrderNo);
-      }
-
-      for (const pItem of preparedItems) {
-        await GateInwardDetail.create(pItem);
-      }
-
-      // Recalculate PO status after updating details
-      for (const oNo of affectedOrderNos) {
-        await recalcPOStatus(oNo);
-      }
-
-      await adjustInventory(previousDetails, -1);
-      await adjustInventory(preparedItems, 1);
-    }
 
     res.json({
       success: true,
@@ -647,22 +644,14 @@ exports.deleteGateInward = async (req, res) => {
       });
     }
 
-    const details = await GateInwardDetail.findAll({
-      where: { InwardNo: inwardNo },
-      attributes: ['OrderNo', 'ItemCode', 'ReceivedQty'],
-      raw: true
+    await sequelize.transaction(async transaction => {
+      const details = await GateInwardDetail.findAll({ where: { InwardNo: inwardNo }, raw: true, transaction, lock: transaction.LOCK.UPDATE });
+      const orderNos = [...new Set([inward.OrderNo, ...details.map(d => d.OrderNo)].filter(Boolean))];
+      await adjustInventory(details, -1, transaction);
+      await GateInwardDetail.destroy({ where: { InwardNo: inwardNo }, transaction });
+      await inward.destroy({ transaction });
+      for (const oNo of orderNos) await recalcPOStatus(oNo, transaction);
     });
-
-    const orderNos = [...new Set([inward.OrderNo, ...details.map(d => d.OrderNo)].filter(Boolean))];
-
-    await adjustInventory(details, -1);
-    await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
-    await inward.destroy();
-
-    // Recalculate PO status after deletion
-    for (const oNo of orderNos) {
-      await recalcPOStatus(oNo);
-    }
 
     res.json({
       success: true,
@@ -980,36 +969,38 @@ exports.deleteGateInwardChain = async (req, res) => {
     const deletedLayers = [];
     const orderNo = inward.OrderNo;
 
+    await sequelize.transaction(async transaction => {
     // Layer 1: Delete GateInward + Details
     if (layers.gateInward) {
       const details = await GateInwardDetail.findAll({
         where: { InwardNo: inwardNo },
-        raw: true
+        raw: true, transaction, lock: transaction.LOCK.UPDATE
       });
-      await adjustInventory(details, -1);
-      await GateInwardDetail.destroy({ where: { InwardNo: inwardNo } });
-      await inward.destroy();
+      await adjustInventory(details, -1, transaction);
+      await GateInwardDetail.destroy({ where: { InwardNo: inwardNo }, transaction });
+      await inward.destroy({ transaction });
       deletedLayers.push('GateInward');
 
       // Recalculate PO status after deletion
       if (orderNo) {
-        await recalcPOStatus(orderNo);
+        await recalcPOStatus(orderNo, transaction);
       }
     }
 
     // Layer 2: Delete PurchaseOrder + Details (only if not used by another GateInward)
     if (layers.purchaseOrder && orderNo) {
       const otherGI = await GateInwardDetail.findOne({
-        where: { OrderNo: orderNo }
+        where: { OrderNo: orderNo }, transaction
       });
       if (!otherGI) {
-        await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo } });
-        await PurchaseOrder.destroy({ where: { OrderNo: orderNo } });
+        await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo }, transaction });
+        await PurchaseOrder.destroy({ where: { OrderNo: orderNo }, transaction });
         deletedLayers.push('PurchaseOrder');
       } else {
         deletedLayers.push('PurchaseOrder (skipped — used by another GateInward)');
       }
     }
+    });
 
     res.json({
       success: true,

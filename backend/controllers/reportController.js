@@ -11,7 +11,7 @@ const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 const ItemIssue = require('../models/ItemIssue');
 const ItemIssueDetail = require('../models/ItemIssueDetail');
-const { getHistoricalDepartmentStock } = require('../services/historicalStock');
+const { getHistoricalDepartmentStock, getMigratedCurrentStock } = require('../services/historicalStock');
 const BillEntry = require('../models/BillEntry');
 const BillEntryDetail = require('../models/BillEntryDetail');
 const GatePassOut = require('../models/GatePassOut');
@@ -2383,6 +2383,14 @@ exports.getReceiptReturnPending = async (req, res) => {
 exports.getItemWiseStockReport = async (req, res) => {
   try {
     const itemsFilter = parseFilterParam(req.query.items);
+    const currentLedger = await getMigratedCurrentStock();
+    if (currentLedger) {
+      const selected = currentLedger.itemBalances.filter(item => !itemsFilter || itemsFilter.some(value => String(value) === String(item.itemCode) || String(value) === String(item.itemName)));
+      const items = selected.map((item, index) => ({ ...item, slNo: index + 1 }));
+      const reportTotalQty = items.reduce((sum, item) => sum + item.quantity, 0);
+      const reportTotalValue = items.reduce((sum, item) => sum + item.value, 0);
+      return res.json({ success: true, data: { reportTitle: 'Item wise stock', items, reportTotalQty, reportTotalValue, asOfDate: currentLedger.toDate, valuationBasis: currentLedger.valuationBasis } });
+    }
     let whereClause = `1=1`;
     const replacements = {};
 
@@ -2440,7 +2448,7 @@ exports.getItemWiseStockReport = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Item Wise Stock Report:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 
@@ -2512,8 +2520,7 @@ exports.getDepartmentWiseStock = async (req, res) => {
   try {
     const departments = parseFilterParam(req.query.departments);
 
-    // Historical periods use the verified stock ledger. The legacy fallback
-    // below remains available for periods that have no verified snapshot yet.
+    // Historical periods must not silently display current stock balances.
     if (req.query.fromDate && req.query.toDate) {
       try {
         const historical = await getHistoricalDepartmentStock({
@@ -2537,9 +2544,16 @@ exports.getDepartmentWiseStock = async (req, res) => {
         });
       } catch (historicalError) {
         if (historicalError.status !== 422) throw historicalError;
+        return res.status(422).json({ success: false, message: historicalError.message });
       }
     }
 
+    const currentLedger = await getMigratedCurrentStock({ departments });
+    if (currentLedger) return res.json({ success: true, data: {
+      reportTitle: currentLedger.reportTitle, items: currentLedger.items,
+      reportTotalQty: currentLedger.reportTotalQty, reportTotalValue: currentLedger.reportTotalValue,
+      asOfDate: currentLedger.toDate, valuationBasis: currentLedger.valuationBasis
+    } });
     let whereClause = `1=1`;
     const replacements = {};
 
@@ -2589,7 +2603,7 @@ exports.getDepartmentWiseStock = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating department wise stock abstract:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 
@@ -2597,6 +2611,12 @@ exports.getDepartmentWiseStock = async (req, res) => {
 exports.getDepartmentWiseClosingStock = async (req, res) => {
   try {
     const departments = parseFilterParam(req.query.departments);
+    const currentLedger = await getMigratedCurrentStock({ departments });
+    if (currentLedger) return res.json({ success: true, data: {
+      reportTitle: 'Department wise Closing stock abstract', items: currentLedger.items,
+      reportTotalQty: currentLedger.reportTotalQty, reportTotalValue: currentLedger.reportTotalValue,
+      asOfDate: currentLedger.toDate, valuationBasis: currentLedger.valuationBasis
+    } });
     let whereClause = `1=1`;
     const replacements = {};
 
@@ -2646,7 +2666,7 @@ exports.getDepartmentWiseClosingStock = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating department wise closing stock abstract:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 
@@ -2654,6 +2674,19 @@ exports.getDepartmentWiseClosingStock = async (req, res) => {
 exports.getDepartmentWiseStockDetail = async (req, res) => {
   try {
     const departments = parseFilterParam(req.query.departments);
+    const currentLedger = await getMigratedCurrentStock({ departments });
+    if (currentLedger) {
+      const grouped = new Map();
+      for (const item of currentLedger.itemBalances) {
+        if (!grouped.has(item.departmentName)) grouped.set(item.departmentName, []);
+        const group = grouped.get(item.departmentName);
+        group.push({ slNo: group.length + 1, itemCode: item.itemCode, itemName: item.itemName, qty: item.quantity, unitRate: item.unitRate, value: item.value, uom: item.uom });
+      }
+      const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([departmentName, items]) => ({
+        departmentName, items, deptTotalQty: items.reduce((sum, item) => sum + item.qty, 0), deptTotalValue: items.reduce((sum, item) => sum + item.value, 0)
+      }));
+      return res.json({ success: true, data: { reportTitle: 'Department wise stock detail', groups, reportTotalQty: currentLedger.reportTotalQty, reportTotalValue: currentLedger.reportTotalValue, asOfDate: currentLedger.toDate, valuationBasis: currentLedger.valuationBasis } });
+    }
     let whereClause = `1=1`;
     const replacements = {};
 
@@ -2730,7 +2763,7 @@ exports.getDepartmentWiseStockDetail = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating department wise stock detail:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 
@@ -2738,6 +2771,20 @@ exports.getDepartmentWiseStockDetail = async (req, res) => {
 exports.getSubHeadWiseStockAbstract = async (req, res) => {
   try {
     const subheads = parseFilterParam(req.query.subheads);
+    const ledger = await getMigratedCurrentStock();
+    if (ledger) {
+      const heads = await SubHead.findAll({ attributes: ['code', 'sub_group_name'], raw: true });
+      const names = new Map(heads.map(h => [String(h.code), h.sub_group_name]));
+      const groups = new Map();
+      for (const item of ledger.itemBalances) {
+        const name = names.get(String(item.subHeadCode)) || 'Unassigned';
+        if (subheads && !subheads.some(v => String(v) === String(item.subHeadCode) || String(v) === name)) continue;
+        if (!groups.has(name)) groups.set(name, { subHeadName: name, itemCount: 0, totalQty: 0, totalValue: 0 });
+        const g = groups.get(name); g.itemCount++; g.totalQty += item.quantity; g.totalValue += item.value;
+      }
+      const items = [...groups.values()].sort((a, b) => a.subHeadName.localeCompare(b.subHeadName)).map((g, i) => ({ ...g, slNo: i + 1 }));
+      return res.json({ success: true, data: { reportTitle: 'Sub Head wise stock abstract', items, reportTotalQty: items.reduce((s, g) => s + g.totalQty, 0), reportTotalValue: items.reduce((s, g) => s + g.totalValue, 0), asOfDate: ledger.toDate, valuationBasis: ledger.valuationBasis } });
+    }
     let whereClause = `1=1`;
     const replacements = {};
 
@@ -2788,7 +2835,7 @@ exports.getSubHeadWiseStockAbstract = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Sub Head wise stock abstract:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 
@@ -2796,6 +2843,21 @@ exports.getSubHeadWiseStockAbstract = async (req, res) => {
 exports.getSubHeadWiseStockDetail = async (req, res) => {
   try {
     const subheads = parseFilterParam(req.query.subheads);
+    const ledger = await getMigratedCurrentStock();
+    if (ledger) {
+      const heads = await SubHead.findAll({ attributes: ['code', 'sub_group_name'], raw: true });
+      const names = new Map(heads.map(h => [String(h.code), h.sub_group_name]));
+      const grouped = new Map();
+      for (const item of ledger.itemBalances) {
+        const name = names.get(String(item.subHeadCode)) || 'Unassigned';
+        if (subheads && !subheads.some(v => String(v) === String(item.subHeadCode) || String(v) === name)) continue;
+        if (!grouped.has(name)) grouped.set(name, []);
+        const group = grouped.get(name);
+        group.push({ slNo: group.length + 1, itemCode: item.itemCode, itemName: item.itemName, qty: item.quantity, unitRate: item.unitRate, value: item.value, uom: item.uom });
+      }
+      const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([subHeadName, items]) => ({ subHeadName, items, shTotalQty: items.reduce((s, i) => s + i.qty, 0), shTotalValue: items.reduce((s, i) => s + i.value, 0) }));
+      return res.json({ success: true, data: { reportTitle: 'Sub Head wise stock detail', groups, reportTotalQty: groups.reduce((s, g) => s + g.shTotalQty, 0), reportTotalValue: groups.reduce((s, g) => s + g.shTotalValue, 0), asOfDate: ledger.toDate, valuationBasis: ledger.valuationBasis } });
+    }
     let whereClause = `1=1`;
     const replacements = {};
 
@@ -2872,7 +2934,7 @@ exports.getSubHeadWiseStockDetail = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Sub Head wise stock detail:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 
@@ -3576,6 +3638,18 @@ exports.getGatePassInPartyWise = async (req, res) => {
 // 5.8 Item Register Location Wise Report
 exports.getItemRegisterLocationWise = async (req, res) => {
   try {
+    const ledger = await getMigratedCurrentStock();
+    if (ledger) {
+      const grouped = new Map();
+      for (const item of ledger.itemBalances) {
+        const location = item.location || 'Unassigned';
+        if (!grouped.has(location)) grouped.set(location, []);
+        const group = grouped.get(location);
+        group.push({ slNo: group.length + 1, itemCode: item.itemCode, itemName: item.itemName, departmentName: item.departmentName, qty: item.quantity, unitRate: item.unitRate, value: item.value, uom: item.uom });
+      }
+      const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([location, items]) => ({ location, items, locTotalQty: items.reduce((s, i) => s + i.qty, 0), locTotalValue: items.reduce((s, i) => s + i.value, 0) }));
+      return res.json({ success: true, data: { reportTitle: 'Item Register Location wise Report', groups, reportTotalQty: ledger.reportTotalQty, reportTotalValue: ledger.reportTotalValue, asOfDate: ledger.toDate, valuationBasis: ledger.valuationBasis } });
+    }
     const rows = await sequelize.query(`
       SELECT
         COALESCE(i.Location, 'Unassigned') AS location,
@@ -3645,7 +3719,7 @@ exports.getItemRegisterLocationWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Item Register Location Wise Report:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.status === 422 ? error.message : 'Error generating report', error: error.message });
   }
 };
 

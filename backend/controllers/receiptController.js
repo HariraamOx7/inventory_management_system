@@ -5,6 +5,7 @@ const Supplier = require('../models/Supplier');
 const Item = require('../models/Item');
 const GateInward = require('../models/GateInward');
 const GateInwardDetail = require('../models/GateInwardDetail');
+const resolveItemIdentifier = require('../services/resolveItemCode');
 const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 
@@ -48,14 +49,7 @@ const resolvePartyCode = async (partyCode, partyName) => {
 };
 
 const resolveItemCode = async (itemCode, itemName) => {
-  if (itemCode && !isNaN(parseInt(itemCode, 10))) {
-    return parseInt(itemCode, 10);
-  }
-  if (itemName && String(itemName).trim()) {
-    const found = await Item.findOne({ where: { ItemName: String(itemName).trim() } });
-    if (found) return found.ItemCode;
-  }
-  return null;
+  return resolveItemIdentifier(Item, itemCode, itemName);
 };
 
 const getPurchaseOrderUnitRateMap = async (orderNos = []) => {

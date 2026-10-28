@@ -29,6 +29,14 @@ GateInwardDetail.init({
   ReceivedQty: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0
+  },
+  StockUnitRate: {
+    type: DataTypes.DECIMAL(20, 8),
+    allowNull: true
+  },
+  StockValue: {
+    type: DataTypes.DECIMAL(20, 6),
+    allowNull: true
   }
 }, {
   sequelize,
