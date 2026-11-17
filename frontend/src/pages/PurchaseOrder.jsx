@@ -1,3 +1,4 @@
+import { roundTotal } from '../utils/roundTotal';
 // frontend/src/pages/PurchaseOrder.jsx
 import { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
 import axios from 'axios';
@@ -67,6 +68,7 @@ const formatDateForInput = (dateStr) => {
 const initialHeadState = {
   OrderNo: '',
   OrderDate: new Date().toISOString().split('T')[0],
+  PartyCode: '',
   PartyName: '',
   Address: '',
   Place: '',
@@ -78,6 +80,7 @@ const initialHeadState = {
 };
 
 const initialDetailState = {
+  ItemCode: '',
   ItemName: '',
   Qty: '',
   PerQty: '1',
@@ -193,6 +196,19 @@ export default function PurchaseOrder() {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // The displayed number is a preview; the server assigns it on save.
+  useEffect(() => {
+    if (!editDrawerOpen || !isNewEntry) return;
+    let active = true;
+    setHeadData(prev => ({ ...prev, OrderNo: '' }));
+    axios.get(`${API_URL}/purchase-orders/last-order-no`)
+      .then(res => {
+        if (active && res.data?.success) setHeadData(prev => ({ ...prev, OrderNo: String(res.data.data.nextOrderNo) }));
+      })
+      .catch(() => { if (active) showToast('Could not load the next PO number', 'error'); });
+    return () => { active = false; };
+  }, [editDrawerOpen, isNewEntry, showToast]);
+
   // ── Add New Item Popup Helpers (uses /api/items) ───────────────────────────
   const imFetchDepartments = useCallback(async () => {
     if (imDepartments.length > 0) return;
@@ -263,7 +279,7 @@ export default function PurchaseOrder() {
       const itemRes = await axios.get(`${API_URL}/purchase-orders/items`).catch(() => ({ data: { success: false } }));
       if (itemRes.data?.success) setItemsList(itemRes.data.data);
       // Auto-select in detail form
-      setDetailData(prev => ({ ...prev, ItemName: imFormData.ItemName, UnitRate: parseFloat(imFormData.UnitRate) || prev.UnitRate }));
+      setDetailData(prev => ({ ...prev, ItemCode: res.data?.data?.ItemCode || '', ItemName: imFormData.ItemName, UnitRate: parseFloat(imFormData.UnitRate) || prev.UnitRate }));
       showToast(`Item "${imFormData.ItemName}" added successfully`, 'success');
       setShowAddItemMasterModal(false);
     } catch (err) {
@@ -352,8 +368,7 @@ export default function PurchaseOrder() {
     const pf = items.reduce((sum, i) => sum + (parseFloat(i.PF_Amount) || 0), 0);
     const lorryFreight = items.reduce((sum, i) => sum + (parseFloat(i.LorryFreight) || 0), 0);
     const unroundedGrandTotal = total - discount + gst + igst + pf + lorryFreight;
-    const grandTotal = Math.round(unroundedGrandTotal);
-    const roundOff = noRoundOff ? 0 : parseFloat((grandTotal - unroundedGrandTotal).toFixed(2));
+    const { grandTotal, roundOff } = roundTotal(unroundedGrandTotal, noRoundOff);
 
     return {
       Total: total,
@@ -376,15 +391,7 @@ export default function PurchaseOrder() {
     setNoRoundOff(false);
     setDetailData(initialDetailState);
 
-    let nextNo = '1';
-    try {
-      const res = await axios.get(`${API_URL}/purchase-orders/last-order-no`);
-      if (res.data?.success) {
-        nextNo = (Number(res.data.data.lastOrderNo) + 1).toString();
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    const nextNo = '';
 
     setHeadData({
       ...initialHeadState,
@@ -403,6 +410,7 @@ export default function PurchaseOrder() {
     setHeadData({
       OrderNo: order.OrderNo.toString(),
       OrderDate: formatDateForInput(order.OrderDate),
+      PartyCode: order.PartyCode || '',
       PartyName: order.PartyName || '',
       Address: order.Address || '',
       Place: order.Place || '',
@@ -414,6 +422,7 @@ export default function PurchaseOrder() {
     });
 
     setItems((order.details || []).map(d => ({
+      ItemCode: d.ItemCode,
       ItemName: d.ItemName,
       Qty: parseFloat(d.Qty) > 0 ? d.Qty : '',
       PerQty: d.PerQty || '1',
@@ -448,19 +457,12 @@ export default function PurchaseOrder() {
     setEditingItemIndex(null);
     setNoRoundOff(Number(order.RoundOff) === 0);
 
-    let nextNo = '1';
-    try {
-      const res = await axios.get(`${API_URL}/purchase-orders/last-order-no`);
-      if (res.data?.success) {
-        nextNo = (Number(res.data.data.lastOrderNo) + 1).toString();
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    const nextNo = '';
 
     setHeadData({
       OrderNo: nextNo,
       OrderDate: new Date().toISOString().split('T')[0],
+      PartyCode: order.PartyCode || '',
       PartyName: order.PartyName || '',
       Address: order.Address || '',
       Place: order.Place || '',
@@ -472,6 +474,7 @@ export default function PurchaseOrder() {
     });
 
     setItems((order.details || []).map(d => ({
+      ItemCode: d.ItemCode,
       ItemName: d.ItemName,
       Qty: parseFloat(d.Qty) > 0 ? d.Qty : '',
       PerQty: d.PerQty || '1',
@@ -498,7 +501,7 @@ export default function PurchaseOrder() {
     setDetailData(initialDetailState);
     setEditDrawerOpen(true);
     setTimeout(() => setIsDrawerVisible(true), 10);
-    showToast(`PO #${order.OrderNo} details copied to new order #PO-${String(nextNo).padStart(3, '0')}`, 'info');
+    showToast(`PO #${order.OrderNo} details copied to a new order`, 'info');
   };
 
   const handleCloseEditDrawer = () => {
@@ -583,6 +586,7 @@ export default function PurchaseOrder() {
     if (!item) return;
     setEditingItemIndex(index);
     setDetailData({
+      ItemCode: item.ItemCode || '',
       ItemName: item.ItemName || '',
       Qty: parseFloat(item.Qty) > 0 ? item.Qty : '',
       PerQty: item.PerQty || '1',
@@ -673,7 +677,7 @@ export default function PurchaseOrder() {
   const handleSavePO = async (e) => {
     if (e) e.preventDefault();
 
-    if (!headData.PartyName) {
+    if (!headData.PartyCode) {
       showToast('Please select a Party Name', 'error');
       return;
     }
@@ -695,8 +699,8 @@ export default function PurchaseOrder() {
       };
 
       if (isNewEntry) {
-        await axios.post(`${API_URL}/purchase-orders`, payload);
-        showToast('Purchase Order created successfully!', 'success');
+        const response = await axios.post(`${API_URL}/purchase-orders`, payload);
+        showToast(`Purchase Order PO-${response.data.data.OrderNo} created successfully!`, 'success');
       } else {
         await axios.put(`${API_URL}/purchase-orders/${editingOrderNo}`, payload);
         showToast('Purchase Order updated successfully!', 'success');
@@ -715,7 +719,7 @@ export default function PurchaseOrder() {
 
   // Delete PO
   const handleDeletePO = async (orderNo) => {
-    if (!window.confirm(`Are you sure you want to delete Purchase Order #${orderNo}?`)) return;
+    if (!window.confirm(`Delete Purchase Order #${orderNo}?\n\nThis also deletes linked Gate Inwards, receipts and bills, and reverses received stock.`)) return;
 
     try {
       setLoading(true);
@@ -785,7 +789,7 @@ export default function PurchaseOrder() {
     suppliers.map(s => {
       const name = (s.name || s.AccountName || '').trim();
       return {
-        value: name,
+        value: s.PartyCode,
         label: name,
         sub: s.Place ? `Place: ${s.Place}` : '',
         Address: s.Address || s.address || '',
@@ -798,8 +802,10 @@ export default function PurchaseOrder() {
   // Item Options for SearchSelect
   const itemOptions = useMemo(() =>
     itemsList.map(i => ({
-      value: i.ItemName,
-      label: i.ItemName,
+      value: i.ItemCode,
+      label: `${i.ItemName} (${i.ItemCode})`,
+      ItemName: i.ItemName,
+      ItemCode: i.ItemCode,
       sub: i.UnitRate ? `Unit Rate: ₹${i.UnitRate}${i.UOM ? ' | ' + i.UOM : ''}` : (i.UOM || ''),
       UnitRate: i.UnitRate,
       UOM: i.UOM || ''
@@ -1367,7 +1373,7 @@ export default function PurchaseOrder() {
                           <input
                             type="text"
                             readOnly
-                            value={`PO-${String(headData.OrderNo).padStart(3, '0')}`}
+                            value={headData.OrderNo ? `PO-${String(headData.OrderNo).padStart(3, '0')}` : 'Assigned on save'}
                             className="w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 font-bold focus:outline-none cursor-not-allowed"
                           />
                         </div>
@@ -1378,6 +1384,7 @@ export default function PurchaseOrder() {
                             type="date"
                             required
                             value={headData.OrderDate}
+                            disabled={!isNewEntry && String(headData.OrderNo).length === 11 && String(headData.OrderNo).startsWith(headData.OrderDate.replace(/-/g, ''))}
                             onChange={(e) => setHeadData({ ...headData, OrderDate: e.target.value })}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
@@ -1389,11 +1396,12 @@ export default function PurchaseOrder() {
                           label="Party Name *"
                           required
                           options={supplierOptions}
-                          value={headData.PartyName}
+                          value={headData.PartyCode}
                           onChange={(val, opt) => {
                             setHeadData(prev => ({
                               ...prev,
-                              PartyName: val,
+                              PartyCode: val,
+                              PartyName: opt?.label || '',
                               Address: opt?.Address !== undefined ? (opt.Address || '') : (opt?.address || prev.Address),
                               Place: opt?.Place !== undefined ? (opt.Place || '') : (opt?.place || prev.Place)
                             }));
@@ -1484,11 +1492,12 @@ export default function PurchaseOrder() {
                         <SearchSelect
                           label="Item Name *"
                           options={itemOptions}
-                          value={detailData.ItemName}
+                          value={detailData.ItemCode || detailData.ItemName}
                           onChange={(val, opt) => {
                             setDetailData(prev => ({
                               ...prev,
-                              ItemName: val,
+                              ItemCode: opt?.ItemCode || '',
+                              ItemName: opt?.ItemName || '',
                               UnitRate: opt?.UnitRate !== undefined && opt?.UnitRate !== null && opt?.UnitRate !== '' ? opt.UnitRate : prev.UnitRate,
                               UOM: opt?.UOM || prev.UOM || ''
                             }));

@@ -18,7 +18,7 @@ BillEntry.init({
     allowNull: false
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: true
   },
   PartyCode: {

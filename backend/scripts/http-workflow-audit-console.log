@@ -1,0 +1,77 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+PASS HTTP Department create persists header and every detail
+PASS HTTP Department edit and reload persists fields and every detail
+PASS HTTP SubHead create persists header and every detail
+PASS HTTP SubHead edit and reload persists fields and every detail
+PASS HTTP UOM create persists header and every detail
+PASS HTTP UOM edit and reload persists fields and every detail
+PASS HTTP State create persists header and every detail
+PASS HTTP State edit and reload persists fields and every detail
+PASS HTTP StoreMaster create persists header and every detail
+PASS HTTP StoreMaster edit and reload persists fields and every detail
+PASS HTTP ProductHead create persists header and every detail
+PASS HTTP ProductHead edit and reload persists fields and every detail
+PASS HTTP Supplier create persists header and every detail
+PASS HTTP Supplier edit and reload persists fields and every detail
+PASS HTTP PartyMaster create persists header and every detail
+PASS HTTP PartyMaster edit and reload persists fields and every detail
+PASS HTTP PurchaseType create persists header and every detail
+PASS HTTP PurchaseType edit and reload persists fields and every detail
+PASS HTTP ItemMaster create persists header and every detail
+PASS HTTP ItemMaster edit and reload persists fields and every detail
+PASS HTTP Item create persists header and every detail
+PASS HTTP Item edit and reload persists fields and every detail
+PASS HTTP PurchaseOrder create persists header and every detail
+PASS HTTP PurchaseOrder edit and reload persists fields and every detail
+PASS HTTP GateInward create persists header and every detail
+PASS HTTP GateInward edit and reload persists fields and every detail
+PASS HTTP gate inward updates physical stock once across create and edit
+PASS HTTP Receipt create persists header and every detail
+PASS HTTP Receipt edit and reload persists fields and every detail
+PASS HTTP BillEntry create persists header and every detail
+PASS HTTP BillEntry edit and reload persists fields and every detail
+PASS HTTP BillVerify create persists header and every detail
+PASS HTTP BillVerify edit and reload persists fields and every detail
+PASS HTTP ItemIssue create persists header and every detail
+PASS HTTP ItemIssue edit and reload persists fields and every detail
+PASS HTTP item issue edit deducts stock once
+PASS HTTP GatePassOut create persists header and every detail
+PASS HTTP GatePassOut edit and reload persists fields and every detail
+PASS HTTP GatePassIn create persists header and every detail
+PASS HTTP GatePassIn edit and reload persists fields and every detail
+PASS HTTP CancelOrder create persists header and every detail
+PASS HTTP CancelOrder edit and reload persists fields and every detail
+PASS /reports/receipt/item-wise totals reconcile with the saved transaction
+PASS /reports/receipt/party-wise totals reconcile with the saved transaction
+PASS /reports/billing/item-wise totals reconcile with the saved transaction
+PASS /reports/billing/day-book totals reconcile with the saved transaction
+PASS /reports/issue/item-wise totals reconcile with the saved transaction
+PASS Bulk upload generates distinct codes and reports rejected rows
+PASS Item code generation skips sequence gaps and occupied codes
+PASS State sequential code generation crosses single-digit boundary
+PASS SubHead sequential code generation crosses single-digit boundary
+PASS operator can perform authorized business CRUD
+PASS manager can perform authorized business CRUD
+PASS Supplier form without a code receives a unique generated PartyCode
+PASS HTTP CancelOrder delete removes header and details
+PASS HTTP GatePassIn delete removes header and details
+PASS HTTP GatePassOut delete removes header and details
+PASS HTTP ItemIssue delete removes header and details
+PASS HTTP BillVerify delete removes header and details
+PASS HTTP BillEntry delete removes header and details
+PASS HTTP Receipt delete removes header and details
+PASS HTTP GateInward delete removes header and details
+PASS HTTP PurchaseOrder delete removes header and details
+PASS HTTP Item delete removes header and details
+PASS HTTP ItemMaster delete removes header and details
+PASS HTTP PurchaseType delete removes header and details
+PASS HTTP PartyMaster delete removes header and details
+PASS HTTP Supplier delete removes header and details
+PASS HTTP ProductHead delete removes header and details
+PASS HTTP StoreMaster delete removes header and details
+PASS HTTP State delete removes header and details
+PASS HTTP UOM delete removes header and details
+PASS HTTP SubHead delete removes header and details
+PASS HTTP Department delete removes header and details
+74 passed; 0 failed. Disposable database removed.

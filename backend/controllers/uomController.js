@@ -1,3 +1,5 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const UOM = require('../models/UOM');
 
 exports.getUoms = async (req, res) => {
@@ -11,7 +13,7 @@ exports.getUoms = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching UOMs:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching UOMs',
             error: error.message 
@@ -40,7 +42,7 @@ exports.addUom = async (req, res) => {
         });
     } catch (error) {
         console.error('Error adding UOM:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding UOM',
             error: error.message 
@@ -78,7 +80,7 @@ exports.updateUom = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating UOM:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating UOM',
             error: error.message
@@ -98,6 +100,8 @@ exports.deleteUom = async (req, res) => {
             });
         }
 
+        await preventReferencedDeletion('UOM', uom);
+
         await uom.destroy();
 
         res.json({
@@ -106,7 +110,7 @@ exports.deleteUom = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting UOM:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting UOM',
             error: error.message

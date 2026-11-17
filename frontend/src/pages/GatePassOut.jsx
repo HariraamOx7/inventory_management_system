@@ -86,19 +86,10 @@ export default function GatePassOut() {
     };
 
     fetchInitialData();
-  }, []);
+  }, [showToast]);
 
   // Handle party selection and auto-fill address
-  const handlePartySelect = (partyName) => {
-    const selectedParty = parties.find(p => p.name === partyName);
-    if (selectedParty) {
-      setFormData(prev => ({
-        ...prev,
-        PartyName: partyName,
-        Address: selectedParty.address || ''
-      }));
-    }
-  };
+
 
   const handleAddItem = () => {
     if (!itemData.ItemName || !itemData.Qty) {

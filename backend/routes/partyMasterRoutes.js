@@ -13,6 +13,8 @@ router.get('/', getParties);
 router.get('/suppliers/all', getSuppliers);
 router.get('/supplier-details', getSupplierByName);
 router.post('/', addParty);
+router.put('/', updateParty);
+router.delete('/', deleteParty);
 router.put('/:code', updateParty);
 router.delete('/:code', deleteParty);
 

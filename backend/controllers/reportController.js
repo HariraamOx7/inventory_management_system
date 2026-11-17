@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 const ExcelJS = require('exceljs');
 const { Op, fn, col, literal } = require('sequelize');
 const sequelize = require('../config/db');
@@ -11,7 +12,7 @@ const PurchaseOrder = require('../models/PurchaseOrder');
 const PurchaseOrderDetail = require('../models/PurchaseOrderDetail');
 const ItemIssue = require('../models/ItemIssue');
 const ItemIssueDetail = require('../models/ItemIssueDetail');
-const { getHistoricalDepartmentStock, getMigratedCurrentStock } = require('../services/historicalStock');
+const { getHistoricalDepartmentStock, getMigratedCurrentStock, calculateMigratedLedgerHash, fields: historicalFields } = require('../services/historicalStock');
 const BillEntry = require('../models/BillEntry');
 const BillEntryDetail = require('../models/BillEntryDetail');
 const GatePassOut = require('../models/GatePassOut');
@@ -52,7 +53,8 @@ const dateRange = (req) => {
 
 const parseFilterParam = (param) => {
   if (!param) return null;
-  const list = param.split(',').map(v => decodeURIComponent(v.trim())).filter(Boolean);
+  // Express already decodes query values. A second decode corrupts literal %.
+  const list = param.split(',').map(v => v.trim()).filter(Boolean);
   return list.length > 0 ? list : null;
 };
 
@@ -162,7 +164,7 @@ exports.getFilterOptions = async (req, res) => {
     res.json({ success: true, data });
   } catch (error) {
     console.error(`Error fetching filter options for ${req.params.type}:`, error);
-    res.status(500).json({ success: false, message: 'Error fetching filter options', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error fetching filter options', error: error.message });
   }
 };
 
@@ -270,7 +272,7 @@ exports.getOrderNoWiseOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Order No Wise Order Details:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -382,7 +384,7 @@ exports.getSupplierWiseOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating supplier wise order details:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -470,7 +472,7 @@ exports.getDepartmentWiseOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating department wise order details:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -543,7 +545,7 @@ exports.getPurchaseOrderPendingWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating PO Pending Wise Details:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -640,7 +642,7 @@ exports.getPurchaseOrderPendingDateWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating PO Pending Date Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -726,7 +728,7 @@ exports.getPurchaseOrderPriceComparison = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating PO Price Comparison:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -831,7 +833,7 @@ exports.getPurchaseOrderPartyWisePending = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating PO Party Wise Pending:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -949,7 +951,7 @@ exports.getDayBook = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Day Book:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1047,7 +1049,7 @@ exports.getBillReportPurchaseTypeWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Purchase Type Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1121,7 +1123,7 @@ exports.getBillReportAbstractPurchaseTypeWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Abstract Purchase Type Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1229,7 +1231,7 @@ exports.getPurchaseRegisterPurchaseTypeWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Purchase Register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1316,7 +1318,7 @@ exports.getBillReportDateWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Date Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1411,7 +1413,7 @@ exports.getBillReportPartyWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Party Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1472,7 +1474,7 @@ exports.getBillReportAbstractPartyWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Abstract Party Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1564,7 +1566,7 @@ exports.getBillReportDepartmentWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Department Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1627,7 +1629,7 @@ exports.getBillReportAbstractDepartmentWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Abstract Department Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1719,7 +1721,7 @@ exports.getBillReportSubHeadWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Sub Head Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1810,7 +1812,7 @@ exports.getBillReportItemWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Bill Report Item Wise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -1908,7 +1910,7 @@ exports.getDateWiseReceiptRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating date wise receipt register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2003,7 +2005,7 @@ exports.getPartyWiseReceiptRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating party wise receipt register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2099,7 +2101,7 @@ exports.getSubHeadWiseReceiptRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Sub Head wise receipt register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2205,7 +2207,7 @@ exports.getDepartmentWiseReceiptRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating department wise receipt register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2300,7 +2302,7 @@ exports.getItemWiseReceiptRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating item wise receipt register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2371,7 +2373,7 @@ exports.getReceiptReturnPending = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Receipt Return Pending:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2511,7 +2513,7 @@ exports.getItemWiseOpeningStock = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Item Wise Opening Stock:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -2526,7 +2528,8 @@ exports.getDepartmentWiseStock = async (req, res) => {
         const historical = await getHistoricalDepartmentStock({
           from: req.query.fromDate,
           to: req.query.toDate,
-          departments
+          departments,
+          legacyReport: true
         });
         return res.json({
           success: true,
@@ -2535,7 +2538,7 @@ exports.getDepartmentWiseStock = async (req, res) => {
             period: `${fmtDateFull(req.query.fromDate)} to ${fmtDateFull(req.query.toDate)}`,
             historical: true,
             valuationBasis: historical.valuationBasis,
-            items: historical.items,
+            items: historical.items.filter(item => Number(item.totalQty) !== 0 || Number(item.totalValue) !== 0).map((item, index) => ({ ...item, slNo: index + 1 })),
             reportTotalQty: historical.reportTotalQty,
             reportTotalValue: historical.reportTotalValue,
             totals: historical.totals,
@@ -2550,7 +2553,7 @@ exports.getDepartmentWiseStock = async (req, res) => {
 
     const currentLedger = await getMigratedCurrentStock({ departments });
     if (currentLedger) return res.json({ success: true, data: {
-      reportTitle: currentLedger.reportTitle, items: currentLedger.items,
+      reportTitle: currentLedger.reportTitle, items: currentLedger.items.filter(item => Number(item.totalQty) !== 0 || Number(item.totalValue) !== 0).map((item, index) => ({ ...item, slNo: index + 1 })),
       reportTotalQty: currentLedger.reportTotalQty, reportTotalValue: currentLedger.reportTotalValue,
       asOfDate: currentLedger.toDate, valuationBasis: currentLedger.valuationBasis
     } });
@@ -2578,7 +2581,7 @@ exports.getDepartmentWiseStock = async (req, res) => {
     let reportTotalQty = 0;
     let reportTotalValue = 0;
 
-    const items = rows.map((row, idx) => {
+    const items = rows.filter(row => parseDec(row.totalQty) !== 0 || parseDec(row.totalValue) !== 0).map((row, idx) => {
       const totalQty = parseDec(row.totalQty);
       const totalValue = parseDec(row.totalValue);
       reportTotalQty += totalQty;
@@ -2674,18 +2677,146 @@ exports.getDepartmentWiseClosingStock = async (req, res) => {
 exports.getDepartmentWiseStockDetail = async (req, res) => {
   try {
     const departments = parseFilterParam(req.query.departments);
+
+    // Fetch items master quantities to cross-check and surface discrepancies
+    const masterItems = await sequelize.query(`SELECT i.ItemCode, i.Quantity AS masterQty FROM items i`, { type: sequelize.QueryTypes.SELECT });
+    const masterMap = new Map();
+    for (const m of masterItems) {
+      if (m.ItemCode) {
+        masterMap.set(m.ItemCode, Number(m.masterQty || 0));
+        masterMap.set(String(m.ItemCode).trim().toLowerCase(), Number(m.masterQty || 0));
+      }
+    }
+
+    if (req.query.fromDate && req.query.toDate) {
+      try {
+        const historical = await getHistoricalDepartmentStock({
+          from: req.query.fromDate,
+          to: req.query.toDate,
+          departments,
+          legacyReport: true
+        });
+        const grouped = new Map();
+        const discrepancies = [];
+
+        for (const item of historical.itemBalances) {
+          if (Number(item.quantity) === 0 && Number(item.value) === 0) continue;
+          if (!grouped.has(item.departmentName)) grouped.set(item.departmentName, []);
+          const group = grouped.get(item.departmentName);
+
+          const masterQty = masterMap.has(item.itemCode)
+            ? masterMap.get(item.itemCode)
+            : masterMap.get(String(item.itemCode).trim().toLowerCase());
+          const hasMaster = masterQty !== undefined;
+          const ledgerQty = Number(item.quantity || 0);
+          const hasMismatch = hasMaster && Math.abs(masterQty - ledgerQty) > 0.001;
+          const diff = hasMaster ? Number((masterQty - ledgerQty).toFixed(2)) : 0;
+
+          if (hasMismatch) {
+            discrepancies.push({
+              itemCode: item.itemCode,
+              itemName: item.itemName,
+              departmentName: item.departmentName,
+              ledgerQty,
+              masterQty,
+              difference: diff
+            });
+          }
+
+          group.push({
+            slNo: group.length + 1,
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            qty: item.quantity,
+            unitRate: item.unitRate,
+            value: item.value,
+            uom: item.uom,
+            hasMismatch,
+            masterQty: hasMaster ? masterQty : null,
+            difference: diff
+          });
+        }
+        const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([departmentName, items]) => ({
+          departmentName, items, deptTotalQty: items.reduce((sum, item) => sum + item.qty, 0), deptTotalValue: items.reduce((sum, item) => sum + item.value, 0)
+        }));
+        return res.json({
+          success: true,
+          data: {
+            reportTitle: 'Department wise stock detail',
+            period: `${fmtDateFull(req.query.fromDate)} to ${fmtDateFull(req.query.toDate)}`,
+            groups,
+            discrepancies,
+            discrepanciesCount: discrepancies.length,
+            reportTotalQty: groups.reduce((sum, g) => sum + g.deptTotalQty, 0),
+            reportTotalValue: groups.reduce((sum, g) => sum + g.deptTotalValue, 0),
+            asOfDate: req.query.toDate,
+            valuationBasis: historical.valuationBasis
+          }
+        });
+      } catch (historicalError) {
+        if (historicalError.status !== 422) throw historicalError;
+        return res.status(422).json({ success: false, message: historicalError.message });
+      }
+    }
+
     const currentLedger = await getMigratedCurrentStock({ departments });
     if (currentLedger) {
       const grouped = new Map();
+      const discrepancies = [];
+
       for (const item of currentLedger.itemBalances) {
+        if (Number(item.quantity) === 0 && Number(item.value) === 0) continue;
         if (!grouped.has(item.departmentName)) grouped.set(item.departmentName, []);
         const group = grouped.get(item.departmentName);
-        group.push({ slNo: group.length + 1, itemCode: item.itemCode, itemName: item.itemName, qty: item.quantity, unitRate: item.unitRate, value: item.value, uom: item.uom });
+
+        const masterQty = masterMap.has(item.itemCode)
+          ? masterMap.get(item.itemCode)
+          : masterMap.get(String(item.itemCode).trim().toLowerCase());
+        const hasMaster = masterQty !== undefined;
+        const ledgerQty = Number(item.quantity || 0);
+        const hasMismatch = hasMaster && Math.abs(masterQty - ledgerQty) > 0.001;
+        const diff = hasMaster ? Number((masterQty - ledgerQty).toFixed(2)) : 0;
+
+        if (hasMismatch) {
+          discrepancies.push({
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            departmentName: item.departmentName,
+            ledgerQty,
+            masterQty,
+            difference: diff
+          });
+        }
+
+        group.push({
+          slNo: group.length + 1,
+          itemCode: item.itemCode,
+          itemName: item.itemName,
+          qty: item.quantity,
+          unitRate: item.unitRate,
+          value: item.value,
+          uom: item.uom,
+          hasMismatch,
+          masterQty: hasMaster ? masterQty : null,
+          difference: diff
+        });
       }
       const groups = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([departmentName, items]) => ({
         departmentName, items, deptTotalQty: items.reduce((sum, item) => sum + item.qty, 0), deptTotalValue: items.reduce((sum, item) => sum + item.value, 0)
       }));
-      return res.json({ success: true, data: { reportTitle: 'Department wise stock detail', groups, reportTotalQty: currentLedger.reportTotalQty, reportTotalValue: currentLedger.reportTotalValue, asOfDate: currentLedger.toDate, valuationBasis: currentLedger.valuationBasis } });
+      return res.json({
+        success: true,
+        data: {
+          reportTitle: 'Department wise stock detail',
+          groups,
+          discrepancies,
+          discrepanciesCount: discrepancies.length,
+          reportTotalQty: currentLedger.reportTotalQty,
+          reportTotalValue: currentLedger.reportTotalValue,
+          asOfDate: currentLedger.toDate,
+          valuationBasis: currentLedger.valuationBasis
+        }
+      });
     }
     let whereClause = `1=1`;
     const replacements = {};
@@ -2712,6 +2843,7 @@ exports.getDepartmentWiseStockDetail = async (req, res) => {
 
     const grouped = {};
     rows.forEach(r => {
+      if (parseDec(r.Quantity) === 0 && parseDec(r.StockValue) === 0) return;
       const dept = r.departmentName;
       if (!grouped[dept]) grouped[dept] = [];
       grouped[dept].push({
@@ -2973,7 +3105,7 @@ exports.getNilStockItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Nil Stock Items:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3025,7 +3157,7 @@ exports.getMaxLevelStockItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating MaxLevel Stock Items:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3108,7 +3240,7 @@ exports.exportItemWiseStock = async (req, res) => {
     res.end();
   } catch (error) {
     console.error('Error exporting item wise stock report:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error exporting item wise stock report',
       error: error.message
@@ -3187,7 +3319,7 @@ exports.getGatePassPendingReport = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Gate Pass Pending Report:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3276,7 +3408,7 @@ exports.getPartyWiseGatePassPending = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Party wise Gate Pass Pending:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3351,7 +3483,7 @@ exports.getGatePassReturnableNonReturnable = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating GP Returnable/NonReturnable Report:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3432,7 +3564,7 @@ exports.getGatePassReturnablePartyWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating GP Returnable PartyWise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3486,7 +3618,7 @@ exports.getGatePassNonReturnableReport = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating GP NonReturnable Report:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3548,7 +3680,7 @@ exports.getGatePassInReport = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Gate Pass In Report:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3631,7 +3763,7 @@ exports.getGatePassInPartyWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Gate Pass In PartyWise:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3809,7 +3941,7 @@ exports.getDateWiseIssueRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating date wise issue register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3900,7 +4032,7 @@ exports.getItemWiseIssueRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating item wise issue register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -3993,7 +4125,7 @@ exports.getSubHeadWiseIssueRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Sub Head wise issue register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -4084,7 +4216,7 @@ exports.getDepartmentWiseIssueRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating department wise issue register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -4184,7 +4316,7 @@ exports.getMonthWiseItemMovementItemWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Month Wise Item Movement (Item):', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -4256,7 +4388,7 @@ exports.getMonthWiseItemMovementDepartmentWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Month Wise Item Movement (Dept):', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -4330,7 +4462,7 @@ exports.getMonthWiseItemMovementSubHeadWise = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Month Wise Item Movement (Subhead):', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
   }
 };
 
@@ -4442,6 +4574,100 @@ exports.getDepartmentItemWiseIssueRegister = async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating Department-Item wise issue register:', error);
-    res.status(500).json({ success: false, message: 'Error generating report', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error generating report', error: error.message });
+  }
+};
+
+// ── Stock Reconciliation Diagnostic ───────────────────────────────────
+exports.getStockReconciliationDiagnostic = async (req, res) => {
+  try {
+    const result = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' }, async (transaction) => {
+      const opts = { type: sequelize.QueryTypes.SELECT, transaction };
+      const diagnostics = { hashMismatch: false, unvaluedMovements: null, mismatches: [], orphanedLedgerItems: [], missingMovementItems: [] };
+
+      // 1. Check if migration batch exists
+      let batches;
+      try {
+        batches = await sequelize.query(`SELECT * FROM stock_history_batches
+          WHERE Status = 'Verified' AND SourceName = 'KR_2026-2027 staged source totals'
+          ORDER BY VerifiedThrough DESC LIMIT 1`, opts);
+      } catch (error) {
+        if (error.original?.code === 'ER_NO_SUCH_TABLE') return { noBatch: true, message: 'No stock_history_batches table found - migrated stock system not active' };
+        throw error;
+      }
+      if (!batches.length) return { noBatch: true, message: 'No verified migration batch found - using live items table directly' };
+
+      const batch = batches[0];
+      const formatDate = v => v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10);
+      const from = formatDate(batch.SnapshotDate);
+      const to = formatDate(batch.VerifiedThrough);
+      diagnostics.batchInfo = { from, to, sourceName: batch.SourceName, status: batch.Status };
+
+      // 2. Check hash
+      const actualHash = await calculateMigratedLedgerHash({ from, to, transaction });
+      diagnostics.hashMismatch = actualHash !== batch.SourceHash;
+      diagnostics.hashInfo = { expected: batch.SourceHash?.slice(0, 16) + '...', actual: actualHash.slice(0, 16) + '...' };
+
+      // 3. Check unvalued movements
+      const [missing] = await sequelize.query(`SELECT
+        (SELECT COUNT(*) FROM gate_inward_details d JOIN gate_inwards h ON h.InwardNo=d.InwardNo WHERE h.InwardDate > :to AND (d.StockUnitRate IS NULL OR d.StockValue IS NULL)) AS unvaluedInwards,
+        (SELECT COUNT(*) FROM item_issue_details d JOIN item_issues h ON h.IssueNo=d.IssueNo WHERE h.IssueDate > :to AND (d.ItemCode IS NULL OR d.TotalAmount IS NULL)) AS unvaluedIssues`, { ...opts, replacements: { to } });
+      diagnostics.unvaluedMovements = { inwards: Number(missing.unvaluedInwards), issues: Number(missing.unvaluedIssues) };
+
+      // 4. Build balances and find ALL mismatches (don't throw)
+      let historical;
+      try {
+        historical = await getHistoricalDepartmentStock({ from, to, transaction });
+      } catch (err) {
+        return { ...diagnostics, historicalError: err.message };
+      }
+
+      const round = value => Number(Number(value || 0).toFixed(2));
+      const balances = new Map(historical.itemBalances.map(item => [item.itemCode, { ...item }]));
+      const newItems = await sequelize.query(`SELECT i.ItemCode,i.ItemName,i.Quantity,i.UnitRate,i.UOM,i.Location,i.SubHeadCode,d.dept_id AS departmentId,COALESCE(d.dept_name,'Unassigned') AS departmentName FROM items i LEFT JOIN departments d ON d.dept_id=i.DepartmentId`, opts);
+      const inward = await sequelize.query(`SELECT d.ItemCode,SUM(d.ReceivedQty) qty,SUM(d.StockValue) value FROM gate_inward_details d JOIN gate_inwards h ON h.InwardNo=d.InwardNo WHERE h.InwardDate > :to GROUP BY d.ItemCode`, { ...opts, replacements: { to } });
+      const issues = await sequelize.query(`SELECT d.ItemCode,SUM(d.Qty) qty,SUM(d.TotalAmount) value FROM item_issue_details d JOIN item_issues h ON h.IssueNo=d.IssueNo WHERE h.IssueDate > :to GROUP BY d.ItemCode`, { ...opts, replacements: { to } });
+      const newByCode = new Map(newItems.map(i => [i.ItemCode, i]));
+
+      for (const i of newItems) if (!balances.has(i.ItemCode)) balances.set(i.ItemCode, { itemCode: i.ItemCode, quantity: 0, value: 0 });
+      for (const [rows, sign] of [[inward, 1], [issues, -1]]) for (const movement of rows) {
+        const item = balances.get(movement.ItemCode);
+        if (!item) { diagnostics.missingMovementItems.push(movement.ItemCode); continue; }
+        item.quantity += sign * Number(movement.qty); item.value += sign * Number(movement.value);
+      }
+
+      for (const item of balances.values()) {
+        const master = newByCode.get(item.itemCode);
+        if (!master) {
+          diagnostics.orphanedLedgerItems.push({ itemCode: item.itemCode, ledgerQty: round(item.quantity), ledgerValue: round(item.value) });
+        } else if (Math.abs(Number(master.Quantity || 0) - item.quantity) > 0.001) {
+          diagnostics.mismatches.push({
+            itemCode: item.itemCode,
+            itemName: master.ItemName,
+            department: master.departmentName,
+            currentQtyInItemsTable: Number(master.Quantity || 0),
+            calculatedLedgerQty: round(item.quantity),
+            difference: round(Number(master.Quantity || 0) - item.quantity)
+          });
+        }
+      }
+
+      diagnostics.summary = {
+        totalItemsChecked: balances.size,
+        quantityMismatches: diagnostics.mismatches.length,
+        orphanedLedgerItems: diagnostics.orphanedLedgerItems.length,
+        missingMovementItems: diagnostics.missingMovementItems.length,
+        hashOk: !diagnostics.hashMismatch,
+        unvaluedInwards: diagnostics.unvaluedMovements.inwards,
+        unvaluedIssues: diagnostics.unvaluedMovements.issues
+      };
+
+      return diagnostics;
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error running stock reconciliation diagnostic:', error);
+    res.status(error.status || 500).json({ success: false, message: 'Error running diagnostic', error: error.message });
   }
 };

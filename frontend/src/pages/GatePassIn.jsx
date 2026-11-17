@@ -80,7 +80,7 @@ export default function GatePassIn() {
     };
 
     fetchInitialData();
-  }, []);
+  }, [showToast]);
 
   const handleAddItem = () => {
     if (!itemData.ItemName || !itemData.RecQty) {

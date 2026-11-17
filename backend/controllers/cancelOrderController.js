@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 // backend/controllers/cancelOrderController.js
 const CancelOrder = require('../models/CancelOrder');
 const PurchaseOrder = require('../models/PurchaseOrder');
@@ -16,7 +17,7 @@ exports.getLastCancelNo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching last cancel number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching cancel number',
       error: error.message
@@ -37,7 +38,7 @@ exports.getCancelOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching cancel orders:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching cancel orders',
       error: error.message
@@ -74,7 +75,7 @@ exports.getPurchaseOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase orders:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase orders',
       error: error.message
@@ -121,7 +122,7 @@ exports.getPurchaseOrderByNo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase order',
       error: error.message
@@ -156,7 +157,7 @@ exports.createCancelOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating cancel order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating cancel order',
       error: error.message
@@ -194,7 +195,7 @@ exports.updateCancelOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating cancel order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating cancel order',
       error: error.message
@@ -224,7 +225,7 @@ exports.deleteCancelOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting cancel order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting cancel order',
       error: error.message

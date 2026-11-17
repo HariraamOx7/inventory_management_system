@@ -1,0 +1,1641 @@
+{
+  "scope": "Real HTTP identity, numeric boundaries, malformed collections, all-route permissions, authentication",
+  "results": [
+    {
+      "name": "items exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "items exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "items exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "items exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "items exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "items exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "parties exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "parties exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "parties exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "parties exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "parties exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "parties exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "stores exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "stores exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "stores exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "stores exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "stores exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "stores exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "states exact identity \"00/1\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "states exact identity \"00%2F\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "states exact identity \"A#?+&\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "states exact identity \"0012\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "states exact identity \"12\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "states exact identity \"தமிழ்\" edit/delete",
+      "status": "PASS"
+    },
+    {
+      "name": "/items rejects invalid pagination {\"page\":\"-1\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/suppliers rejects invalid pagination {\"page\":\"-1\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/items rejects invalid pagination {\"limit\":\"-5\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/suppliers rejects invalid pagination {\"limit\":\"-5\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/items rejects invalid pagination {\"page\":\"abc\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/suppliers rejects invalid pagination {\"page\":\"abc\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/items rejects invalid pagination {\"limit\":\"1000000000\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/suppliers rejects invalid pagination {\"limit\":\"1000000000\"}",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/purchase/price-comparison accepts literal percent signs in filters without decoding twice",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/purchase/price-comparison rejects invalid date ranges",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/receipt/item-wise accepts literal percent signs in filters without decoding twice",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/receipt/item-wise rejects invalid date ranges",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/billing/item-wise accepts literal percent signs in filters without decoding twice",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/billing/item-wise rejects invalid date ranges",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/issue/item-wise accepts literal percent signs in filters without decoding twice",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/issue/item-wise rejects invalid date ranges",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects invalid ItemName 5",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects invalid ItemName {}",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects invalid ItemName []",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects invalid ItemName true",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects invalid ItemName \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects invalid ItemName \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "items rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects invalid ItemName 5",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects invalid ItemName {}",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects invalid ItemName []",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects invalid ItemName true",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects invalid ItemName \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects invalid ItemName \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "item-masters rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects invalid AccountName 5",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects invalid AccountName {}",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects invalid AccountName []",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects invalid AccountName true",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects invalid AccountName \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects invalid AccountName \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "suppliers rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects invalid AccountName 5",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects invalid AccountName {}",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects invalid AccountName []",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects invalid AccountName true",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects invalid AccountName \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects invalid AccountName \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "parties rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects invalid StoreName 5",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects invalid StoreName {}",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects invalid StoreName []",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects invalid StoreName true",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects invalid StoreName \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects invalid StoreName \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "stores rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects invalid ProdHeadDesc 5",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects invalid ProdHeadDesc {}",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects invalid ProdHeadDesc []",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects invalid ProdHeadDesc true",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects invalid ProdHeadDesc \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects invalid ProdHeadDesc \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "product-heads rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects invalid sub_group_name 5",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects invalid sub_group_name {}",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects invalid sub_group_name []",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects invalid sub_group_name true",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects invalid sub_group_name \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects invalid sub_group_name \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "sub-heads rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects invalid StateName 5",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects invalid StateName {}",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects invalid StateName []",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects invalid StateName true",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects invalid StateName \"   \"",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects invalid StateName \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects malformed request body []",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects malformed request body null",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects malformed request body \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "states rejects malformed request body 5",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity -1",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity \"abc\"",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity \"Infinity\"",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity null",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity \"\"",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity {}",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects invalid quantity []",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity -1",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity \"abc\"",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity \"Infinity\"",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity null",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity \"\"",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity {}",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects invalid quantity []",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity -1",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity \"abc\"",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity \"Infinity\"",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity null",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity \"\"",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity {}",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects invalid quantity []",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity -1",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity \"abc\"",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity \"Infinity\"",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity null",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity \"\"",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity {}",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects invalid quantity []",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity -1",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity \"abc\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity \"Infinity\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity null",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity \"\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity {}",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects invalid quantity []",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity -1",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity \"abc\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity \"Infinity\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity null",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity \"\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity {}",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects invalid quantity []",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase-orders rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "receipts rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "bill-entries rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-inwards rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-inwards rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-inwards rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-inwards rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-inwards rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-inwards rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "item-issues rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-outs rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects malformed item collection null",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects malformed item collection []",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects malformed item collection {}",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects malformed item collection \"bad\"",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects malformed item collection [null]",
+      "status": "PASS"
+    },
+    {
+      "name": "gate-pass-ins rejects malformed item collection [5]",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /departments",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /departments",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /departments/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /departments/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /departments/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /departments/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /suppliers/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /suppliers/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /suppliers/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /suppliers/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /stores",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /stores",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /stores",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /stores",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /stores",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /stores",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /stores/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /stores/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /stores/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /stores/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /product-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /product-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /product-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /product-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /sub-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /sub-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /sub-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /sub-heads/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /items",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /items",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /items",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /items",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /items",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /items",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /items/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /items/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /items/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /items/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /items/bulk-upload",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /items/bulk-upload",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /uoms",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /uoms",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /uoms/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /uoms/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /uoms/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /uoms/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /item-masters/generate-code",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /item-masters/generate-code",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /item-masters/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /item-masters/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /item-masters/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /item-masters/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /parties",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /parties",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /parties",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /parties",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /parties",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /parties",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /parties/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /parties/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /parties/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /parties/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /states",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /states",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /states",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /states",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /states",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /states",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /states/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /states/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /states/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /states/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /purchase-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /purchase-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /purchase-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /purchase-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /purchase-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /purchase-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /gate-inwards",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /gate-inwards",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /gate-inwards/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /gate-inwards/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /gate-inwards/delete-inward-chain/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /gate-inwards/delete-inward-chain/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /gate-inwards/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /gate-inwards/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /receipts",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /receipts",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /receipts/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /receipts/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /receipts/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /receipts/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /bill-entries",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /bill-entries",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /bill-entries/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /bill-entries/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /bill-entries/delete-chain/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /bill-entries/delete-chain/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /bill-entries/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /bill-entries/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /item-issues",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /item-issues",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /item-issues/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /item-issues/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /item-issues/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /item-issues/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /gate-pass-outs",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /gate-pass-outs",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /gate-pass-outs/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /gate-pass-outs/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /gate-pass-outs/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /gate-pass-outs/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /gate-pass-ins",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /gate-pass-ins",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /gate-pass-ins/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /gate-pass-ins/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /gate-pass-ins/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /gate-pass-ins/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /cancel-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /cancel-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /cancel-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /cancel-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /cancel-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /cancel-orders/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /bill-verify",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /bill-verify",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /bill-verify/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /bill-verify/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /bill-verify/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /bill-verify/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot POST /purchase-types",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot POST /purchase-types",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot PUT /purchase-types/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot PUT /purchase-types/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous cannot DELETE /purchase-types/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot DELETE /purchase-types/1999999999",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP login rejects wrong password, missing account, and inactive account",
+      "status": "PASS"
+    },
+    {
+      "name": "Password change rejects wrong current password and persists a valid new password",
+      "status": "PASS"
+    },
+    {
+      "name": "/items?code=00%2F01%2FEd%2F0001 cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "/suppliers?code=EDGE cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "/departments/1 cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "/sub-heads?code=01 cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "/gate-inwards/43 cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "/receipts/85 cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "/gate-pass-outs/1 cannot delete a record still referenced by transactions",
+      "status": "PASS"
+    },
+    {
+      "name": "Cascade selection cannot leave dangling links /bill-entries/delete-chain/1 {\"bill\":true,\"receipt\":false,\"gateInward\":true}",
+      "status": "PASS"
+    },
+    {
+      "name": "Cascade selection cannot leave dangling links /bill-entries/delete-chain/1 {\"bill\":false,\"receipt\":true}",
+      "status": "PASS"
+    },
+    {
+      "name": "Cascade selection cannot leave dangling links /gate-inwards/delete-inward-chain/43 {\"gateInward\":true}",
+      "status": "PASS"
+    },
+    {
+      "name": "Concurrent receipts cannot duplicate the same purchase order",
+      "status": "PASS"
+    },
+    {
+      "name": "Concurrent bills cannot duplicate the same GRN",
+      "status": "PASS"
+    },
+    {
+      "name": "Optional blank purchase type remains valid when saving a bill",
+      "status": "PASS"
+    },
+    {
+      "name": "/receipts/85 rejects changing party away from its source document",
+      "status": "PASS"
+    },
+    {
+      "name": "/bill-entries/1 rejects changing party away from its source document",
+      "status": "PASS"
+    },
+    {
+      "name": "Bill rejects unrelated product outside its receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "Bill rejects quantity above receipt outside its receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "Removing an inward cannot make stock negative after its goods were issued",
+      "status": "PASS"
+    },
+    {
+      "name": "Editing an unchanged inward after a partial issue preserves remaining stock value",
+      "status": "PASS"
+    }
+  ]
+}

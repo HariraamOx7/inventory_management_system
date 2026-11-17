@@ -1,0 +1,221 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Error creating bill entry: Error: Cannot identify bill item: DOES NOT EXIST
+    at resolveBillItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:72:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:582:23)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:39:7
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:11:9)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:36:5 {
+  statusCode: 400
+}
+PASS Bill rejects unresolved items without leaving a header
+PASS PurchaseOrder failed edit retains header and details
+PASS BillEntry failed edit retains header and details
+PASS BillEntry failed create leaves no partial record
+PASS GatePassOut failed edit retains header and details
+PASS GatePassOut failed create leaves no partial record
+PASS GatePassIn failed edit retains header and details
+PASS GatePassIn failed create leaves no partial record
+PASS Item issue delete restores the exact item code
+PASS Item issue update restores the exact item code
+Error creating gate inward: Error: Received quantity for B exceeds the actual pending quantity (10) or is invalid
+    at invalid (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:154:19)
+    at validateInwardBalances (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:182:71)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:554:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:553:23)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:109:7
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:11:9)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:107:5 {
+PASS Gate inward rejects quantities above actual pending balance
+  statusCode: 400
+}
+Error creating gate inward: Error: Received quantity for B exceeds the actual pending quantity (4) or is invalid
+    at invalid (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:154:19)
+    at validateInwardBalances (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:182:71)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:554:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:553:23)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:117:32
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:11:9)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:112:5 {
+  statusCode: 400
+}
+Error creating gate inward: Error: Item A is not on purchase order 1065
+    at invalid (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:154:19)
+    at validateInwardBalances (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:180:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:554:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:553:23)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:117:32
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:11:9)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:112:5 {
+  statusCode: 400
+}
+PASS Gate inward rejects duplicate-line overflow and items outside the PO
+Error updating gate inward: Error: Received quantity for B exceeds the actual pending quantity (4) or is invalid
+    at invalid (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:154:19)
+    at validateInwardBalances (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:182:71)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:662:9
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.updateGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:644:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:132:7
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:11:9)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:121:5 {
+  statusCode: 400
+}
+PASS Same-PO invoice batches can be edited and exclude their own received quantity
+Error creating gate inward: Error: Received quantity for B exceeds the actual pending quantity (0) or is invalid
+    at invalid (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:154:19)
+    at validateInwardBalances (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:182:71)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:554:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:553:23)
+    at async Promise.all (index 1)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:138:7
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:11:9)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\system-audit.cjs:136:5 {
+  statusCode: 400
+}
+PASS Concurrent gate inwards cannot receive the same pending balance twice
+PASS Purchase order save preserves the submitted summary rounding
+PASS purchaseOrder deletion preserves stock value and transaction consistency
+PASS billChain deletion preserves stock value and transaction consistency
+PASS failedBillChain deletion preserves stock value and transaction consistency
+PASS Deleting either PO in a shared inward cannot delete the other PO goods
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+PASS HTTP login and authenticated profile
+PASS HTTP rejects anonymous and invalid-token business access
+PASS HTTP items edit/delete retains slash, percent, and leading-zero codes
+PASS HTTP item-masters edit/delete retains slash, percent, and leading-zero codes
+PASS HTTP viewer can read but cannot modify business data
+PASS HTTP GET /api/auth/me
+PASS HTTP GET /api/dashboard/stats
+PASS HTTP GET /api/departments
+PASS HTTP GET /api/suppliers
+PASS HTTP GET /api/suppliers/last-code
+PASS HTTP GET /api/stores
+PASS HTTP GET /api/product-heads
+PASS HTTP GET /api/sub-heads/last-code
+PASS HTTP GET /api/sub-heads
+PASS HTTP GET /api/sub-heads/by-department
+PASS HTTP GET /api/items
+PASS HTTP GET /api/uoms
+PASS HTTP GET /api/item-masters/sub-heads-by-dept
+PASS HTTP GET /api/item-masters
+PASS HTTP GET /api/item-masters/departments/all
+PASS HTTP GET /api/item-masters/uoms/all
+PASS HTTP GET /api/parties
+PASS HTTP GET /api/parties/suppliers/all
+PASS HTTP GET /api/parties/supplier-details
+PASS HTTP GET /api/states
+PASS HTTP GET /api/purchase-orders/last-order-no
+PASS HTTP GET /api/purchase-orders/suppliers
+PASS HTTP GET /api/purchase-orders/items
+PASS HTTP GET /api/purchase-orders/supplier-details
+PASS HTTP GET /api/purchase-orders
+PASS HTTP GET /api/gate-inwards/get-parties
+PASS HTTP GET /api/gate-inwards/purchase-orders-by-party
+PASS HTTP GET /api/gate-inwards/items-by-party
+PASS HTTP GET /api/gate-inwards/items-by-order
+PASS HTTP GET /api/gate-inwards/last-inward-no
+PASS HTTP GET /api/gate-inwards/purchase-orders
+PASS HTTP GET /api/gate-inwards/order-items
+PASS HTTP GET /api/gate-inwards/check-duplicate-invoice
+PASS HTTP GET /api/gate-inwards
+PASS HTTP GET /api/receipts/last-grn-no
+PASS HTTP GET /api/receipts/parties
+PASS HTTP GET /api/receipts/available-purchase-orders
+PASS HTTP GET /api/receipts/purchase-order-details
+PASS HTTP GET /api/receipts/available-gate-inwards
+PASS HTTP GET /api/receipts/gate-inward-details
+PASS HTTP GET /api/receipts/gate-inwards-by-party
+PASS HTTP GET /api/receipts/inward-items
+PASS HTTP GET /api/receipts
+PASS HTTP GET /api/bill-entries/last-voucher-no
+PASS HTTP GET /api/bill-entries/available-parties
+PASS HTTP GET /api/bill-entries/available-gate-inwards
+PASS HTTP GET /api/bill-entries/available-grns
+PASS HTTP GET /api/bill-entries/grn-details
+PASS HTTP GET /api/bill-entries/check-duplicate
+PASS HTTP GET /api/bill-entries
+PASS HTTP GET /api/item-issues/last-issue-no
+PASS HTTP GET /api/item-issues/departments
+PASS HTTP GET /api/item-issues/items-by-department
+PASS HTTP GET /api/item-issues/items
+PASS HTTP GET /api/item-issues
+PASS HTTP GET /api/gate-pass-outs/last-gp-no
+PASS HTTP GET /api/gate-pass-outs/parties
+PASS HTTP GET /api/gate-pass-outs/departments
+PASS HTTP GET /api/gate-pass-outs/items
+PASS HTTP GET /api/gate-pass-outs
+PASS HTTP GET /api/gate-pass-ins/last-in-no
+PASS HTTP GET /api/gate-pass-ins/parties
+PASS HTTP GET /api/gate-pass-ins/items
+PASS HTTP GET /api/gate-pass-ins
+PASS HTTP GET /api/cancel-orders/last-cancel-no
+PASS HTTP GET /api/cancel-orders/purchase-orders
+PASS HTTP GET /api/cancel-orders/purchase-order-details
+PASS HTTP GET /api/cancel-orders
+PASS HTTP GET /api/bill-verify/party-names
+PASS HTTP GET /api/bill-verify/bills-by-party
+PASS HTTP GET /api/bill-verify
+PASS HTTP GET /api/reports/purchase/orderno-wise
+PASS HTTP GET /api/reports/purchase/supplier-wise
+PASS HTTP GET /api/reports/purchase/department-wise
+PASS HTTP GET /api/reports/purchase/pending-wise
+PASS HTTP GET /api/reports/purchase/pending-date-wise
+PASS HTTP GET /api/reports/purchase/price-comparison
+PASS HTTP GET /api/reports/purchase/party-pending
+PASS HTTP GET /api/reports/billing/day-book
+PASS HTTP GET /api/reports/billing/purchasetype-wise
+PASS HTTP GET /api/reports/billing/purchasetype-wise-abstract
+PASS HTTP GET /api/reports/billing/purchase-register
+PASS HTTP GET /api/reports/billing/date-wise
+PASS HTTP GET /api/reports/billing/party-wise
+PASS HTTP GET /api/reports/billing/party-wise-abstract
+PASS HTTP GET /api/reports/billing/department-wise
+PASS HTTP GET /api/reports/billing/department-wise-abstract
+PASS HTTP GET /api/reports/billing/subhead-wise
+PASS HTTP GET /api/reports/billing/item-wise
+PASS HTTP GET /api/reports/receipt/date-wise
+PASS HTTP GET /api/reports/receipt/party-wise
+PASS HTTP GET /api/reports/receipt/subhead-wise
+PASS HTTP GET /api/reports/receipt/department-wise
+PASS HTTP GET /api/reports/receipt/item-wise
+PASS HTTP GET /api/reports/receipt/return-pending
+PASS HTTP GET /api/reports/stock/item-wise-report
+PASS HTTP GET /api/reports/stock/item-wise
+PASS HTTP GET /api/reports/stock/item-opening
+PASS HTTP GET /api/reports/stock/department-wise
+PASS HTTP GET /api/reports/stock/department-closing
+PASS HTTP GET /api/reports/stock/department-detail
+PASS HTTP GET /api/reports/stock/subhead-wise
+PASS HTTP GET /api/reports/stock/subhead-detail
+PASS HTTP GET /api/reports/stock/nil-stock
+PASS HTTP GET /api/reports/stock/max-level
+PASS HTTP GET /api/reports/others/gatepass-pending
+PASS HTTP GET /api/reports/others/gatepass-pending-party
+PASS HTTP GET /api/reports/others/gatepass-returnable-nonreturnable
+PASS HTTP GET /api/reports/others/gatepass-returnable-party
+PASS HTTP GET /api/reports/others/gatepass-nonreturnable
+PASS HTTP GET /api/reports/others/gatepass-in
+PASS HTTP GET /api/reports/others/gatepass-in-party
+PASS HTTP GET /api/reports/others/item-location
+PASS HTTP GET /api/reports/issue/date-wise
+PASS HTTP GET /api/reports/issue/item-wise
+PASS HTTP GET /api/reports/issue/subhead-wise
+PASS HTTP GET /api/reports/issue/department-wise
+PASS HTTP GET /api/reports/issue/month-movement-item
+PASS HTTP GET /api/reports/issue/month-movement-dept
+PASS HTTP GET /api/reports/issue/month-movement-subhead
+PASS HTTP GET /api/reports/issue/department-item-wise
+PASS HTTP GET /api/purchase-types
+PASS HTTP GET /api/purchase-types/next-code
+PASS HTTP GET /api/purchase-types/default-formulas
+148 passed; 0 failed. Disposable database removed.

@@ -2,6 +2,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const db = require('../config/db');
 const root = path.resolve(__dirname, '../../../..');
+const reportPath = process.env.AUGUST_REPORT_PATH || path.join(root, 'report2.csv');
+const receiptPath = process.env.AUGUST_RECEIPTS_PATH || path.join(root, 'DATA', 'Receipt', 'receiptdetail.csv');
+const issuePath = process.env.AUGUST_ISSUES_PATH || path.join(root, 'DATA', 'ItemIssue', 'Item_Issue_detail_old_db_desc.csv');
 
 function readCsv(filename) {
   const bytes = fs.readFileSync(filename);
@@ -22,7 +25,7 @@ function readCsv(filename) {
 const num = value => Number(String(value || '').replace(/,/g, '').trim()) || 0;
 const sum = (rows, column) => rows.reduce((total, row) => total + num(row[column]), 0);
 function originalItems() {
-  const rows = readCsv('C:/Users/HARIRAAM/Desktop/report2.csv');
+  const rows = readCsv(reportPath);
   let department = ''; const items = [];
   for (const row of rows) {
     if (String(row[4] || '').trim()) department = row[4].trim();
@@ -40,7 +43,7 @@ async function main() {
   const original = originalItems();
   console.log('original', JSON.stringify({ items: original.length,
     totals: Object.fromEntries(['openingQty','openingValue','receivedQty','receivedValue','issueQty','issueValue','closingQty','closingValue'].map(key => [key, original.reduce((t, r) => t + r[key], 0)])) }));
-  const legacyReceipts = readCsv(path.join(root, 'DATA/Receipt/receiptdetail.csv')).filter(row => row[29]?.startsWith('2026-08-'));
+  const legacyReceipts = readCsv(receiptPath).filter(row => row[29]?.startsWith('2026-08-'));
   const receiptByItem = new Map();
   for (const row of legacyReceipts) {
     const code = row[3]; const item = receiptByItem.get(code) || { qty:0, gross:0, afterDiscount:0, actValue:0 };
@@ -49,7 +52,7 @@ async function main() {
     receiptByItem.set(code, item);
   }
   console.log('legacyReceipts', JSON.stringify({ rows: legacyReceipts.length, qty: sum(legacyReceipts,4), gross:sum(legacyReceipts,24), discount:sum(legacyReceipts,8), net:sum(legacyReceipts,24)-sum(legacyReceipts,8), actValue: legacyReceipts.reduce((t,r)=>t+num(r[4])*num(r[25]),0) }));
-  const issues = readCsv(path.join(root, 'DATA/ItemIssue/Item_Issue_detail_old_db_desc.csv')).filter(row => row[6]?.startsWith('2026-08-'));
+  const issues = readCsv(issuePath).filter(row => row[6]?.startsWith('2026-08-'));
   console.log('legacyIssues', JSON.stringify({ rows:issues.length, qty:sum(issues,4), value:sum(issues,5) }));
   const discrepancies = original.map(item => ({ ...item, legacyReceipt: receiptByItem.get(item.itemCode) })).filter(item => item.legacyReceipt && Math.abs(item.receivedValue-item.legacyReceipt.afterDiscount)>0.011);
   console.log('receiptDifferences', JSON.stringify(discrepancies.map(item=>({ itemCode:item.itemCode,itemName:item.itemName,original:item.receivedValue,legacy:item.legacyReceipt, delta:item.legacyReceipt.afterDiscount-item.receivedValue })).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta)).slice(0,25)));

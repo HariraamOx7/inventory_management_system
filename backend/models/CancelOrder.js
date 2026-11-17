@@ -11,7 +11,7 @@ CancelOrder.init({
     autoIncrement: true
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: false
   },
   PartyName: {

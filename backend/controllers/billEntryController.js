@@ -1,4 +1,8 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
 const { Op } = require('sequelize');
+const sequelize = require('../config/db');
 const {
   BillEntry,
   BillEntryDetail,
@@ -52,15 +56,49 @@ const resolvePartyCode = async (partyCode, partyName) => {
   return null;
 };
 
-const resolveItemCode = async (itemCode, itemName) => {
-  if (itemCode && String(itemCode).trim()) {
-    return String(itemCode).trim();
+const resolveItemCode = async (itemCode, itemName) => require('../services/resolveItemCode')(Item, itemCode, itemName);
+
+// Validate every line before changing a bill; never silently omit products.
+const resolveBillItems = async (items) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    const error = new Error('At least one bill item is required');
+    error.statusCode = 400;
+    throw error;
   }
-  if (itemName && String(itemName).trim()) {
-    const found = await Item.findOne({ where: { ItemName: String(itemName).trim() } });
-    if (found) return found.ItemCode;
+  const resolved = [];
+  for (const item of items) {
+    const code = await resolveItemCode(item?.ItemCode, item?.ItemName);
+    if (!code || !(await Item.findByPk(code))) {
+      const error = new Error(`Cannot identify bill item: ${item?.ItemName || item?.ItemCode || '(unnamed item)'}`);
+      error.statusCode = 400;
+      throw error;
+    }
+    resolved.push({ ...item, ItemCode: code });
   }
-  return null;
+  return resolved;
+};
+
+const validateBillSource = async (items, grnNo, partyCode, transaction) => {
+  const reject = message => { const error = new Error(message); error.statusCode = 400; throw error; };
+  const receipt = await Receipt.findByPk(grnNo, { transaction, lock: transaction.LOCK.UPDATE });
+  if (!receipt || receipt.PartyCode !== partyCode) reject('The bill party must match its receipt');
+  if (!items) return;
+  const source = await ReceiptDetail.findAll({ where: { GRNNo: grnNo }, raw: true, transaction });
+  const balances = new Map();
+  for (const line of source) {
+    const key = `${line.OrderNo || ''}::${line.ItemCode}`;
+    balances.set(key, (balances.get(key) || 0) + Number(line.Qty));
+  }
+  for (const item of items) {
+    const orderNo = cleanOrderNo(item.OrderNo);
+    const matches = source.filter(line => line.ItemCode === item.ItemCode && (!orderNo || String(line.OrderNo) === String(orderNo)));
+    const keys = [...new Set(matches.map(line => `${line.OrderNo || ''}::${line.ItemCode}`))];
+    if (keys.length !== 1) reject(`Item ${item.ItemCode} must identify a line on the selected receipt`);
+    const qty = parseDec(item.Qty ?? item.ReceivedQty);
+    if (qty > balances.get(keys[0]) + 0.000001) reject(`Billed quantity for ${item.ItemCode} cannot exceed the received quantity`);
+    balances.set(keys[0], balances.get(keys[0]) - qty);
+    item.OrderNo = matches[0].OrderNo;
+  }
 };
 
 const resolvePurchaseTypeCode = async (typeInput) => {
@@ -100,15 +138,25 @@ exports.getAvailableParties = async (req, res) => {
       ]
     });
 
-    const parties = [...new Set(receipts.map(r => {
-      const p = r.toJSON();
-      return p.supplier?.AccountName || p.PartyCode;
-    }).filter(Boolean))].sort();
+    const partiesByCode = new Map();
+    for (const receipt of receipts) {
+      const p = receipt.toJSON();
+      if (!p.PartyCode) continue;
+      partiesByCode.set(p.PartyCode, {
+        PartyCode: p.PartyCode,
+        name: p.supplier?.AccountName || p.PartyCode
+      });
+    }
+    const partyRecords = [...partiesByCode.values()].sort((a, b) => a.name.localeCompare(b.name));
+    // Preserve the legacy name list for existing clients.
+    const parties = req.query.includeCodes === 'true'
+      ? partyRecords
+      : [...new Set(partyRecords.map(p => p.name))];
 
     res.json({ success: true, data: parties });
   } catch (error) {
     console.error('Error fetching available parties:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching available parties',
       error: error.message
@@ -174,7 +222,7 @@ exports.getAvailableGateInwards = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching available gate inwards:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate inwards',
       error: error.message
@@ -309,7 +357,7 @@ exports.getAvailableGRNs = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching available GRNs:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching GRNs',
       error: error.message
@@ -431,7 +479,7 @@ exports.getGRNDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching GRN details:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching GRN details',
       error: error.message
@@ -452,7 +500,7 @@ exports.getLastVoucherNo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching last voucher number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching voucher number',
       error: error.message
@@ -463,6 +511,7 @@ exports.getLastVoucherNo = async (req, res) => {
 // Create bill entry
 exports.createBillEntry = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { required: true, quantities: ['Qty', 'ReceivedQty'] });
     const {
       GateInwardNo: rawGateInwardNo, GRNNo, PartyCode, PartyName, AccDate, PartyBillNo, BillDate,
       PurchaseType, BillAmount, TDS, Narration, Total, Discount, GST,
@@ -530,40 +579,51 @@ exports.createBillEntry = async (req, res) => {
       }
     }
 
-    const lastBill = await BillEntry.findOne({ order: [['VoucherNo', 'DESC']] });
-    const nextVoucherNo = lastBill ? lastBill.VoucherNo + 1 : 1;
+    const billItems = await resolveBillItems(items);
 
     const resolvedPurchaseType = await resolvePurchaseTypeCode(PurchaseType);
 
-    const newBill = await BillEntry.create({
-      VoucherNo: nextVoucherNo,
-      GateInwardNo: (resolvedGateInwardNo === '' || resolvedGateInwardNo === null || resolvedGateInwardNo === undefined) ? null : parseInt(resolvedGateInwardNo, 10),
-      GRNNo: parseInt(GRNNo, 10),
-      PartyCode: resolvedPartyCode,
-      AccDate: AccDate || new Date(),
-      PartyBillNo: PartyBillNo ? PartyBillNo.trim() : null,
-      BillDate: BillDate || new Date(),
-      PurchaseType: resolvedPurchaseType || null,
-      BillAmount: parseDec(BillAmount, 0),
-      TDS: parseDec(TDS, 0),
-      Narration: Narration ? Narration.trim() : null,
-      Total: parseDec(Total, 0),
-      Discount: parseDec(Discount, 0),
-      GST: parseDec(GST, 0),
-      IGST: parseDec(IGST, 0),
-      VAT_CST: parseDec(VAT_CST, 0),
-      P_F: parseDec(P_F, 0),
-      LorryFreight: parseDec(LorryFreight, 0),
-      RoundOff: parseDec(RoundOff, 0),
-      TaxRndOff: parseDec(TaxRndOff, 0),
-      GrandTotal: parseDec(GrandTotal, 0),
-      Status: 'Billed'
-    });
+    const newBill = await sequelize.transaction(async transaction => {
+      // Serialize duplicate checks with creation, rather than checking before a race.
+      await Supplier.findByPk(resolvedPartyCode, { transaction, lock: transaction.LOCK.UPDATE });
+      await Receipt.findByPk(GRNNo, { transaction, lock: transaction.LOCK.UPDATE });
+      const duplicate = await BillEntry.findOne({ where: { [Op.or]: [
+        { GRNNo }, ...(PartyBillNo?.trim() ? [{ PartyCode: resolvedPartyCode, PartyBillNo: PartyBillNo.trim() }] : [])
+      ] }, transaction });
+      if (duplicate) {
+        const error = new Error('This GRN or supplier bill number is already billed');
+        error.statusCode = 409;
+        throw error;
+      }
+      await validateBillSource(billItems, GRNNo, resolvedPartyCode, transaction);
+      const createdBill = await BillEntry.create({
+        GateInwardNo: (resolvedGateInwardNo === '' || resolvedGateInwardNo === null || resolvedGateInwardNo === undefined) ? null : parseInt(resolvedGateInwardNo, 10),
+        GRNNo: parseInt(GRNNo, 10),
+        PartyCode: resolvedPartyCode,
+        AccDate: AccDate || new Date(),
+        PartyBillNo: PartyBillNo ? PartyBillNo.trim() : null,
+        BillDate: BillDate || new Date(),
+        PurchaseType: resolvedPurchaseType || null,
+        BillAmount: parseDec(BillAmount, 0),
+        TDS: parseDec(TDS, 0),
+        Narration: Narration ? Narration.trim() : null,
+        Total: parseDec(Total, 0),
+        Discount: parseDec(Discount, 0),
+        GST: parseDec(GST, 0),
+        IGST: parseDec(IGST, 0),
+        VAT_CST: parseDec(VAT_CST, 0),
+        P_F: parseDec(P_F, 0),
+        LorryFreight: parseDec(LorryFreight, 0),
+        RoundOff: parseDec(RoundOff, 0),
+        TaxRndOff: parseDec(TaxRndOff, 0),
+        GrandTotal: parseDec(GrandTotal, 0),
+        Status: 'Billed'
+      }, { transaction });
 
-    const rcptDetails = await ReceiptDetail.findAll({
-      where: { GRNNo },
-      attributes: ['ItemCode', 'OrderNo'],
-      raw: true
+      const rcptDetails = await ReceiptDetail.findAll({
+        where: { GRNNo },
+        attributes: ['ItemCode', 'OrderNo'],
+        raw: true
     });
     const itemOrderMap = {};
     rcptDetails.forEach(rd => {
@@ -571,24 +631,25 @@ exports.createBillEntry = async (req, res) => {
     });
     const defaultOrderNo = rcptDetails[0]?.OrderNo || null;
 
-    const billItems = (items && items.length > 0) ? items : [];
     for (const item of billItems) {
-      const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-      if (!itemCode) continue;
+      const itemCode = item.ItemCode;
 
-      const qty = parseFloat(item.Qty || item.ReceivedQty) || 0;
+      const qty = parseFloat(item.Qty ?? item.ReceivedQty) || 0;
       const unitRate = parseFloat(item.UnitRate) || 0;
       const resolvedOrderNo = item.OrderNo || itemOrderMap[itemCode] || defaultOrderNo;
 
       await BillEntryDetail.create({
-        VoucherNo: newBill.VoucherNo,
+        VoucherNo: createdBill.VoucherNo,
         OrderNo: cleanOrderNo(resolvedOrderNo),
         ItemCode: itemCode,
         Qty: qty,
         UnitRate: unitRate,
-        TotalAmount: item.TotalAmount || (qty * unitRate)
-      });
+        TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
+      }, { transaction });
     }
+
+    return createdBill;
+    });
 
     res.status(201).json({
       success: true,
@@ -597,7 +658,7 @@ exports.createBillEntry = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating bill entry:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating bill entry',
       error: error.message
@@ -608,6 +669,7 @@ exports.createBillEntry = async (req, res) => {
 // Update bill entry
 exports.updateBillEntry = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { quantities: ['Qty', 'ReceivedQty'] });
     const { voucherNo } = req.params;
     const vNo = parseInt(voucherNo, 10);
 
@@ -663,48 +725,61 @@ exports.updateBillEntry = async (req, res) => {
       GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : billEntry.GrandTotal
     };
 
-    await billEntry.update(updateData);
+    const resolvedItems = items === undefined ? null : await resolveBillItems(items);
+    await sequelize.transaction(async transaction => {
+      await Supplier.findByPk(resolvedPartyCode, { transaction, lock: transaction.LOCK.UPDATE });
+      await validateBillSource(resolvedItems, billEntry.GRNNo, resolvedPartyCode, transaction);
+      if (updateData.PartyBillNo) {
+        const duplicate = await BillEntry.findOne({ where: { PartyCode: resolvedPartyCode, PartyBillNo: updateData.PartyBillNo, VoucherNo: { [Op.ne]: vNo } }, transaction });
+        if (duplicate) {
+          const error = new Error('This supplier bill number is already used by another bill');
+          error.statusCode = 409;
+          throw error;
+        }
+      }
+      await billEntry.update(updateData, { transaction });
 
-    if (items && Array.isArray(items) && items.length > 0) {
-      await BillEntryDetail.destroy({ where: { VoucherNo: vNo } });
+      if (resolvedItems) {
+        await BillEntryDetail.destroy({ where: { VoucherNo: vNo }, transaction });
 
-      let itemOrderMap = {};
-      let defaultOrderNo = null;
-      if (billEntry.GRNNo) {
-        try {
-          const rcptDetails = await ReceiptDetail.findAll({
-            where: { GRNNo: billEntry.GRNNo },
-            attributes: ['ItemCode', 'OrderNo'],
-            raw: true
-          });
-          rcptDetails.forEach(rd => {
-            if (rd.ItemCode && rd.OrderNo) itemOrderMap[rd.ItemCode] = rd.OrderNo;
-          });
-          defaultOrderNo = rcptDetails[0]?.OrderNo || null;
-        } catch (err) {
-          console.warn('Could not query receipt details for order mapping:', err.message);
+        let itemOrderMap = {};
+        let defaultOrderNo = null;
+        if (billEntry.GRNNo) {
+          try {
+            const rcptDetails = await ReceiptDetail.findAll({
+              where: { GRNNo: billEntry.GRNNo },
+              attributes: ['ItemCode', 'OrderNo'],
+              raw: true
+            });
+            rcptDetails.forEach(rd => {
+              if (rd.ItemCode && rd.OrderNo) itemOrderMap[rd.ItemCode] = rd.OrderNo;
+            });
+            defaultOrderNo = rcptDetails[0]?.OrderNo || null;
+          } catch (err) {
+            console.warn('Could not query receipt details for order mapping:', err.message);
+          }
+        }
+
+        for (const item of resolvedItems) {
+          const itemCode = item.ItemCode;
+
+          const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
+          const unitRate = parseDec(item.UnitRate, 0);
+          const rawOrderNo = item.OrderNo || itemOrderMap[itemCode] || defaultOrderNo;
+          const resolvedOrderNo = cleanOrderNo(rawOrderNo);
+
+          await BillEntryDetail.create({
+            VoucherNo: vNo,
+            OrderNo: resolvedOrderNo,
+            ItemCode: itemCode,
+            Qty: qty,
+            UnitRate: unitRate,
+            TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
+          }, { transaction });
         }
       }
 
-      for (const item of items) {
-        const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-        if (!itemCode) continue;
-
-        const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
-        const unitRate = parseDec(item.UnitRate, 0);
-        const rawOrderNo = item.OrderNo || itemOrderMap[itemCode] || defaultOrderNo;
-        const resolvedOrderNo = cleanOrderNo(rawOrderNo);
-
-        await BillEntryDetail.create({
-          VoucherNo: vNo,
-          OrderNo: resolvedOrderNo,
-          ItemCode: itemCode,
-          Qty: qty,
-          UnitRate: unitRate,
-          TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
-        });
-      }
-    }
+    });
 
     res.json({
       success: true,
@@ -713,7 +788,7 @@ exports.updateBillEntry = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating bill entry:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating bill entry',
       error: error.message
@@ -734,8 +809,12 @@ exports.deleteBillEntry = async (req, res) => {
       });
     }
 
-    await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo } });
-    await billEntry.destroy();
+        await preventReferencedDeletion('BillEntry', billEntry);
+
+    await sequelize.transaction(async transaction => {
+      await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo }, transaction });
+      await billEntry.destroy({ transaction });
+    });
 
     res.json({
       success: true,
@@ -743,7 +822,7 @@ exports.deleteBillEntry = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting bill entry:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting bill entry',
       error: error.message
@@ -927,7 +1006,7 @@ exports.getBillEntries = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching bill entries:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bill entries',
       error: error.message
@@ -1035,7 +1114,7 @@ exports.getBillEntry = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching bill entry:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bill entry',
       error: error.message
@@ -1088,7 +1167,7 @@ exports.getBillEntriesByParty = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching bill entries by party:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bill entries',
       error: error.message
@@ -1331,7 +1410,7 @@ exports.getPrintData = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching print data:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching print data',
       error: error.message
@@ -1374,7 +1453,7 @@ exports.checkDuplicateBillEntry = async (req, res) => {
     });
   } catch (error) {
     console.error('Error checking duplicate bill:', error);
-    res.status(500).json({ success: false, message: 'Error checking duplicate', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error checking duplicate', error: error.message });
   }
 };
 
@@ -1391,46 +1470,48 @@ exports.deleteBillChain = async (req, res) => {
     }
 
     const deletedLayers = [];
-
-    // Layer 1: Delete BillEntry + Details
-    if (layers.bill) {
-      await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo } });
-      await billEntry.destroy();
-      deletedLayers.push('BillEntry');
-    }
-
-    // Layer 2: Delete Receipt (GRN) + Details
-    if (layers.receipt && billEntry.GRNNo) {
-      await ReceiptDetail.destroy({ where: { GRNNo: billEntry.GRNNo } });
-      await Receipt.destroy({ where: { GRNNo: billEntry.GRNNo } });
-      deletedLayers.push('Receipt');
-    }
-
-    // Layer 3: Delete GateInward + Details
-    if (layers.gateInward && billEntry.GateInwardNo) {
-      await GateInwardDetail.destroy({ where: { InwardNo: billEntry.GateInwardNo } });
-      const gateInward = await GateInward.findByPk(billEntry.GateInwardNo);
-      if (gateInward) {
-        await gateInward.destroy();
+    await sequelize.transaction(async transaction => {
+      // Capture references before removing any layer.
+      const inward = billEntry.GateInwardNo
+        ? await GateInward.findByPk(billEntry.GateInwardNo, { transaction, lock: transaction.LOCK.UPDATE }) : null;
+      const inwardDetails = inward ? await GateInwardDetail.findAll({
+        where: { InwardNo: inward.InwardNo }, raw: true, transaction
+      }) : [];
+      const orderNos = [...new Set([inward?.OrderNo, ...inwardDetails.map(d => d.OrderNo)].filter(Boolean))];
+      if (layers.bill) {
+        await require('../models/BillVerify').destroy({ where: { VoucherNo: voucherNo }, transaction });
+        await BillEntryDetail.destroy({ where: { VoucherNo: voucherNo }, transaction });
+        await billEntry.destroy({ transaction });
+        deletedLayers.push('BillEntry');
+      }
+      if (layers.receipt && billEntry.GRNNo) {
+        const receipt = await Receipt.findByPk(billEntry.GRNNo, { transaction });
+        if (receipt) await preventReferencedDeletion('Receipt', receipt, transaction);
+        await ReceiptDetail.destroy({ where: { GRNNo: billEntry.GRNNo }, transaction });
+        await Receipt.destroy({ where: { GRNNo: billEntry.GRNNo }, transaction });
+        deletedLayers.push('Receipt');
+      }
+      if (layers.gateInward && inward) {
+        await preventReferencedDeletion('GateInward', inward, transaction);
+        const { adjustInwardInventory, recalcPOStatus } = require('./gateInwardController');
+        await adjustInwardInventory(inwardDetails, -1, transaction);
+        await GateInwardDetail.destroy({ where: { InwardNo: inward.InwardNo }, transaction });
+        await inward.destroy({ transaction });
+        for (const orderNo of orderNos) await recalcPOStatus(orderNo, transaction);
         deletedLayers.push('GateInward');
       }
-    }
-
-    // Layer 4: Delete PurchaseOrder + Details (only if not used by any other GateInward)
-    if (layers.purchaseOrder && billEntry.GateInwardNo) {
-      const gi = await GateInward.findByPk(billEntry.GateInwardNo);
-      const orderNo = gi ? gi.OrderNo : null;
-      if (orderNo) {
-        const otherGI = await GateInwardDetail.findOne({
-          where: { OrderNo: orderNo, InwardNo: { [Op.ne]: billEntry.GateInwardNo } }
-        });
-        if (!otherGI) {
-          await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo } });
-          await PurchaseOrder.destroy({ where: { OrderNo: orderNo } });
-          deletedLayers.push('PurchaseOrder');
+      if (layers.purchaseOrder) {
+        for (const orderNo of orderNos) {
+          const otherDetail = await GateInwardDetail.findOne({ where: { OrderNo: orderNo }, transaction });
+          const otherInward = await GateInward.findOne({ where: { OrderNo: orderNo }, transaction });
+          if (!otherDetail && !otherInward) {
+            await PurchaseOrderDetail.destroy({ where: { OrderNo: orderNo }, transaction });
+            await PurchaseOrder.destroy({ where: { OrderNo: orderNo }, transaction });
+            deletedLayers.push('PurchaseOrder');
+          }
         }
       }
-    }
+    });
 
     res.json({
       success: true,
@@ -1439,6 +1520,6 @@ exports.deleteBillChain = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting bill chain:', error);
-    res.status(500).json({ success: false, message: 'Error deleting bill chain', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error deleting bill chain', error: error.message });
   }
 };

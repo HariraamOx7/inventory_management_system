@@ -1,0 +1,76 @@
+{
+  "scope": "Local automated checks; disposable schema writes; source database read only for migration copy; browser checks recorded separately",
+  "completedAt": "2026-10-30T14:56:05.222Z",
+  "results": [
+    {
+      "name": "crud",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 10,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-crud.log"
+    },
+    {
+      "name": "system",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 10.9,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-system.log"
+    },
+    {
+      "name": "receipts",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 3.5,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-receipts.log"
+    },
+    {
+      "name": "item-identities",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 0.2,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-item-identities.log"
+    },
+    {
+      "name": "http-workflows",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 7.4,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-http-workflows.log"
+    },
+    {
+      "name": "rounding",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 0.1,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-rounding.log"
+    },
+    {
+      "name": "edges",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 20.2,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-edges.log"
+    },
+    {
+      "name": "frontend-lint",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 3,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-frontend-lint.log"
+    },
+    {
+      "name": "migration-copy",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 24.3,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-migration-copy.log"
+    },
+    {
+      "name": "frontend-build",
+      "status": "PASS",
+      "exitCode": 0,
+      "elapsedSeconds": 19,
+      "logfile": "D:\\PROJECT\\shop_new_ui\\shop\\Stores\\backend\\scripts\\full-audit-frontend-build.log"
+    }
+  ]
+}

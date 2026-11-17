@@ -8,6 +8,9 @@ const { readCsv, originalItems, num, root } = require('./stock-source-audit.cjs'
 const { getHistoricalDepartmentStock, fields } = require('../services/historicalStock');
 const from = '2026-08-01';
 const to = '2026-08-31';
+const reportPath = process.env.AUGUST_REPORT_PATH || path.join(root, 'report2.csv');
+const receiptPath = process.env.AUGUST_RECEIPTS_PATH || path.join(root, 'DATA', 'Receipt', 'receiptdetail.csv');
+const issuePath = process.env.AUGUST_ISSUES_PATH || path.join(root, 'DATA', 'ItemIssue', 'Item_Issue_detail_old_db_desc.csv');
 const canonicalName = name => String(name || '').trim().replace(/"+/g, '').replace(/\s+/g, ' ').toUpperCase();
 const receiptKey = row => JSON.stringify([String(row.GRNNo), String(row.OrderNo), row.ItemCode, num(row.Qty), Math.round(num(row.UnitRate) * 1e6) / 1e6, Math.round(num(row.TotalAmount) * 100) / 100]);
 const issueKey = row => JSON.stringify([num(row.IssueNo), canonicalName(row.ItemName), num(row.Qty)]);
@@ -39,15 +42,19 @@ async function main() {
   if (!backupPath || !fs.existsSync(backupPath) || fs.statSync(backupPath).size < 1000) throw new Error('A full SQL backup is required.');
   if (!fs.readFileSync(backupPath, 'utf8').includes('-- Dump completed on')) throw new Error('SQL backup is incomplete.');
   const [identity] = await db.query('SELECT DATABASE() AS db, @@port AS port');
-  if (identity[0].db !== 'stores' || Number(identity[0].port) !== 3306) throw new Error('Unexpected target database.');
+  const expectedDatabase = process.env.DB_NAME;
+  const expectedPort = Number(process.env.DB_PORT) || 3306;
+  if (identity[0].db !== expectedDatabase || Number(identity[0].port) !== expectedPort) {
+    throw new Error('Unexpected target database.');
+  }
 
   const original = originalItems();
   if (original.length !== 1075 || new Set(original.map(row => row.itemCode)).size !== 1075) throw new Error('Unexpected original-report item coverage.');
-  const sourceReceipts = readCsv(path.join(root, 'DATA/Receipt/receiptdetail.csv'))
+  const sourceReceipts = readCsv(receiptPath)
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => row[29]?.startsWith('2026-08-'))
     .map(({ row, index }) => ({ GRNNo: num(row[1]), OrderNo: num(row[2]), ItemCode: row[3], Qty: num(row[4]), UnitRate: num(row[5]), TotalAmount: num(row[24]), StockUnitRate: num(row[25]), StockValue: num(row[4]) * num(row[25]), SourceKey: `legacy-receipt:${index + 1}` }));
-  const sourceIssues = readCsv(path.join(root, 'DATA/ItemIssue/Item_Issue_detail_old_db_desc.csv'))
+  const sourceIssues = readCsv(issuePath)
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => row[6]?.startsWith('2026-08-'))
     .map(({ row, index }) => ({ IssueNo: num(row[1]), ItemCode: row[2], Qty: num(row[4]), TotalAmount: num(row[5]), IssueDate: row[6].slice(0, 10), SourceKey: `legacy-issue:${index + 1}` }));
@@ -108,7 +115,25 @@ async function main() {
     }
     if (groups.size !== 291) throw new Error('Some original receipt lines are missing.');
     const issueSourceKeys = new Set(sourceIssues.map(issueKey));
-    if (liveIssues.some(row => !issueSourceKeys.has(issueKey(row)))) throw new Error('Unexpected August issue transaction; preserve it and investigate before replacing.');
+    // Old server rows with no item code or valuation cannot be part of a
+    // historical stock report. Preserve them in quarantine, then restore the
+    // verified legacy issue lines below.
+    const isIncompleteUnvaluedIssue = row =>
+      !row.ItemCode &&
+      (row.UnitRate === null || row.UnitRate === undefined) &&
+      (row.TotalAmount === null || row.TotalAmount === undefined);
+    const unexpectedIssues = liveIssues
+      .filter(row => !issueSourceKeys.has(issueKey(row)) && !isIncompleteUnvaluedIssue(row))
+      .map(row => ({
+        DetailId: row.DetailId,
+        IssueNo: row.IssueNo,
+        ItemCode: row.ItemCode,
+        ItemName: row.ItemName,
+        Qty: row.Qty
+      }));
+    if (unexpectedIssues.length) {
+      throw new Error(`Unexpected August issue transaction; preserve it and investigate before replacing: ${JSON.stringify(unexpectedIssues)}`);
+    }
 
     const duplicateIds = [...groups.values()].flatMap(rows => rows.slice(1).map(row => row.DetailId));
     if (duplicateIds.length !== 534) throw new Error('August duplicate count changed since audit.');
@@ -149,7 +174,7 @@ async function main() {
         replacements: { from, code: row.itemCode, department: row.department, qty: row.openingQty, amount: row.openingValue, adjustment }
       });
     }
-    const sourceHash = crypto.createHash('sha256').update(fs.readFileSync('C:/Users/HARIRAAM/Desktop/report2.csv')).digest('hex');
+    const sourceHash = crypto.createHash('sha256').update(fs.readFileSync(reportPath)).digest('hex');
     await db.query(`INSERT INTO stock_history_batches (SnapshotDate, VerifiedThrough, SourceName, SourceHash, BackupPath, Status)
       VALUES (:from, :to, 'Original August report and legacy receipt/issue exports', :hash, :backup, 'Verified')`, { transaction, replacements: { from, to, hash: sourceHash, backup: backupPath } });
     const report = await getHistoricalDepartmentStock({ from, to, transaction });

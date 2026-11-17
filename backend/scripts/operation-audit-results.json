@@ -1,0 +1,698 @@
+{
+  "database": "stores_rehearsal_audit_1793372126117",
+  "scope": "Model persistence CRUD and mounted write route invalid-input checks. Successful business workflows, HTTP middleware, UI, concurrency and stock invariants are not covered by this runner.",
+  "results": [
+    {
+      "name": "MODEL Department insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL SubHead insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL Item insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL Supplier insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL ItemMaster insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL PartyMaster insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL PurchaseType insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL State insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL StoreMaster insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL ProductHead insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL UOM insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL PurchaseOrder insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL PurchaseOrderDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL GateInward insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL GateInwardDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL Receipt insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL ReceiptDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL BillEntry insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL BillEntryDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL ItemIssue insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL ItemIssueDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL GatePassOut insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL GatePassOutDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL GatePassIn insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL GatePassInDetail insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL CancelOrder insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL BillVerify insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "MODEL User insert/read/update/delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Department create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Department update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS SubHead create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS SubHead update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS UOM create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS UOM update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS State create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS State update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS StoreMaster create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS StoreMaster update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ProductHead create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ProductHead update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Supplier create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Supplier update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PartyMaster create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PartyMaster update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PurchaseType create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PurchaseType update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ItemMaster create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ItemMaster update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Item create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Item update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PurchaseOrder create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PurchaseOrder update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GateInward create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GateInward update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Receipt create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Receipt update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS BillEntry create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS BillEntry update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS BillVerify create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS BillVerify update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ItemIssue create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ItemIssue update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GatePassOut create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GatePassOut update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GatePassIn create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GatePassIn update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS CancelOrder create",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS CancelOrder update persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS CancelOrder delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GatePassIn delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GatePassOut delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ItemIssue delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS BillVerify delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS BillEntry delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Receipt delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS GateInward delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PurchaseOrder delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Item delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ItemMaster delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PurchaseType delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS PartyMaster delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Supplier delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS ProductHead delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS StoreMaster delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS State delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS UOM delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS SubHead delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "BUSINESS Department delete persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "REGRESSION receipt and bill dropdowns distinguish suppliers with identical names",
+      "status": "PASS"
+    },
+    {
+      "name": "REGRESSION item updates preserve exact string codes and stock",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/auth/login rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/auth/change-password rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/auth/register rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/departments/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/departments/:dept_id rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/departments/:dept_id rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/suppliers/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/suppliers/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/suppliers/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/suppliers/:partyCode rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/suppliers/:partyCode rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/stores/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/stores/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/stores/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/stores/:id rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/stores/:id rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/product-heads/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/product-heads/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/product-heads/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/product-heads/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/product-heads/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/sub-heads/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/sub-heads/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/sub-heads/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/sub-heads/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/sub-heads/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/items/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/items/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/items/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/items/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/items/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/items/bulk-upload rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/uoms/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/uoms/:id rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/uoms/:id rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/item-masters/generate-code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/item-masters/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/item-masters/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/item-masters/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/item-masters/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/item-masters/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/parties/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/parties/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/parties/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/parties/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/parties/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/states/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/states/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/states/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/states/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/states/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/purchase-orders/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/purchase-orders/:orderNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/purchase-orders/:orderNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/gate-inwards/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/gate-inwards/:inwardNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/gate-inwards/delete-inward-chain/:inwardNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/gate-inwards/:inwardNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/receipts/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/receipts/:grnNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/receipts/:grnNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/bill-entries/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/bill-entries/:voucherNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/bill-entries/delete-chain/:voucherNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/bill-entries/:voucherNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/item-issues/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/item-issues/:issueNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/item-issues/:issueNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/gate-pass-outs/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/gate-pass-outs/:gpNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/gate-pass-outs/:gpNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/gate-pass-ins/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/gate-pass-ins/:inNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/gate-pass-ins/:inNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/cancel-orders/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/cancel-orders/:cancelNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/cancel-orders/:cancelNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/bill-verify/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/bill-verify/:verifyNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/bill-verify/:verifyNo rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE POST /api/purchase-types/ rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE PUT /api/purchase-types/:code rejects invalid/missing record",
+      "status": "PASS"
+    },
+    {
+      "name": "ROUTE DELETE /api/purchase-types/:code rejects invalid/missing record",
+      "status": "PASS"
+    }
+  ]
+}

@@ -80,7 +80,13 @@ const authorize = (...roles) => {
   };
 };
 
+const businessWriteAccess = (req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  return authorize('admin', 'manager', 'operator')(req, res, next);
+};
+
 module.exports = {
   auth,
-  authorize
+  authorize,
+  businessWriteAccess
 };

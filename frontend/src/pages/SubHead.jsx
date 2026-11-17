@@ -5,7 +5,7 @@ import {
   Plus, Edit2, Trash2, Save, X, Layers, AlertCircle, Search, ArrowUpDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
@@ -14,7 +14,7 @@ import CustomSelect from '../components/CustomSelect';
 const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 export default function SubHead() {
-  const navigate = useNavigate();
+
   const [subHeads, setSubHeads] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -137,7 +137,7 @@ export default function SubHead() {
   const handleUpdate = async (code) => {
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/sub-heads/${code}`, {
+      await axios.put(`${API_URL}/sub-heads?code=${encodeURIComponent(code)}`, {
         sub_group_name: editData.sub_group_name.trim(),
         department_id: editData.department_id
       });
@@ -154,7 +154,7 @@ export default function SubHead() {
     if (!window.confirm('Are you sure you want to delete this sub head?')) return;
     try {
       setLoading(true);
-      await axios.delete(`${API_URL}/sub-heads/${code}`);
+      await axios.delete(`${API_URL}/sub-heads?code=${encodeURIComponent(code)}`);
       fetchSubHeads();
       getLastCode();
     } catch (error) {

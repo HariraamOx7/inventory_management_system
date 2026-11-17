@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 // backend/controllers/billVerifyController.js
 const { Op } = require('sequelize');
 const BillVerify = require('../models/BillVerify');
@@ -36,7 +37,7 @@ exports.getBillVerifyRecords = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching bill verify records:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bill verify records',
       error: error.message
@@ -71,7 +72,7 @@ exports.getPartyNames = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching party names:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching party names',
       error: error.message
@@ -129,7 +130,7 @@ exports.getBillsByParty = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching bills by party:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bills',
       error: error.message
@@ -169,7 +170,7 @@ exports.createBillVerify = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating bill verify record:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating bill verify record',
       error: error.message
@@ -204,7 +205,7 @@ exports.updateBillVerify = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating bill verify record:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating bill verify record',
       error: error.message
@@ -234,7 +235,7 @@ exports.deleteBillVerify = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting bill verify record:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting bill verify record',
       error: error.message

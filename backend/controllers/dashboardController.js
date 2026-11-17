@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 // backend/controllers/dashboardController.js
 const { 
   PurchaseOrder, 
@@ -315,7 +316,7 @@ exports.getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching real dashboard stats:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Failed to fetch dashboard statistics',
       error: error.message

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
     Plus, Edit2, Trash2, Save, X, Truck, AlertCircle, ArrowLeft,
     Search, Filter, RotateCcw, ChevronLeft, ChevronRight,
     ChevronsLeft, ChevronsRight, SlidersHorizontal
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import CustomSelect from '../components/CustomSelect';
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
@@ -36,7 +36,7 @@ const initialFormState = {
 };
 
 export default function Supplier() {
-    const navigate = useNavigate();
+
     const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -46,7 +46,6 @@ export default function Supplier() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [formData, setFormData] = useState(initialFormState);
     const [editFormData, setEditFormData] = useState(initialFormState);
-    const [nextCode, setNextCode] = useState('');
 
     // Search, Filter & Pagination states
     const [search, setSearch] = useState('');
@@ -71,7 +70,7 @@ export default function Supplier() {
         };
     }, [editDrawerOpen]);
 
-    const fetchSuppliers = async () => {
+    const fetchSuppliers = useCallback(async () => {
         try {
             setLoading(true);
             const params = {
@@ -95,7 +94,7 @@ export default function Supplier() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, itemsPerPage, search, departmentFilter, placeFilter, gstFilter]);
 
     const fetchFilterMetadata = async () => {
         try {
@@ -111,51 +110,26 @@ export default function Supplier() {
         }
     };
 
-    const getLastCode = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/suppliers/last-code`);
-            if (response.data.success) {
-                const nextNum = (parseInt(response.data.data.lastCode || 0) + 1).toString();
-                setNextCode(nextNum);
-            }
-        } catch (error) {
-            console.error('Error fetching last code:', error);
-        }
-    };
-
     useEffect(() => {
         fetchFilterMetadata();
-        getLastCode();
     }, []);
 
     useEffect(() => {
         fetchSuppliers();
-    }, [currentPage, itemsPerPage, search, departmentFilter, placeFilter, gstFilter]);
+    }, [fetchSuppliers]);
 
     const handleSearchChange = (e) => {
         setSearch(e.target.value);
         setCurrentPage(1);
     };
 
-    const handleDepartmentChange = (e) => {
-        setDepartmentFilter(e.target.value);
-        setCurrentPage(1);
-    };
 
-    const handlePlaceChange = (e) => {
-        setPlaceFilter(e.target.value);
-        setCurrentPage(1);
-    };
 
-    const handleGstChange = (e) => {
-        setGstFilter(e.target.value);
-        setCurrentPage(1);
-    };
 
-    const handleLimitChange = (e) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1);
-    };
+
+
+
+
 
     const handleResetFilters = () => {
         setSearch('');
@@ -174,16 +148,15 @@ export default function Supplier() {
             setShowAddForm(false);
             fetchSuppliers();
             fetchFilterMetadata();
-            getLastCode();
-        } catch (error) {
-            setError('Error adding supplier: ' + error.message);
+            } catch (error) {
+            setError('Error adding supplier: ' + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
     };
 
     const handleEdit = (supplier) => {
-        setEditingId(supplier.AccCode);
+        setEditingId(supplier.PartyCode);
         setEditFormData({
             ...supplier,
             OpeningCredit: parseFloat(supplier.OpeningCredit) > 0 ? supplier.OpeningCredit : '',
@@ -206,12 +179,12 @@ export default function Supplier() {
     const handleUpdate = async (accCode) => {
         try {
             setLoading(true);
-            await axios.put(`${API_URL}/suppliers/${accCode}`, editFormData);
+            await axios.put(`${API_URL}/suppliers?code=${encodeURIComponent(accCode)}`, editFormData);
             handleCloseEditDrawer();
             fetchSuppliers();
             fetchFilterMetadata();
         } catch (error) {
-            setError('Error updating supplier: ' + error.message);
+            setError('Error updating supplier: ' + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -222,12 +195,11 @@ export default function Supplier() {
 
         try {
             setLoading(true);
-            await axios.delete(`${API_URL}/suppliers/${accCode}`);
+            await axios.delete(`${API_URL}/suppliers?code=${encodeURIComponent(accCode)}`);
             fetchSuppliers();
             fetchFilterMetadata();
-            getLastCode();
-        } catch (error) {
-            setError('Error deleting supplier: ' + error.message);
+            } catch (error) {
+            setError('Error deleting supplier: ' + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -706,7 +678,7 @@ export default function Supplier() {
                     <div className="divide-y divide-slate-100">
                         {suppliers.map((supplier) => (
                             <div
-                                key={supplier.AccCode}
+                                key={supplier.PartyCode}
                                 className="p-6 hover:bg-slate-50 transition-colors duration-200"
                             >
                                 <div className="flex items-start justify-between gap-4 mb-4">
@@ -717,7 +689,7 @@ export default function Supplier() {
                                                     {supplier.AccountName || 'N/A'}
                                                 </h3>
                                                 <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                                    Code: {supplier.AccCode}
+                                                    Code: {supplier.PartyCode}
                                                 </span>
                                                 {supplier.Department && (
                                                     <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-medium rounded-md">
@@ -766,7 +738,7 @@ export default function Supplier() {
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(supplier.AccCode)}
+                                            onClick={() => handleDelete(supplier.PartyCode)}
                                             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/30 flex items-center gap-2 font-medium"
                                         >
                                             <Trash2 className="w-4 h-4" />

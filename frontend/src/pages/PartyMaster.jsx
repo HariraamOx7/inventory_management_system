@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, Trash2, Save, X, Users, AlertCircle, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 
@@ -29,7 +29,7 @@ const initialFormState = {
 };
 
 export default function PartyMaster() {
-    const navigate = useNavigate();
+
     const [parties, setParties] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -195,7 +195,7 @@ export default function PartyMaster() {
     const handleUpdate = async (code) => {
         try {
             setLoading(true);
-            await axios.put(`${API_URL}/parties/${code}`, editFormData);
+            await axios.put(`${API_URL}/parties?code=${encodeURIComponent(code)}`, editFormData);
             setEditingCode(null);
             fetchParties();
         } catch (error) {
@@ -210,7 +210,7 @@ export default function PartyMaster() {
 
         try {
             setLoading(true);
-            await axios.delete(`${API_URL}/parties/${code}`);
+            await axios.delete(`${API_URL}/parties?code=${encodeURIComponent(code)}`);
             fetchParties();
         } catch (error) {
             setError('Error deleting party: ' + error.message);
@@ -272,7 +272,7 @@ export default function PartyMaster() {
                     >
                         <option value="">Select Account Name</option>
                         {suppliers.map((supplier) => (
-                            <option key={supplier.AccCode} value={supplier.AccountName}>
+                            <option key={supplier.PartyCode} value={supplier.AccountName}>
                                 {supplier.AccountName}
                             </option>
                         ))}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Search, CheckSquare, Square, MinusSquare, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -21,35 +21,40 @@ const EntityFilterPanel = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
-  const fetchEntities = async () => {
+  const fetchEntities = useCallback(async (signal) => {
     if (!filterType || !reportKey) return;
     try {
       setLoading(true);
       setError('');
       const res = await axios.get(`${API_URL}/reports/filters/${filterType}`, {
-        params: { fromDate, toDate, reportKey }
+        params: { fromDate, toDate, reportKey }, signal
       });
       if (res.data?.success) {
         const list = res.data.data || [];
         setEntities(list);
         // By default, select all available entities
         const allIds = list.map(e => e.id);
-        onChange(allIds, true);
+        onChangeRef.current(allIds, true);
       } else {
         setError(res.data?.message || 'Failed to load filter options');
       }
     } catch (err) {
+      if (axios.isCancel(err)) return;
       console.error(`Error loading filter options for ${filterType}:`, err);
       setError(err.response?.data?.message || 'Error loading options from server');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  };
+  }, [filterType, reportKey, fromDate, toDate]);
 
   useEffect(() => {
-    fetchEntities();
-  }, [filterType, reportKey, fromDate, toDate]);
+    const controller = new AbortController();
+    fetchEntities(controller.signal);
+    return () => controller.abort();
+  }, [fetchEntities]);
 
   // Filtered entities based on search input
   const filteredEntities = useMemo(() => {
@@ -123,7 +128,7 @@ const EntityFilterPanel = ({
           </div>
           <button
             type="button"
-            onClick={fetchEntities}
+            onClick={() => fetchEntities()}
             className="flex items-center gap-1 font-semibold text-rose-800 hover:underline cursor-pointer"
           >
             <RefreshCw size={12} /> Retry

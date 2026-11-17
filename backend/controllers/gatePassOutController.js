@@ -1,3 +1,7 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
+const sequelize = require('../config/db');
 // backend/controllers/gatePassOutController.js
 const GatePassOut = require('../models/GatePassOut');
 const GatePassOutDetail = require('../models/GatePassOutDetail');
@@ -11,14 +15,14 @@ exports.getLastGpNo = async (req, res) => {
     const lastGp = await GatePassOut.findOne({
       order: [['GpNo', 'DESC']]
     });
-    
+
     res.json({
       success: true,
       data: { lastGpNo: lastGp ? lastGp.GpNo : 0 }
     });
   } catch (error) {
     console.error('Error fetching last GP number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching GP number',
       error: error.message
@@ -33,17 +37,17 @@ exports.getParties = async (req, res) => {
       attributes: ['AccountName', 'Address'],
       order: [['AccountName', 'ASC']]
     });
-    
+
     res.json({
       success: true,
-      data: suppliers.map(s => ({ 
-        name: s.AccountName, 
-        address: s.Address 
+      data: suppliers.map(s => ({
+        name: s.AccountName,
+        address: s.Address
       }))
     });
   } catch (error) {
     console.error('Error fetching parties:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching parties',
       error: error.message
@@ -58,14 +62,14 @@ exports.getDepartments = async (req, res) => {
       attributes: ['dept_id', 'dept_name'],
       order: [['dept_name', 'ASC']]
     });
-    
+
     res.json({
       success: true,
       data: departments.map(d => ({ id: d.dept_id, name: d.dept_name }))
     });
   } catch (error) {
     console.error('Error fetching departments:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching departments',
       error: error.message
@@ -80,7 +84,7 @@ exports.getItems = async (req, res) => {
       attributes: ['ItemCode', 'ItemName'],
       order: [['ItemName', 'ASC']]
     });
-    
+
     res.json({
       success: true,
       data: items.map(item => ({
@@ -90,7 +94,7 @@ exports.getItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching items',
       error: error.message
@@ -110,14 +114,14 @@ exports.getGatePassOuts = async (req, res) => {
       ],
       order: [['GpNo', 'DESC']]
     });
-    
+
     res.json({
       success: true,
       data: gatePassOuts
     });
   } catch (error) {
     console.error('Error fetching gate pass outs:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate pass outs',
       error: error.message
@@ -128,12 +132,13 @@ exports.getGatePassOuts = async (req, res) => {
 // Create gate pass out with details
 exports.createGatePassOut = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { required: true, requireName: true });
     const {
       PartyName, Address, Department, GpDate, DespatchThrough,
       Returnable, Remarks, GpRefNo, items
     } = req.body;
 
-    if (!PartyName || !items || items.length === 0) {
+    if (!PartyName || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Party name and items are required'
@@ -141,26 +146,30 @@ exports.createGatePassOut = async (req, res) => {
     }
 
     // Create gate pass out
-    const newGatePassOut = await GatePassOut.create({
-      PartyName: PartyName.trim(),
-      Address: Address ? Address.trim() : null,
-      Department: Department ? Department.trim() : null,
-      GpDate: GpDate || new Date(),
-      DespatchThrough: DespatchThrough ? DespatchThrough.trim() : null,
-      Returnable: Returnable || 'No',
-      Remarks: Remarks ? Remarks.trim() : null,
-      GpRefNo: GpRefNo ? GpRefNo.trim() : null
-    });
+    const newGatePassOut = await sequelize.transaction(async transaction => {
+      const created = await GatePassOut.create({
+        PartyName: PartyName.trim(),
+        Address: Address ? Address.trim() : null,
+        Department: Department ? Department.trim() : null,
+        GpDate: GpDate || new Date(),
+        DespatchThrough: DespatchThrough ? DespatchThrough.trim() : null,
+        Returnable: Returnable || 'No',
+        Remarks: Remarks ? Remarks.trim() : null,
+        GpRefNo: GpRefNo ? GpRefNo.trim() : null
+      }, { transaction });
 
-    // Create gate pass out details
-    for (const item of items) {
-      await GatePassOutDetail.create({
-        GpNo: newGatePassOut.GpNo,
-        ItemName: item.ItemName,
-        Qty: item.Qty || 0,
-        Reason: item.Reason || null
-      });
-    }
+      // Create gate pass out details
+      for (const item of items) {
+        await GatePassOutDetail.create({
+          GpNo: created.GpNo,
+          ItemName: item.ItemName,
+          Qty: item.Qty || 0,
+          Reason: item.Reason || null
+        }, { transaction });
+      }
+
+      return created;
+    });
 
     res.status(201).json({
       success: true,
@@ -169,7 +178,7 @@ exports.createGatePassOut = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating gate pass out:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating gate pass out',
       error: error.message
@@ -180,6 +189,7 @@ exports.createGatePassOut = async (req, res) => {
 // Update gate pass out
 exports.updateGatePassOut = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { requireName: true });
     const { gpNo } = req.params;
     const {
       PartyName, Address, Department, GpDate, DespatchThrough,
@@ -194,30 +204,36 @@ exports.updateGatePassOut = async (req, res) => {
       });
     }
 
-    await gatePassOut.update({
-      PartyName: PartyName ? PartyName.trim() : gatePassOut.PartyName,
-      Address: Address ? Address.trim() : gatePassOut.Address,
-      Department: Department ? Department.trim() : gatePassOut.Department,
-      GpDate: GpDate || gatePassOut.GpDate,
-      DespatchThrough: DespatchThrough ? DespatchThrough.trim() : gatePassOut.DespatchThrough,
-      Returnable: Returnable || gatePassOut.Returnable,
-      Remarks: Remarks ? Remarks.trim() : gatePassOut.Remarks,
-      GpRefNo: GpRefNo ? GpRefNo.trim() : gatePassOut.GpRefNo
-    });
-
-    // Update details if provided
-    if (items && items.length > 0) {
-      await GatePassOutDetail.destroy({ where: { GpNo: gpNo } });
-      
-      for (const item of items) {
-        await GatePassOutDetail.create({
-          GpNo: gpNo,
-          ItemName: item.ItemName,
-          Qty: item.Qty || 0,
-          Reason: item.Reason || null
-        });
-      }
+    if (items !== undefined && (!Array.isArray(items) || items.length === 0)) {
+      return res.status(400).json({ success: false, message: 'Gate pass items cannot be empty' });
     }
+    await sequelize.transaction(async transaction => {
+      await gatePassOut.update({
+        PartyName: PartyName ? PartyName.trim() : gatePassOut.PartyName,
+        Address: Address ? Address.trim() : gatePassOut.Address,
+        Department: Department ? Department.trim() : gatePassOut.Department,
+        GpDate: GpDate || gatePassOut.GpDate,
+        DespatchThrough: DespatchThrough ? DespatchThrough.trim() : gatePassOut.DespatchThrough,
+        Returnable: Returnable || gatePassOut.Returnable,
+        Remarks: Remarks ? Remarks.trim() : gatePassOut.Remarks,
+        GpRefNo: GpRefNo ? GpRefNo.trim() : gatePassOut.GpRefNo
+      }, { transaction });
+
+      // Update details if provided
+      if (items && items.length > 0) {
+        await GatePassOutDetail.destroy({ where: { GpNo: gpNo }, transaction });
+
+        for (const item of items) {
+          await GatePassOutDetail.create({
+            GpNo: gpNo,
+            ItemName: item.ItemName,
+            Qty: item.Qty || 0,
+            Reason: item.Reason || null
+          }, { transaction });
+        }
+      }
+
+    });
 
     res.json({
       success: true,
@@ -226,7 +242,7 @@ exports.updateGatePassOut = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating gate pass out:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating gate pass out',
       error: error.message
@@ -238,7 +254,7 @@ exports.updateGatePassOut = async (req, res) => {
 exports.deleteGatePassOut = async (req, res) => {
   try {
     const { gpNo } = req.params;
-    
+
     const gatePassOut = await GatePassOut.findByPk(gpNo);
     if (!gatePassOut) {
       return res.status(404).json({
@@ -247,11 +263,15 @@ exports.deleteGatePassOut = async (req, res) => {
       });
     }
 
-    // Delete details first
-    await GatePassOutDetail.destroy({ where: { GpNo: gpNo } });
+        await preventReferencedDeletion('GatePassOut', gatePassOut);
 
-    // Then delete gate pass out
-    await gatePassOut.destroy();
+    await sequelize.transaction(async transaction => {
+      // Delete details first
+      await GatePassOutDetail.destroy({ where: { GpNo: gpNo }, transaction });
+
+      // Then delete gate pass out
+      await gatePassOut.destroy({ transaction });
+    });
 
     res.json({
       success: true,
@@ -259,7 +279,7 @@ exports.deleteGatePassOut = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting gate pass out:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting gate pass out',
       error: error.message

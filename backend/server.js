@@ -20,7 +20,8 @@ const {
 } = require('./models/index');
 
 // Import Middlewares
-const { auth } = require('./middleware/auth');
+const { auth, businessWriteAccess } = require('./middleware/auth');
+const validateBusinessInput = require('./middleware/validateBusinessInput');
 const { apiLimiter, heavyOpsLimiter } = require('./middleware/rateLimiter');
 
 // Import Routes
@@ -85,28 +86,28 @@ app.use('/api/', apiLimiter);
 app.use('/api/auth', authRoutes);
 
 // ── Protected Business API Routes (Requires valid JWT Token) ──
-app.use('/api/dashboard', auth, dashboardRoutes);
-app.use('/api/departments', auth, departmentRoutes);
-app.use('/api/suppliers', auth, supplierRoutes);
-app.use('/api/stores', auth, storeRoutes);
-app.use('/api/product-heads', auth, prodHeadRoutes);
-app.use('/api/sub-heads', auth, subHeadRoutes);
-app.use('/api/items', auth, itemRoutes);
-app.use('/api/uoms', auth, uomRoutes);
-app.use('/api/item-masters', auth, itemMasterRoutes);
-app.use('/api/parties', auth, partyMasterRoutes);
-app.use('/api/states', auth, stateRoutes);
-app.use('/api/purchase-orders', auth, purchaseOrderRoutes);
-app.use('/api/gate-inwards', auth, gateInwardRoutes);
-app.use('/api/receipts', auth, receiptRoutes);
-app.use('/api/bill-entries', auth, billEntryRoutes);
-app.use('/api/item-issues', auth, itemIssueRoutes);
-app.use('/api/gate-pass-outs', auth, gatePassOutRoutes);
-app.use('/api/gate-pass-ins', auth, gatePassInRoutes);
-app.use('/api/cancel-orders', auth, cancelOrderRoutes);
-app.use('/api/bill-verify', auth, billVerifyRoutes);
-app.use('/api/reports', auth, heavyOpsLimiter, reportRoutes);
-app.use('/api/purchase-types', auth, purchaseTypeRoutes);
+app.use('/api/dashboard', auth, businessWriteAccess, validateBusinessInput, dashboardRoutes);
+app.use('/api/departments', auth, businessWriteAccess, validateBusinessInput, departmentRoutes);
+app.use('/api/suppliers', auth, businessWriteAccess, validateBusinessInput, supplierRoutes);
+app.use('/api/stores', auth, businessWriteAccess, validateBusinessInput, storeRoutes);
+app.use('/api/product-heads', auth, businessWriteAccess, validateBusinessInput, prodHeadRoutes);
+app.use('/api/sub-heads', auth, businessWriteAccess, validateBusinessInput, subHeadRoutes);
+app.use('/api/items', auth, businessWriteAccess, validateBusinessInput, itemRoutes);
+app.use('/api/uoms', auth, businessWriteAccess, validateBusinessInput, uomRoutes);
+app.use('/api/item-masters', auth, businessWriteAccess, validateBusinessInput, itemMasterRoutes);
+app.use('/api/parties', auth, businessWriteAccess, validateBusinessInput, partyMasterRoutes);
+app.use('/api/states', auth, businessWriteAccess, validateBusinessInput, stateRoutes);
+app.use('/api/purchase-orders', auth, businessWriteAccess, validateBusinessInput, purchaseOrderRoutes);
+app.use('/api/gate-inwards', auth, businessWriteAccess, validateBusinessInput, gateInwardRoutes);
+app.use('/api/receipts', auth, businessWriteAccess, validateBusinessInput, receiptRoutes);
+app.use('/api/bill-entries', auth, businessWriteAccess, validateBusinessInput, billEntryRoutes);
+app.use('/api/item-issues', auth, businessWriteAccess, validateBusinessInput, itemIssueRoutes);
+app.use('/api/gate-pass-outs', auth, businessWriteAccess, validateBusinessInput, gatePassOutRoutes);
+app.use('/api/gate-pass-ins', auth, businessWriteAccess, validateBusinessInput, gatePassInRoutes);
+app.use('/api/cancel-orders', auth, businessWriteAccess, validateBusinessInput, cancelOrderRoutes);
+app.use('/api/bill-verify', auth, businessWriteAccess, validateBusinessInput, billVerifyRoutes);
+app.use('/api/reports', auth, businessWriteAccess, validateBusinessInput, heavyOpsLimiter, reportRoutes);
+app.use('/api/purchase-types', auth, businessWriteAccess, validateBusinessInput, purchaseTypeRoutes);
 
 // 5. Global Error Handler (Sanitized in production)
 app.use((err, req, res, next) => {

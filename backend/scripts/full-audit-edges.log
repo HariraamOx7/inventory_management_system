@@ -1,0 +1,2393 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+PASS items exact identity "00/1" edit/delete
+PASS items exact identity "00%2F" edit/delete
+PASS items exact identity "A#?+&" edit/delete
+PASS items exact identity "0012" edit/delete
+PASS items exact identity "12" edit/delete
+PASS items exact identity "தமிழ்" edit/delete
+PASS item-masters exact identity "00/1" edit/delete
+PASS item-masters exact identity "00%2F" edit/delete
+PASS item-masters exact identity "A#?+&" edit/delete
+PASS item-masters exact identity "0012" edit/delete
+PASS item-masters exact identity "12" edit/delete
+PASS item-masters exact identity "தமிழ்" edit/delete
+PASS suppliers exact identity "00/1" edit/delete
+PASS suppliers exact identity "00%2F" edit/delete
+PASS suppliers exact identity "A#?+&" edit/delete
+PASS suppliers exact identity "0012" edit/delete
+PASS suppliers exact identity "12" edit/delete
+PASS suppliers exact identity "தமிழ்" edit/delete
+PASS parties exact identity "00/1" edit/delete
+PASS parties exact identity "00%2F" edit/delete
+PASS parties exact identity "A#?+&" edit/delete
+PASS parties exact identity "0012" edit/delete
+PASS parties exact identity "12" edit/delete
+PASS parties exact identity "தமிழ்" edit/delete
+PASS stores exact identity "00/1" edit/delete
+PASS stores exact identity "00%2F" edit/delete
+PASS stores exact identity "A#?+&" edit/delete
+PASS stores exact identity "0012" edit/delete
+PASS stores exact identity "12" edit/delete
+PASS stores exact identity "தமிழ்" edit/delete
+PASS product-heads exact identity "00/1" edit/delete
+PASS product-heads exact identity "00%2F" edit/delete
+PASS product-heads exact identity "A#?+&" edit/delete
+PASS product-heads exact identity "0012" edit/delete
+PASS product-heads exact identity "12" edit/delete
+PASS product-heads exact identity "தமிழ்" edit/delete
+PASS sub-heads exact identity "00/1" edit/delete
+PASS sub-heads exact identity "00%2F" edit/delete
+PASS sub-heads exact identity "A#?+&" edit/delete
+PASS sub-heads exact identity "0012" edit/delete
+PASS sub-heads exact identity "12" edit/delete
+PASS sub-heads exact identity "தமிழ்" edit/delete
+PASS states exact identity "00/1" edit/delete
+PASS states exact identity "00%2F" edit/delete
+PASS states exact identity "A#?+&" edit/delete
+PASS states exact identity "0012" edit/delete
+PASS states exact identity "12" edit/delete
+PASS states exact identity "தமிழ்" edit/delete
+PASS /items rejects invalid pagination {"page":"-1"}
+PASS /suppliers rejects invalid pagination {"page":"-1"}
+PASS /items rejects invalid pagination {"limit":"-5"}
+PASS /suppliers rejects invalid pagination {"limit":"-5"}
+PASS /items rejects invalid pagination {"page":"abc"}
+PASS /suppliers rejects invalid pagination {"page":"abc"}
+PASS /items rejects invalid pagination {"limit":"1000000000"}
+PASS /suppliers rejects invalid pagination {"limit":"1000000000"}
+PASS /reports/purchase/price-comparison accepts literal percent signs in filters without decoding twice
+PASS /reports/purchase/price-comparison rejects invalid date ranges
+PASS /reports/receipt/item-wise accepts literal percent signs in filters without decoding twice
+PASS /reports/receipt/item-wise rejects invalid date ranges
+PASS /reports/billing/item-wise accepts literal percent signs in filters without decoding twice
+PASS /reports/billing/item-wise rejects invalid date ranges
+PASS /reports/issue/item-wise accepts literal percent signs in filters without decoding twice
+PASS /reports/issue/item-wise rejects invalid date ranges
+PASS items rejects invalid ItemName 5
+PASS items rejects invalid ItemName {}
+PASS items rejects invalid ItemName []
+PASS items rejects invalid ItemName true
+PASS items rejects invalid ItemName "   "
+PASS items rejects invalid ItemName "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS items rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS items rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS items rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS items rejects malformed request body 5
+PASS item-masters rejects invalid ItemName 5
+PASS item-masters rejects invalid ItemName {}
+PASS item-masters rejects invalid ItemName []
+PASS item-masters rejects invalid ItemName true
+PASS item-masters rejects invalid ItemName "   "
+PASS item-masters rejects invalid ItemName "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS item-masters rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS item-masters rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS item-masters rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS item-masters rejects malformed request body 5
+PASS suppliers rejects invalid AccountName 5
+PASS suppliers rejects invalid AccountName {}
+PASS suppliers rejects invalid AccountName []
+PASS suppliers rejects invalid AccountName true
+PASS suppliers rejects invalid AccountName "   "
+PASS suppliers rejects invalid AccountName "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS suppliers rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS suppliers rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS suppliers rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS suppliers rejects malformed request body 5
+PASS parties rejects invalid AccountName 5
+PASS parties rejects invalid AccountName {}
+PASS parties rejects invalid AccountName []
+PASS parties rejects invalid AccountName true
+PASS parties rejects invalid AccountName "   "
+PASS parties rejects invalid AccountName "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS parties rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS parties rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS parties rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS parties rejects malformed request body 5
+PASS stores rejects invalid StoreName 5
+PASS stores rejects invalid StoreName {}
+PASS stores rejects invalid StoreName []
+PASS stores rejects invalid StoreName true
+PASS stores rejects invalid StoreName "   "
+PASS stores rejects invalid StoreName "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS stores rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS stores rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS stores rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS stores rejects malformed request body 5
+PASS product-heads rejects invalid ProdHeadDesc 5
+PASS product-heads rejects invalid ProdHeadDesc {}
+PASS product-heads rejects invalid ProdHeadDesc []
+PASS product-heads rejects invalid ProdHeadDesc true
+PASS product-heads rejects invalid ProdHeadDesc "   "
+PASS product-heads rejects invalid ProdHeadDesc "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS product-heads rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS product-heads rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS product-heads rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS product-heads rejects malformed request body 5
+PASS sub-heads rejects invalid sub_group_name 5
+PASS sub-heads rejects invalid sub_group_name {}
+PASS sub-heads rejects invalid sub_group_name []
+PASS sub-heads rejects invalid sub_group_name true
+PASS sub-heads rejects invalid sub_group_name "   "
+PASS sub-heads rejects invalid sub_group_name "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS sub-heads rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS sub-heads rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS sub-heads rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS sub-heads rejects malformed request body 5
+PASS states rejects invalid StateName 5
+PASS states rejects invalid StateName {}
+PASS states rejects invalid StateName []
+PASS states rejects invalid StateName true
+PASS states rejects invalid StateName "   "
+PASS states rejects invalid StateName "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PASS states rejects malformed request body []
+[Error Handler] SyntaxError: Unexpected token 'n', "null" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: 'null',
+  type: 'entity.parse.failed'
+}
+PASS states rejects malformed request body null
+[Error Handler] SyntaxError: Unexpected token '"', ""bad"" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '"bad"',
+  type: 'entity.parse.failed'
+}
+PASS states rejects malformed request body "bad"
+[Error Handler] SyntaxError: Unexpected token '5', "5" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:156:10)
+    at parse (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\types\json.js:71:15)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\body-parser\lib\read.js:123:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+    at invokeCallback (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:509:28)
+    at endReadableNT (node:internal/streams/readable:1735:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  expose: true,
+  statusCode: 400,
+  status: 400,
+  body: '5',
+  type: 'entity.parse.failed'
+}
+PASS states rejects malformed request body 5
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity -1
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity "abc"
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity "Infinity"
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity null
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity ""
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity {}
+Error creating purchase order: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects invalid quantity []
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity -1
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity "abc"
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity "Infinity"
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity null
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity ""
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity {}
+Error creating receipt: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects invalid quantity []
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity -1
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity "abc"
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity "Infinity"
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity null
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity ""
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity {}
+Error creating bill entry: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects invalid quantity []
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity -1
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity "abc"
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity "Infinity"
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity null
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity ""
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity {}
+Error creating item issue: Error: Invalid quantity for Edge product: enter a non-negative number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects invalid quantity []
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity -1
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity "abc"
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity "Infinity"
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity null
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity ""
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity {}
+Error creating gate pass out: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects invalid quantity []
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity -1
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity "abc"
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity "Infinity"
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity null
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity ""
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity {}
+Error creating gate pass in: Error: Invalid quantity for Edge product: enter a positive number below 100000000
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:23:7)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects invalid quantity []
+Error creating purchase order: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects malformed item collection null
+Error creating purchase order: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects malformed item collection []
+Error creating purchase order: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects malformed item collection {}
+Error creating purchase order: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects malformed item collection "bad"
+Error creating purchase order: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects malformed item collection [null]
+Error creating purchase order: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createPurchaseOrder (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS purchase-orders rejects malformed item collection [5]
+Error creating receipt: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects malformed item collection null
+Error creating receipt: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects malformed item collection []
+Error creating receipt: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects malformed item collection {}
+Error creating receipt: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects malformed item collection "bad"
+Error creating receipt: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects malformed item collection [null]
+Error creating receipt: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS receipts rejects malformed item collection [5]
+Error creating bill entry: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects malformed item collection null
+Error creating bill entry: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects malformed item collection []
+Error creating bill entry: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects malformed item collection {}
+Error creating bill entry: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects malformed item collection "bad"
+Error creating bill entry: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects malformed item collection [null]
+Error creating bill entry: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS bill-entries rejects malformed item collection [5]
+Error creating gate inward: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-inwards rejects malformed item collection null
+Error creating gate inward: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-inwards rejects malformed item collection []
+Error creating gate inward: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-inwards rejects malformed item collection {}
+Error creating gate inward: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-inwards rejects malformed item collection "bad"
+Error creating gate inward: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-inwards rejects malformed item collection [null]
+Error creating gate inward: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-inwards rejects malformed item collection [5]
+Error creating item issue: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects malformed item collection null
+Error creating item issue: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects malformed item collection []
+Error creating item issue: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects malformed item collection {}
+Error creating item issue: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects malformed item collection "bad"
+Error creating item issue: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects malformed item collection [null]
+Error creating item issue: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createItemIssue (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS item-issues rejects malformed item collection [5]
+Error creating gate pass out: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects malformed item collection null
+Error creating gate pass out: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects malformed item collection []
+Error creating gate pass out: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects malformed item collection {}
+Error creating gate pass out: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects malformed item collection "bad"
+Error creating gate pass out: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects malformed item collection [null]
+Error creating gate pass out: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-outs rejects malformed item collection [5]
+Error creating gate pass in: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects malformed item collection null
+Error creating gate pass in: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects malformed item collection []
+Error creating gate pass in: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects malformed item collection {}
+Error creating gate pass in: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects malformed item collection "bad"
+Error creating gate pass in: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects malformed item collection [null]
+Error creating gate pass in: Error: Each item row must be an object
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:15:67)
+    at exports.createGatePassIn (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\route.js:117:3)
+    at handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:295:15
+    at processParams (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:582:12)
+    at next (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:291:5)
+    at router.handle (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:186:3)
+    at router (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:60:12)
+    at Layer.handleRequest (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:342:13)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\router\index.js:297:9 {
+  statusCode: 400
+}
+PASS gate-pass-ins rejects malformed item collection [5]
+PASS anonymous cannot POST /departments
+PASS viewer cannot POST /departments
+PASS anonymous cannot PUT /departments/1999999999
+PASS viewer cannot PUT /departments/1999999999
+PASS anonymous cannot DELETE /departments/1999999999
+PASS viewer cannot DELETE /departments/1999999999
+PASS anonymous cannot POST /suppliers
+PASS viewer cannot POST /suppliers
+PASS anonymous cannot PUT /suppliers
+PASS viewer cannot PUT /suppliers
+PASS anonymous cannot DELETE /suppliers
+PASS viewer cannot DELETE /suppliers
+PASS anonymous cannot PUT /suppliers/1999999999
+PASS viewer cannot PUT /suppliers/1999999999
+PASS anonymous cannot DELETE /suppliers/1999999999
+PASS viewer cannot DELETE /suppliers/1999999999
+PASS anonymous cannot POST /stores
+PASS viewer cannot POST /stores
+PASS anonymous cannot PUT /stores
+PASS viewer cannot PUT /stores
+PASS anonymous cannot DELETE /stores
+PASS viewer cannot DELETE /stores
+PASS anonymous cannot PUT /stores/1999999999
+PASS viewer cannot PUT /stores/1999999999
+PASS anonymous cannot DELETE /stores/1999999999
+PASS viewer cannot DELETE /stores/1999999999
+PASS anonymous cannot POST /product-heads
+PASS viewer cannot POST /product-heads
+PASS anonymous cannot PUT /product-heads
+PASS viewer cannot PUT /product-heads
+PASS anonymous cannot DELETE /product-heads
+PASS viewer cannot DELETE /product-heads
+PASS anonymous cannot PUT /product-heads/1999999999
+PASS viewer cannot PUT /product-heads/1999999999
+PASS anonymous cannot DELETE /product-heads/1999999999
+PASS viewer cannot DELETE /product-heads/1999999999
+PASS anonymous cannot POST /sub-heads
+PASS viewer cannot POST /sub-heads
+PASS anonymous cannot PUT /sub-heads
+PASS viewer cannot PUT /sub-heads
+PASS anonymous cannot DELETE /sub-heads
+PASS viewer cannot DELETE /sub-heads
+PASS anonymous cannot PUT /sub-heads/1999999999
+PASS viewer cannot PUT /sub-heads/1999999999
+PASS anonymous cannot DELETE /sub-heads/1999999999
+PASS viewer cannot DELETE /sub-heads/1999999999
+PASS anonymous cannot POST /items
+PASS viewer cannot POST /items
+PASS anonymous cannot PUT /items
+PASS viewer cannot PUT /items
+PASS anonymous cannot DELETE /items
+PASS viewer cannot DELETE /items
+PASS anonymous cannot PUT /items/1999999999
+PASS viewer cannot PUT /items/1999999999
+PASS anonymous cannot DELETE /items/1999999999
+PASS viewer cannot DELETE /items/1999999999
+PASS anonymous cannot POST /items/bulk-upload
+PASS viewer cannot POST /items/bulk-upload
+PASS anonymous cannot POST /uoms
+PASS viewer cannot POST /uoms
+PASS anonymous cannot PUT /uoms/1999999999
+PASS viewer cannot PUT /uoms/1999999999
+PASS anonymous cannot DELETE /uoms/1999999999
+PASS viewer cannot DELETE /uoms/1999999999
+PASS anonymous cannot POST /item-masters/generate-code
+PASS viewer cannot POST /item-masters/generate-code
+PASS anonymous cannot POST /item-masters
+PASS viewer cannot POST /item-masters
+PASS anonymous cannot PUT /item-masters
+PASS viewer cannot PUT /item-masters
+PASS anonymous cannot DELETE /item-masters
+PASS viewer cannot DELETE /item-masters
+PASS anonymous cannot PUT /item-masters/1999999999
+PASS viewer cannot PUT /item-masters/1999999999
+PASS anonymous cannot DELETE /item-masters/1999999999
+PASS viewer cannot DELETE /item-masters/1999999999
+PASS anonymous cannot POST /parties
+PASS viewer cannot POST /parties
+PASS anonymous cannot PUT /parties
+PASS viewer cannot PUT /parties
+PASS anonymous cannot DELETE /parties
+PASS viewer cannot DELETE /parties
+PASS anonymous cannot PUT /parties/1999999999
+PASS viewer cannot PUT /parties/1999999999
+PASS anonymous cannot DELETE /parties/1999999999
+PASS viewer cannot DELETE /parties/1999999999
+PASS anonymous cannot POST /states
+PASS viewer cannot POST /states
+PASS anonymous cannot PUT /states
+PASS viewer cannot PUT /states
+PASS anonymous cannot DELETE /states
+PASS viewer cannot DELETE /states
+PASS anonymous cannot PUT /states/1999999999
+PASS viewer cannot PUT /states/1999999999
+PASS anonymous cannot DELETE /states/1999999999
+PASS viewer cannot DELETE /states/1999999999
+PASS anonymous cannot POST /purchase-orders
+PASS viewer cannot POST /purchase-orders
+PASS anonymous cannot PUT /purchase-orders/1999999999
+PASS viewer cannot PUT /purchase-orders/1999999999
+PASS anonymous cannot DELETE /purchase-orders/1999999999
+PASS viewer cannot DELETE /purchase-orders/1999999999
+PASS anonymous cannot POST /gate-inwards
+PASS viewer cannot POST /gate-inwards
+PASS anonymous cannot PUT /gate-inwards/1999999999
+PASS viewer cannot PUT /gate-inwards/1999999999
+PASS anonymous cannot DELETE /gate-inwards/delete-inward-chain/1999999999
+PASS viewer cannot DELETE /gate-inwards/delete-inward-chain/1999999999
+PASS anonymous cannot DELETE /gate-inwards/1999999999
+PASS viewer cannot DELETE /gate-inwards/1999999999
+PASS anonymous cannot POST /receipts
+PASS viewer cannot POST /receipts
+PASS anonymous cannot PUT /receipts/1999999999
+PASS viewer cannot PUT /receipts/1999999999
+PASS anonymous cannot DELETE /receipts/1999999999
+PASS viewer cannot DELETE /receipts/1999999999
+PASS anonymous cannot POST /bill-entries
+PASS viewer cannot POST /bill-entries
+PASS anonymous cannot PUT /bill-entries/1999999999
+PASS viewer cannot PUT /bill-entries/1999999999
+PASS anonymous cannot DELETE /bill-entries/delete-chain/1999999999
+PASS viewer cannot DELETE /bill-entries/delete-chain/1999999999
+PASS anonymous cannot DELETE /bill-entries/1999999999
+PASS viewer cannot DELETE /bill-entries/1999999999
+PASS anonymous cannot POST /item-issues
+PASS viewer cannot POST /item-issues
+PASS anonymous cannot PUT /item-issues/1999999999
+PASS viewer cannot PUT /item-issues/1999999999
+PASS anonymous cannot DELETE /item-issues/1999999999
+PASS viewer cannot DELETE /item-issues/1999999999
+PASS anonymous cannot POST /gate-pass-outs
+PASS viewer cannot POST /gate-pass-outs
+PASS anonymous cannot PUT /gate-pass-outs/1999999999
+PASS viewer cannot PUT /gate-pass-outs/1999999999
+PASS anonymous cannot DELETE /gate-pass-outs/1999999999
+PASS viewer cannot DELETE /gate-pass-outs/1999999999
+PASS anonymous cannot POST /gate-pass-ins
+PASS viewer cannot POST /gate-pass-ins
+PASS anonymous cannot PUT /gate-pass-ins/1999999999
+PASS viewer cannot PUT /gate-pass-ins/1999999999
+PASS anonymous cannot DELETE /gate-pass-ins/1999999999
+PASS viewer cannot DELETE /gate-pass-ins/1999999999
+PASS anonymous cannot POST /cancel-orders
+PASS viewer cannot POST /cancel-orders
+PASS anonymous cannot PUT /cancel-orders/1999999999
+PASS viewer cannot PUT /cancel-orders/1999999999
+PASS anonymous cannot DELETE /cancel-orders/1999999999
+PASS viewer cannot DELETE /cancel-orders/1999999999
+PASS anonymous cannot POST /bill-verify
+PASS viewer cannot POST /bill-verify
+PASS anonymous cannot PUT /bill-verify/1999999999
+PASS viewer cannot PUT /bill-verify/1999999999
+PASS anonymous cannot DELETE /bill-verify/1999999999
+PASS viewer cannot DELETE /bill-verify/1999999999
+PASS anonymous cannot POST /purchase-types
+PASS viewer cannot POST /purchase-types
+PASS anonymous cannot PUT /purchase-types/1999999999
+PASS viewer cannot PUT /purchase-types/1999999999
+PASS anonymous cannot DELETE /purchase-types/1999999999
+PASS viewer cannot DELETE /purchase-types/1999999999
+PASS HTTP login rejects wrong password, missing account, and inactive account
+PASS Password change rejects wrong current password and persists a valid new password
+Error deleting item: Error: Cannot delete Item: it is used by PurchaseOrderDetail. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.deleteItem (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemController.js:295:9) {
+  statusCode: 409
+}
+PASS /items?code=00%2F01%2FEd%2F0001 cannot delete a record still referenced by transactions
+Error deleting supplier: Error: Cannot delete Supplier: it is used by PurchaseOrder. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.deleteSupplier (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\supplierController.js:242:9) {
+  statusCode: 409
+}
+PASS /suppliers?code=EDGE cannot delete a record still referenced by transactions
+PASS /departments/1 cannot delete a record still referenced by transactions
+Error deleting sub head: Error: Cannot delete SubHead: it is used by Item. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.deleteSubHead (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\subHeadController.js:189:9) {
+  statusCode: 409
+}
+PASS /sub-heads?code=01 cannot delete a record still referenced by transactions
+Error deleting gate inward: Error: Cannot delete GateInward: it is used by Receipt. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.deleteGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:711:9) {
+  statusCode: 409
+}
+PASS /gate-inwards/43 cannot delete a record still referenced by transactions
+Error deleting receipt: Error: Cannot delete Receipt: it is used by BillEntry. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.deleteReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:1037:9) {
+  statusCode: 409
+}
+PASS /receipts/85 cannot delete a record still referenced by transactions
+Error deleting gate pass out: Error: Cannot delete GatePassOut: it is used by GatePassInDetail. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async exports.deleteGatePassOut (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:266:9) {
+  statusCode: 409
+}
+PASS /gate-pass-outs/1 cannot delete a record still referenced by transactions
+Error deleting bill chain: Error: Cannot delete GateInward: it is used by Receipt. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:1495:9
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.deleteBillChain (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:1473:5) {
+  statusCode: 409
+}
+PASS Cascade selection cannot leave dangling links /bill-entries/delete-chain/1 {"bill":true,"receipt":false,"gateInward":true}
+Error deleting bill chain: Error: Cannot delete Receipt: it is used by BillEntry. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:1489:22
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.deleteBillChain (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:1473:5) {
+  statusCode: 409
+}
+PASS Cascade selection cannot leave dangling links /bill-entries/delete-chain/1 {"bill":false,"receipt":true}
+Error deleting gate inward chain: Error: Cannot delete GateInward: it is used by Receipt. Remove or correct the linked transaction first.
+    at preventReferencedDeletion (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\preventReferencedDeletion.js:25:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:1041:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.deleteGateInwardChain (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:1038:5) {
+  statusCode: 409
+}
+PASS Cascade selection cannot leave dangling links /gate-inwards/delete-inward-chain/43 {"gateInward":true}
+Error creating receipt: Error: A receipt has already been created for this purchase order
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:857:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:845:24) {
+  statusCode: 409
+}
+PASS Concurrent receipts cannot duplicate the same purchase order
+Error creating bill entry: Error: This GRN or supplier bill number is already billed
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:594:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:586:21) {
+  statusCode: 409
+}
+PASS Concurrent bills cannot duplicate the same GRN
+PASS Optional blank purchase type remains valid when saving a bill
+PASS /receipts/85 rejects changing party away from its source document
+Error updating bill entry: Error: The bill party must match its receipt
+    at reject (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:82:45)
+    at validateBillSource (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:84:52)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:731:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.updateBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:729:5) {
+  statusCode: 400
+}
+PASS /bill-entries/1 rejects changing party away from its source document
+Error creating bill entry: Error: Item NOT_ON_GRN must identify a line on the selected receipt
+    at reject (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:82:45)
+    at validateBillSource (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:96:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:598:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:586:21) {
+  statusCode: 400
+}
+PASS Bill rejects unrelated product outside its receipt
+Error creating bill entry: Error: Billed quantity for 00/01/Ed/0001 cannot exceed the received quantity
+    at reject (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:82:45)
+    at validateBillSource (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:98:49)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:598:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.createBillEntry (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:586:21) {
+  statusCode: 400
+}
+PASS Bill rejects quantity above receipt outside its receipt
+Error deleting gate inward: Error: Cannot remove inward quantity for NO_NEGATIVE_STOCK: it would make stock negative. Reverse the related issues first.
+    at adjustInventory (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:127:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:716:7
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.deleteGateInward (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:713:5) {
+  statusCode: 409
+}
+PASS Removing an inward cannot make stock negative after its goods were issued
+PASS Editing an unchanged inward after a partial issue preserves remaining stock value
+409 passed; 0 failed. Disposable database removed.

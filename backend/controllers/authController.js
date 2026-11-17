@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/index');
@@ -77,7 +78,7 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({
+    return res.status(errorStatus(error)).json({
       success: false,
       message: 'Server error during login authentication'
     });
@@ -104,7 +105,7 @@ exports.getCurrentUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Get current user error:', error);
-    return res.status(500).json({
+    return res.status(errorStatus(error)).json({
       success: false,
       message: 'Server error retrieving profile'
     });
@@ -173,7 +174,7 @@ exports.changePassword = async (req, res) => {
     });
   } catch (error) {
     console.error('Change password error:', error);
-    return res.status(500).json({
+    return res.status(errorStatus(error)).json({
       success: false,
       message: 'Server error while updating password'
     });
@@ -235,7 +236,7 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    return res.status(500).json({
+    return res.status(errorStatus(error)).json({
       success: false,
       message: 'Server error creating user'
     });

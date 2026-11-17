@@ -1,3 +1,5 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const PurchaseType = require('../models/PurchaseType');
 
 // Default formulas for reset functionality
@@ -24,7 +26,7 @@ exports.getPurchaseTypes = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase types:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase types',
       error: error.message
@@ -51,7 +53,7 @@ exports.getPurchaseTypeByCode = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase type:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase type',
       error: error.message
@@ -71,7 +73,7 @@ exports.getNextCode = async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting next code:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error getting next code',
       error: error.message
@@ -87,7 +89,7 @@ exports.getDefaultFormulas = async (req, res) => {
       data: DEFAULT_FORMULAS
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching default formulas',
       error: error.message
@@ -175,7 +177,7 @@ exports.addPurchaseType = async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding purchase type:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error adding purchase type',
       error: error.message
@@ -250,7 +252,7 @@ exports.updatePurchaseType = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating purchase type:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating purchase type',
       error: error.message
@@ -271,6 +273,8 @@ exports.deletePurchaseType = async (req, res) => {
       });
     }
 
+        await preventReferencedDeletion('PurchaseType', purchaseType);
+
     await purchaseType.destroy();
 
     res.json({
@@ -279,7 +283,7 @@ exports.deletePurchaseType = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting purchase type:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting purchase type',
       error: error.message

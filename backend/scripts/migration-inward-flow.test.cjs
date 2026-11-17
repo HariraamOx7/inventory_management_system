@@ -6,10 +6,12 @@ if(!/^stores_rehearsal_[a-z0-9_]+$/.test(process.env.DB_NAME||''))throw new Erro
 const {sequelize,Item,Supplier,PurchaseOrder,PurchaseOrderDetail,GateInward,GateInwardDetail,ItemIssue,ItemIssueDetail}=require('../models');
 const inward=require('../controllers/gateInwardController');
 const {getMigratedCurrentStock,getHistoricalDepartmentStock}=require('../services/historicalStock');
-const code='ZZ_MIGRATION_FLOW_TEST', party='ZZ_MIGRATION_FLOW_TEST', orderNo=1999990011, issueNo=1999990012;
+const code='ZZ_MIGRATION_FLOW_TEST', party='ZZ_MIGRATION_FLOW_TEST', orderNo=20261027001, issueNo=1999990012;
 function response(){return {statusCode:200,body:null,status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;}};}
 test('new inward retains cost across PO price edits, contributes to ledger and reverses',async()=>{
  assert.equal(await Item.count({where:{ItemCode:code}}),0);assert.equal(await Supplier.count({where:{PartyCode:party}}),0);assert.equal(await PurchaseOrder.count({where:{OrderNo:orderNo}}),0);assert.equal(await ItemIssue.count({where:{IssueNo:issueNo}}),0);
+ const baseline=await getMigratedCurrentStock();
+ const priorDay=await getHistoricalDepartmentStock({from:'2026-10-27',to:'2026-10-27'});
  let inwardNo;
  try {
   await Item.create({ItemCode:code,ItemName:'Migration flow test',Quantity:0,OpeningQty:0,UnitRate:0});
@@ -25,8 +27,8 @@ test('new inward retains cost across PO price edits, contributes to ledger and r
   await ItemIssue.create({IssueNo:issueNo,IssueDate:'2026-10-27',Department:'Migration test'});
   await ItemIssueDetail.create({IssueNo:issueNo,ItemCode:code,ItemName:'Migration flow test',Qty:2,UnitRate:10,TotalAmount:20});
   await Item.update({Quantity:2,OpeningQty:2},{where:{ItemCode:code}});
-  const ledger=await getMigratedCurrentStock();const line=ledger.itemBalances.find(i=>i.itemCode===code);assert.equal(line.quantity,2);assert.equal(line.value,20);assert.equal(ledger.reportTotalValue,7648082.55);
-  const day=await getHistoricalDepartmentStock({from:'2026-10-27',to:'2026-10-27'});assert.equal(day.totals.receivedQty,4);assert.equal(day.totals.receivedValue,40);assert.equal(day.totals.issueQty,2);assert.equal(day.totals.issueValue,20);assert.equal(day.totals.closingValue,7648082.55);
+  const ledger=await getMigratedCurrentStock();const line=ledger.itemBalances.find(i=>i.itemCode===code);assert.equal(line.quantity,2);assert.equal(line.value,20);assert.equal(ledger.reportTotalValue,Number((baseline.reportTotalValue+20).toFixed(2)));
+  const day=await getHistoricalDepartmentStock({from:'2026-10-27',to:'2026-10-27'});assert.equal(day.totals.receivedQty,priorDay.totals.receivedQty+4);assert.equal(day.totals.receivedValue,priorDay.totals.receivedValue+40);assert.equal(day.totals.issueQty,priorDay.totals.issueQty+2);assert.equal(day.totals.issueValue,priorDay.totals.issueValue+20);assert.equal(day.totals.closingValue,Number((priorDay.totals.closingValue+20).toFixed(2)));
   await ItemIssueDetail.destroy({where:{IssueNo:issueNo}});await ItemIssue.destroy({where:{IssueNo:issueNo}});await Item.update({Quantity:4,OpeningQty:4},{where:{ItemCode:code}});
   res=response();await inward.deleteGateInward({params:{inwardNo}},res);assert.equal(res.statusCode,200,JSON.stringify(res.body));inwardNo=null;
   assert.equal(Number((await Item.findByPk(code)).Quantity),0);

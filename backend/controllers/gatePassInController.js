@@ -1,3 +1,6 @@
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
+const sequelize = require('../config/db');
 // backend/controllers/gatePassInController.js
 const GatePassIn = require('../models/GatePassIn');
 const GatePassInDetail = require('../models/GatePassInDetail');
@@ -10,14 +13,14 @@ exports.getLastInNo = async (req, res) => {
     const lastIn = await GatePassIn.findOne({
       order: [['InNo', 'DESC']]
     });
-    
+
     res.json({
       success: true,
       data: { lastInNo: lastIn ? lastIn.InNo : 0 }
     });
   } catch (error) {
     console.error('Error fetching last IN number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching IN number',
       error: error.message
@@ -32,14 +35,14 @@ exports.getParties = async (req, res) => {
       attributes: ['AccountName'],
       order: [['AccountName', 'ASC']]
     });
-    
+
     res.json({
       success: true,
       data: suppliers.map(s => ({ name: s.AccountName }))
     });
   } catch (error) {
     console.error('Error fetching parties:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching parties',
       error: error.message
@@ -54,7 +57,7 @@ exports.getItems = async (req, res) => {
       attributes: ['ItemCode', 'ItemName'],
       order: [['ItemName', 'ASC']]
     });
-    
+
     res.json({
       success: true,
       data: items.map(item => ({
@@ -64,7 +67,7 @@ exports.getItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching items',
       error: error.message
@@ -84,14 +87,14 @@ exports.getGatePassIns = async (req, res) => {
       ],
       order: [['InNo', 'DESC']]
     });
-    
+
     res.json({
       success: true,
       data: gatePassIns
     });
   } catch (error) {
     console.error('Error fetching gate pass ins:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate pass ins',
       error: error.message
@@ -102,11 +105,12 @@ exports.getGatePassIns = async (req, res) => {
 // Create gate pass in with details
 exports.createGatePassIn = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { required: true, requireName: true, quantities: ['RecQty'] });
     const {
       PartyName, GiDate, DcNo, DcDate, InvoiceNo, InvoiceDate, LrcNo, items
     } = req.body;
 
-    if (!PartyName || !items || items.length === 0) {
+    if (!PartyName || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Party name and items are required'
@@ -114,27 +118,31 @@ exports.createGatePassIn = async (req, res) => {
     }
 
     // Create gate pass in
-    const newGatePassIn = await GatePassIn.create({
-      PartyName: PartyName.trim(),
-      GiDate: GiDate || new Date(),
-      DcNo: DcNo ? DcNo.trim() : null,
-      DcDate: DcDate || null,
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : null,
-      InvoiceDate: InvoiceDate || null,
-      LrcNo: LrcNo ? LrcNo.trim() : null
-    });
+    const newGatePassIn = await sequelize.transaction(async transaction => {
+      const created = await GatePassIn.create({
+        PartyName: PartyName.trim(),
+        GiDate: GiDate || new Date(),
+        DcNo: DcNo ? DcNo.trim() : null,
+        DcDate: DcDate || null,
+        InvoiceNo: InvoiceNo ? InvoiceNo.trim() : null,
+        InvoiceDate: InvoiceDate || null,
+        LrcNo: LrcNo ? LrcNo.trim() : null
+      }, { transaction });
 
-    // Create gate pass in details
-    for (const item of items) {
-      await GatePassInDetail.create({
-        InNo: newGatePassIn.InNo,
-        ItemName: item.ItemName,
-        PendingQty: item.PendingQty || 0,
-        RecQty: item.RecQty || 0,
-        GpNo: item.GpNo || null,
-        Reason: item.Reason || null
-      });
-    }
+      // Create gate pass in details
+      for (const item of items) {
+        await GatePassInDetail.create({
+          InNo: created.InNo,
+          ItemName: item.ItemName,
+          PendingQty: item.PendingQty || 0,
+          RecQty: item.RecQty || 0,
+          GpNo: item.GpNo || null,
+          Reason: item.Reason || null
+        }, { transaction });
+      }
+
+      return created;
+    });
 
     res.status(201).json({
       success: true,
@@ -143,7 +151,7 @@ exports.createGatePassIn = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating gate pass in:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating gate pass in',
       error: error.message
@@ -154,6 +162,7 @@ exports.createGatePassIn = async (req, res) => {
 // Update gate pass in
 exports.updateGatePassIn = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { requireName: true, quantities: ['RecQty'] });
     const { inNo } = req.params;
     const {
       PartyName, GiDate, DcNo, DcDate, InvoiceNo, InvoiceDate, LrcNo, items
@@ -167,31 +176,37 @@ exports.updateGatePassIn = async (req, res) => {
       });
     }
 
-    await gatePassIn.update({
-      PartyName: PartyName ? PartyName.trim() : gatePassIn.PartyName,
-      GiDate: GiDate || gatePassIn.GiDate,
-      DcNo: DcNo ? DcNo.trim() : gatePassIn.DcNo,
-      DcDate: DcDate || gatePassIn.DcDate,
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : gatePassIn.InvoiceNo,
-      InvoiceDate: InvoiceDate || gatePassIn.InvoiceDate,
-      LrcNo: LrcNo ? LrcNo.trim() : gatePassIn.LrcNo
-    });
-
-    // Update details if provided
-    if (items && items.length > 0) {
-      await GatePassInDetail.destroy({ where: { InNo: inNo } });
-      
-      for (const item of items) {
-        await GatePassInDetail.create({
-          InNo: inNo,
-          ItemName: item.ItemName,
-          PendingQty: item.PendingQty || 0,
-          RecQty: item.RecQty || 0,
-          GpNo: item.GpNo || null,
-          Reason: item.Reason || null
-        });
-      }
+    if (items !== undefined && (!Array.isArray(items) || items.length === 0)) {
+      return res.status(400).json({ success: false, message: 'Gate pass items cannot be empty' });
     }
+    await sequelize.transaction(async transaction => {
+      await gatePassIn.update({
+        PartyName: PartyName ? PartyName.trim() : gatePassIn.PartyName,
+        GiDate: GiDate || gatePassIn.GiDate,
+        DcNo: DcNo ? DcNo.trim() : gatePassIn.DcNo,
+        DcDate: DcDate || gatePassIn.DcDate,
+        InvoiceNo: InvoiceNo ? InvoiceNo.trim() : gatePassIn.InvoiceNo,
+        InvoiceDate: InvoiceDate || gatePassIn.InvoiceDate,
+        LrcNo: LrcNo ? LrcNo.trim() : gatePassIn.LrcNo
+      }, { transaction });
+
+      // Update details if provided
+      if (items && items.length > 0) {
+        await GatePassInDetail.destroy({ where: { InNo: inNo }, transaction });
+
+        for (const item of items) {
+          await GatePassInDetail.create({
+            InNo: inNo,
+            ItemName: item.ItemName,
+            PendingQty: item.PendingQty || 0,
+            RecQty: item.RecQty || 0,
+            GpNo: item.GpNo || null,
+            Reason: item.Reason || null
+          }, { transaction });
+        }
+      }
+
+    });
 
     res.json({
       success: true,
@@ -200,7 +215,7 @@ exports.updateGatePassIn = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating gate pass in:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating gate pass in',
       error: error.message
@@ -212,7 +227,7 @@ exports.updateGatePassIn = async (req, res) => {
 exports.deleteGatePassIn = async (req, res) => {
   try {
     const { inNo } = req.params;
-    
+
     const gatePassIn = await GatePassIn.findByPk(inNo);
     if (!gatePassIn) {
       return res.status(404).json({
@@ -221,11 +236,13 @@ exports.deleteGatePassIn = async (req, res) => {
       });
     }
 
-    // Delete details first
-    await GatePassInDetail.destroy({ where: { InNo: inNo } });
+    await sequelize.transaction(async transaction => {
+      // Delete details first
+      await GatePassInDetail.destroy({ where: { InNo: inNo }, transaction });
 
-    // Then delete gate pass in
-    await gatePassIn.destroy();
+      // Then delete gate pass in
+      await gatePassIn.destroy({ transaction });
+    });
 
     res.json({
       success: true,
@@ -233,7 +250,7 @@ exports.deleteGatePassIn = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting gate pass in:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting gate pass in',
       error: error.message

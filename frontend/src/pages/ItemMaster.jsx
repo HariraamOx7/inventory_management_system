@@ -181,12 +181,12 @@ export default function ItemMaster() {
     const handleUpdate = async (code) => {
         try {
             setLoading(true);
-            await axios.put(`${API_URL}/item-masters/${code}`, {
+            await axios.put(`${API_URL}/item-masters`, {
                 ItemName: editFormData.ItemName,
                 UnitRate: editFormData.UnitRate,
                 Department: editFormData.Department,
                 UOM: editFormData.UOM
-            });
+            }, { params: { code } });
             setEditingCode(null);
             fetchItemMasters();
         } catch (error) {
@@ -201,7 +201,7 @@ export default function ItemMaster() {
 
         try {
             setLoading(true);
-            await axios.delete(`${API_URL}/item-masters/${code}`);
+            await axios.delete(`${API_URL}/item-masters`, { params: { code } });
             fetchItemMasters();
         } catch (error) {
             setError('Error deleting item master: ' + error.message);

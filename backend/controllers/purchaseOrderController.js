@@ -1,3 +1,5 @@
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
 // backend/controllers/purchaseOrderController.js
 const { Op } = require('sequelize');
 const sequelize = require('../config/db');
@@ -40,7 +42,8 @@ const resolveLineUnitRate = (item) => {
 
 const resolvePartyCode = async (partyCode, partyName) => {
   if (partyCode && String(partyCode).trim()) {
-    return String(partyCode).trim();
+    const supplier = await Supplier.findByPk(String(partyCode).trim());
+    return supplier ? supplier.PartyCode : null;
   }
   if (partyName && String(partyName).trim()) {
     const trimmed = String(partyName).trim();
@@ -53,20 +56,14 @@ const resolvePartyCode = async (partyCode, partyName) => {
       }
     });
     if (sup) return sup.PartyCode;
-    return trimmed;
+    return null;
   }
   return null;
 };
 
 const resolveItemCode = async (itemCode, itemName) => {
-  if (itemCode && !isNaN(parseInt(itemCode, 10))) {
-    return parseInt(itemCode, 10);
-  }
-  if (itemName && String(itemName).trim()) {
-    const found = await Item.findOne({ where: { ItemName: String(itemName).trim() } });
-    if (found) return found.ItemCode;
-  }
-  return null;
+  const code = await require('../services/resolveItemCode')(Item, itemCode, itemName);
+  return code && await Item.findByPk(code) ? code : null;
 };
 
 const cleanDate = (d) => {
@@ -76,63 +73,33 @@ const cleanDate = (d) => {
   return dt.toISOString().split('T')[0];
 };
 
-// Some existing databases define OrderNo as a required key without
-// AUTO_INCREMENT. Supplying the next value keeps those installations working
-// without changing a parent column that is referenced by detail-table FKs.
-// Determine the active PO series from saved records instead of trusting the
-// largest value. Imported or exceptional PO numbers can be out of sequence;
-// the longest consecutive run is the regular series to continue.
-const getPreviousPurchaseOrderNo = async () => {
+// Start at 1050 and skip any numbers already in use, including legacy POs.
+const getNextPurchaseOrderNo = async (transaction) => {
   const [rows] = await sequelize.query(
-    'SELECT `OrderNo` FROM `purchase_orders` WHERE `OrderNo` > 0'
+    'SELECT `OrderNo` FROM `purchase_orders` WHERE `OrderNo` >= 1050 ORDER BY `OrderNo` ASC',
+    { transaction }
   );
-
-  if (rows.length === 0) return 0;
-
-  const orderNos = [...new Set(rows.map(row => BigInt(String(row.OrderNo))))]
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-
-  let currentStart = orderNos[0];
-  let currentEnd = orderNos[0];
-  let currentLength = 1;
-  let best = { start: currentStart, end: currentEnd, length: currentLength };
-
-  for (let index = 1; index < orderNos.length; index += 1) {
-    const orderNo = orderNos[index];
-    if (orderNo === currentEnd + 1n) {
-      currentEnd = orderNo;
-      currentLength += 1;
-    } else {
-      currentStart = orderNo;
-      currentEnd = orderNo;
-      currentLength = 1;
-    }
-
-    if (currentLength > best.length ||
-      (currentLength === best.length && currentEnd > best.end)) {
-      best = { start: currentStart, end: currentEnd, length: currentLength };
-    }
+  let next = 1050n;
+  for (const row of rows) {
+    const number = BigInt(String(row.OrderNo));
+    if (number > next) break;
+    if (number === next) next += 1n;
   }
-
-  return Number(best.end);
-};
-
-const getNextPurchaseOrderNo = async () => {
-  return (await getPreviousPurchaseOrderNo()) + 1;
+  return Number(next);
 };
 
 // Get last order number
 exports.getLastOrderNo = async (req, res) => {
   try {
-    const lastOrderNo = await getPreviousPurchaseOrderNo();
+    const nextOrderNo = await getNextPurchaseOrderNo();
     
     res.json({
       success: true,
-      data: { lastOrderNo }
+      data: { lastOrderNo: nextOrderNo - 1, nextOrderNo }
     });
   } catch (error) {
     console.error('Error fetching last order number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching order number',
       error: error.message
@@ -183,7 +150,7 @@ exports.getPurchaseOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase orders:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase orders',
       error: error.message
@@ -236,7 +203,7 @@ exports.getSupplierByName = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching supplier:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching supplier details',
       error: error.message
@@ -268,7 +235,7 @@ exports.getSuppliers = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching suppliers:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching suppliers',
       error: error.message
@@ -290,7 +257,7 @@ exports.getItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching items',
       error: error.message
@@ -301,6 +268,7 @@ exports.getItems = async (req, res) => {
 // Create purchase order with details
 exports.createPurchaseOrder = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { required: true });
     const {
       OrderDate, PartyCode, PartyName, Address, Place, Remarks, RefNo, Total, Discount,
       GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items,
@@ -311,7 +279,7 @@ exports.createPurchaseOrder = async (req, res) => {
     if (!resolvedPartyCode || !items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Party Code/Name and items are required'
+        message: !resolvedPartyCode ? 'Please select a valid supplier from the list' : 'At least one item is required'
       });
     }
 
@@ -327,7 +295,7 @@ exports.createPurchaseOrder = async (req, res) => {
     const preparedItems = [];
     for (const item of items) {
       const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-      if (!itemCode) continue;
+      if (!itemCode) return res.status(400).json({ success: false, message: `Item "${item.ItemName || item.ItemCode || ''}" could not be found. Please select it again.` });
 
       const unitRate = resolveLineUnitRate(item);
       const qty = parseDec(item.Qty, 0);
@@ -384,10 +352,16 @@ exports.createPurchaseOrder = async (req, res) => {
 
     // Supply OrderNo explicitly for databases where the legacy schema does
     // not have AUTO_INCREMENT on this foreign-key-referenced column.
-    const nextOrderNo = await getNextPurchaseOrderNo();
-    const newOrder = await PurchaseOrder.create({
+    const orderDate = cleanDate(OrderDate);
+    if (!orderDate || orderDate !== OrderDate) return res.status(400).json({ success: false, message: 'A valid order date is required' });
+    let newOrder;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        newOrder = await sequelize.transaction(async transaction => {
+          const nextOrderNo = await getNextPurchaseOrderNo(transaction);
+          const created = await PurchaseOrder.create({
       OrderNo: nextOrderNo,
-      OrderDate: cleanDate(OrderDate) || cleanDate(new Date()),
+      OrderDate: orderDate,
       PartyCode: resolvedPartyCode,
       Address: Address ? Address.trim() : null,
       Place: Place ? Place.trim() : null,
@@ -400,19 +374,26 @@ exports.createPurchaseOrder = async (req, res) => {
       VAT_CST: parseDec(VAT_CST, 0),
       P_F: sumPF > 0 || P_F === undefined ? sumPF : parseDec(P_F, 0),
       LorryFreight: parseDec(LorryFreight, 0),
-      RoundOff: sumRoundOff !== 0 || RoundOff === undefined ? sumRoundOff : parseDec(RoundOff, 0),
-      GrandTotal: sumGrandTotal > 0 || GrandTotal === undefined ? sumGrandTotal : parseDec(GrandTotal, 0),
+      RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : sumRoundOff,
+      GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : sumGrandTotal,
       DutyWithoutPF: DutyWithoutPF || false,
       VoltasFormat: VoltasFormat || false,
       VatWithPF: VatWithPF || false
-    });
+          }, { transaction });
 
     // Create order details
     for (const detail of preparedItems) {
       await PurchaseOrderDetail.create({
-        OrderNo: newOrder.OrderNo,
+        OrderNo: created.OrderNo,
         ...detail
-      });
+      }, { transaction });
+    }
+          return created;
+        });
+        break;
+      } catch (error) {
+        if (error.name !== 'SequelizeUniqueConstraintError' || attempt === 4) throw error;
+      }
     }
 
     res.status(201).json({
@@ -422,7 +403,7 @@ exports.createPurchaseOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating purchase order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating purchase order',
       error: error.message
@@ -433,6 +414,7 @@ exports.createPurchaseOrder = async (req, res) => {
 // Update purchase order
 exports.updatePurchaseOrder = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, {});
     const { orderNo } = req.params;
     const oNo = parseInt(orderNo, 10);
 
@@ -457,9 +439,16 @@ exports.updatePurchaseOrder = async (req, res) => {
       });
     }
 
+    if (OrderDate && cleanDate(OrderDate) !== cleanDate(order.OrderDate) &&
+        String(order.OrderNo).length === 11 &&
+        String(order.OrderNo).startsWith(String(order.OrderDate).replace(/-/g, ''))) {
+      return res.status(400).json({ success: false, message: 'The order date cannot be changed because it forms part of the PO number' });
+    }
+
     let resolvedPartyCode = order.PartyCode;
     if (PartyCode || PartyName) {
-      resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName) || order.PartyCode;
+      resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName);
+      if (!resolvedPartyCode) return res.status(400).json({ success: false, message: 'Please select a valid supplier from the list' });
     }
 
     let sumGST = 0;
@@ -475,7 +464,7 @@ exports.updatePurchaseOrder = async (req, res) => {
       preparedItems = [];
       for (const item of items) {
         const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-        if (!itemCode) continue;
+        if (!itemCode) return res.status(400).json({ success: false, message: `Item "${item.ItemName || item.ItemCode || ''}" could not be found. Please select it again.` });
 
         const unitRate = resolveLineUnitRate(item);
         const qty = parseDec(item.Qty, 0);
@@ -525,38 +514,44 @@ exports.updatePurchaseOrder = async (req, res) => {
       }
     }
 
-    await order.update({
-      OrderDate: cleanDate(OrderDate) || order.OrderDate || cleanDate(new Date()),
-      PartyCode: resolvedPartyCode,
-      Address: Address !== undefined ? (Address ? Address.trim() : null) : order.Address,
-      Place: Place !== undefined ? (Place ? Place.trim() : null) : order.Place,
-      Remarks: Remarks !== undefined ? (Remarks ? Remarks.trim() : null) : order.Remarks,
-      RefNo: RefNo !== undefined ? (RefNo ? RefNo.trim() : null) : order.RefNo,
-      Total: preparedItems ? sumTotal : (Total !== undefined ? parseDec(Total, 0) : order.Total),
-      Discount: preparedItems ? sumDiscount : (Discount !== undefined ? parseDec(Discount, 0) : order.Discount),
-      GST: preparedItems ? sumGST : (GST !== undefined ? parseDec(GST, 0) : order.GST),
-      IGST: preparedItems ? sumIGST : (IGST !== undefined ? parseDec(IGST, 0) : order.IGST),
-      VAT_CST: VAT_CST !== undefined ? parseDec(VAT_CST, 0) : order.VAT_CST,
-      P_F: preparedItems ? sumPF : (P_F !== undefined ? parseDec(P_F, 0) : order.P_F),
-      LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : order.LorryFreight,
-      RoundOff: preparedItems ? sumRoundOff : (RoundOff !== undefined ? parseDec(RoundOff, 0) : order.RoundOff),
-      GrandTotal: preparedItems ? sumGrandTotal : (GrandTotal !== undefined ? parseDec(GrandTotal, 0) : order.GrandTotal),
-      DutyWithoutPF: DutyWithoutPF !== undefined ? !!DutyWithoutPF : order.DutyWithoutPF,
-      VoltasFormat: VoltasFormat !== undefined ? !!VoltasFormat : order.VoltasFormat,
-      VatWithPF: VatWithPF !== undefined ? !!VatWithPF : order.VatWithPF
-    });
+    if (items !== undefined && (!Array.isArray(items) || items.length === 0)) {
+      return res.status(400).json({ success: false, message: 'Purchase order items cannot be empty' });
+    }
+    await sequelize.transaction(async transaction => {
+      await order.update({
+        OrderDate: cleanDate(OrderDate) || order.OrderDate || cleanDate(new Date()),
+        PartyCode: resolvedPartyCode,
+        Address: Address !== undefined ? (Address ? Address.trim() : null) : order.Address,
+        Place: Place !== undefined ? (Place ? Place.trim() : null) : order.Place,
+        Remarks: Remarks !== undefined ? (Remarks ? Remarks.trim() : null) : order.Remarks,
+        RefNo: RefNo !== undefined ? (RefNo ? RefNo.trim() : null) : order.RefNo,
+        Total: preparedItems ? sumTotal : (Total !== undefined ? parseDec(Total, 0) : order.Total),
+        Discount: preparedItems ? sumDiscount : (Discount !== undefined ? parseDec(Discount, 0) : order.Discount),
+        GST: preparedItems ? sumGST : (GST !== undefined ? parseDec(GST, 0) : order.GST),
+        IGST: preparedItems ? sumIGST : (IGST !== undefined ? parseDec(IGST, 0) : order.IGST),
+        VAT_CST: VAT_CST !== undefined ? parseDec(VAT_CST, 0) : order.VAT_CST,
+        P_F: preparedItems ? sumPF : (P_F !== undefined ? parseDec(P_F, 0) : order.P_F),
+        LorryFreight: LorryFreight !== undefined ? parseDec(LorryFreight, 0) : order.LorryFreight,
+        RoundOff: RoundOff !== undefined ? parseDec(RoundOff, 0) : (preparedItems ? sumRoundOff : order.RoundOff),
+        GrandTotal: GrandTotal !== undefined ? parseDec(GrandTotal, 0) : (preparedItems ? sumGrandTotal : order.GrandTotal),
+        DutyWithoutPF: DutyWithoutPF !== undefined ? !!DutyWithoutPF : order.DutyWithoutPF,
+        VoltasFormat: VoltasFormat !== undefined ? !!VoltasFormat : order.VoltasFormat,
+        VatWithPF: VatWithPF !== undefined ? !!VatWithPF : order.VatWithPF
+      }, { transaction });
 
-    // Update order details if provided
-    if (preparedItems) {
-      await PurchaseOrderDetail.destroy({ where: { OrderNo: oNo } });
-      for (const item of preparedItems) {
-        await PurchaseOrderDetail.create(item);
+      // Update order details if provided
+      if (preparedItems) {
+        await PurchaseOrderDetail.destroy({ where: { OrderNo: oNo }, transaction });
+        for (const item of preparedItems) {
+          await PurchaseOrderDetail.create(item, { transaction });
+        }
+
+        // Recalculate PO status (ordered qty may have changed)
+        const { recalcPOStatus } = require('./gateInwardController');
+        await recalcPOStatus(oNo, transaction);
       }
 
-      // Recalculate PO status (ordered qty may have changed)
-      const { recalcPOStatus } = require('./gateInwardController');
-      await recalcPOStatus(oNo);
-    }
+    });
 
     res.json({
       success: true,
@@ -565,7 +560,7 @@ exports.updatePurchaseOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating purchase order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating purchase order',
       error: error.message
@@ -588,8 +583,14 @@ exports.deletePurchaseOrder = async (req, res) => {
       });
     }
 
+    const referencedInwards = await GateInwardDetail.findAll({
+      where: { OrderNo: orderNo }, attributes: ['InwardNo'], raw: true, transaction: t
+    });
     const gateInwards = await GateInward.findAll({
-      where: { OrderNo: orderNo },
+      where: { [Op.or]: [
+        { OrderNo: orderNo },
+        { InwardNo: { [Op.in]: referencedInwards.map(d => d.InwardNo) } }
+      ] },
       attributes: ['InwardNo'],
       raw: true,
       transaction: t
@@ -599,11 +600,16 @@ exports.deletePurchaseOrder = async (req, res) => {
     const inwardDetails = inwardNos.length > 0
       ? await GateInwardDetail.findAll({
           where: { InwardNo: { [Op.in]: inwardNos } },
-          attributes: ['ItemCode', 'ReceivedQty'],
+          attributes: ['OrderNo', 'ItemCode', 'ReceivedQty', 'StockUnitRate', 'StockValue'],
           raw: true,
           transaction: t
         })
       : [];
+
+    if (inwardDetails.some(d => d.OrderNo && String(d.OrderNo) !== String(orderNo))) {
+      await t.rollback();
+      return res.status(409).json({ success: false, message: 'This purchase order shares a gate inward with another PO. Remove its inward lines before deleting the order.' });
+    }
 
     const receipts = inwardNos.length > 0
       ? await Receipt.findAll({
@@ -626,6 +632,7 @@ exports.deletePurchaseOrder = async (req, res) => {
     const voucherNos = billEntries.map(row => row.VoucherNo);
 
     if (voucherNos.length > 0) {
+      await require('../models/BillVerify').destroy({ where: { VoucherNo: { [Op.in]: voucherNos } }, transaction: t });
       await BillEntryDetail.destroy({ where: { VoucherNo: { [Op.in]: voucherNos } }, transaction: t });
       await BillEntry.destroy({ where: { VoucherNo: { [Op.in]: voucherNos } }, transaction: t });
     }
@@ -636,20 +643,8 @@ exports.deletePurchaseOrder = async (req, res) => {
     }
 
     if (inwardNos.length > 0) {
-      for (const detail of inwardDetails) {
-        const receivedQty = parseFloat(detail.ReceivedQty) || 0;
-        if (!detail.ItemCode || receivedQty === 0) continue;
-
-        const itemRecord = await Item.findByPk(detail.ItemCode, { transaction: t });
-        if (!itemRecord) continue;
-
-        const currentQty = parseFloat(itemRecord.Quantity ?? itemRecord.OpeningQty) || 0;
-        const currentOpeningQty = parseFloat(itemRecord.OpeningQty) || 0;
-        await itemRecord.update({
-          Quantity: currentQty - receivedQty,
-          OpeningQty: currentOpeningQty - receivedQty
-        }, { transaction: t });
-      }
+      const { adjustInwardInventory } = require('./gateInwardController');
+      await adjustInwardInventory(inwardDetails, -1, t);
 
       await GateInwardDetail.destroy({ where: { InwardNo: { [Op.in]: inwardNos } }, transaction: t });
       await GateInward.destroy({ where: { InwardNo: { [Op.in]: inwardNos } }, transaction: t });
@@ -671,7 +666,7 @@ exports.deletePurchaseOrder = async (req, res) => {
       console.error('Error rolling back purchase order delete transaction:', rollbackError);
     }
     console.error('Error deleting purchase order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting purchase order',
       error: error.message
@@ -727,7 +722,7 @@ exports.getPurchaseOrderById = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase order',
       error: error.message

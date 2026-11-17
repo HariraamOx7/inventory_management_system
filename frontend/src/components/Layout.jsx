@@ -123,7 +123,6 @@ const Layout = ({ children }) => {
       setTransactionsOpen(true);
     }
   }, [location.pathname, isTransactionsPath]);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const toast = useToastStore(state => state.toast);
   const hideToast = useToastStore(state => state.hideToast);

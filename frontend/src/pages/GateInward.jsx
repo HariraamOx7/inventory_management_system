@@ -17,6 +17,7 @@ const initialFormState = {
   InwardNo: '',
   OrderNo: '',
   PartyName: '',
+  PartyCode: '',
   InwardDate: new Date().toISOString().split('T')[0],
   InvoiceNo: '',
   InvoiceDate: new Date().toISOString().split('T')[0]
@@ -101,18 +102,23 @@ export default function GateInward() {
 
   // Fetch purchase orders when party is selected in form
   useEffect(() => {
-    if (formData.PartyName && !editingInwardNo) {
+    let active = true;
+    if (formData.PartyCode && !editingInwardNo) {
+      setPurchaseOrders([]);
       const fetchPartyPOs = async () => {
         try {
           const response = await axios.get(`${API_URL}/gate-inwards/purchase-orders-by-party`, {
-            params: { partyName: formData.PartyName }
+            params: { partyCode: formData.PartyCode }
           });
 
-          if (response.data?.success) {
+          if (active && response.data?.success) {
             setPurchaseOrders(response.data.data || []);
           }
         } catch (error) {
-          console.error('Error fetching party purchase orders:', error);
+          if (active) {
+            console.error('Error fetching party purchase orders:', error);
+            showToast('Could not load purchase orders. Please try again.', 'error');
+          }
         }
       };
 
@@ -121,7 +127,8 @@ export default function GateInward() {
       setPurchaseOrders([]);
       setItems([]);
     }
-  }, [formData.PartyName, editingInwardNo]);
+    return () => { active = false; };
+  }, [formData.PartyCode, editingInwardNo, showToast]);
 
   // Fetch items when orderNo is selected
   useEffect(() => {
@@ -134,6 +141,7 @@ export default function GateInward() {
 
           if (response.data?.success) {
             const itemsWithReceivedQty = (response.data.data || []).map(item => ({
+              ItemCode: item.ItemCode,
               ItemName: item.ItemName,
               OrderNo: item.OrderNo || formData.OrderNo,
               PendingQty: item.Qty,
@@ -214,6 +222,7 @@ export default function GateInward() {
       InwardNo: inward.InwardNo,
       OrderNo: orderNo,
       PartyName: inward.PartyName || '',
+      PartyCode: inward.PartyCode || '',
       InwardDate: formatDateForInput(inward.InwardDate) || new Date().toISOString().split('T')[0],
       InvoiceNo: inward.InvoiceNo || '',
       InvoiceDate: formatDateForInput(inward.InvoiceDate)
@@ -221,6 +230,7 @@ export default function GateInward() {
 
     if (inward.details) {
       setItems(inward.details.map(d => ({
+        ItemCode: d.ItemCode,
         ItemName: d.ItemName,
         OrderNo: d.OrderNo || orderNo,
         PendingQty: d.PendingQty || 0,
@@ -654,10 +664,11 @@ export default function GateInward() {
                           <CustomSelect
                             label="Party Name *"
                             searchable
-                            options={parties.map(p => ({ value: p.name, label: p.name }))}
-                            value={formData.PartyName}
+                            options={parties.map(p => ({ value: p.PartyCode, label: `${p.name} (${p.PartyCode})` }))}
+                            value={formData.PartyCode}
                             onChange={(val) => {
-                              setFormData(prev => ({ ...prev, PartyName: val, OrderNo: '' }));
+                              const party = parties.find(p => String(p.PartyCode) === String(val));
+                              setFormData(prev => ({ ...prev, PartyCode: val, PartyName: party?.name || '', OrderNo: '' }));
                               setItems([]);
                             }}
                             placeholder="Select party name"
@@ -711,7 +722,7 @@ export default function GateInward() {
                             const partyVal = formData.PartyName;
                             if (!invoiceVal || !partyVal) return;
                             try {
-                              const params = { partyName: partyVal, invoiceNo: invoiceVal };
+                              const params = { partyCode: formData.PartyCode, partyName: partyVal, invoiceNo: invoiceVal };
                               if (editingInwardNo) params.excludeInwardNo = editingInwardNo;
                               const res = await axios.get(`${API_URL}/gate-inwards/check-duplicate-invoice`, { params });
                               if (res.data?.duplicate) {

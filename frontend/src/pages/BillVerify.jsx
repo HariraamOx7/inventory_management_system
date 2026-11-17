@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Trash2, Edit2, X } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -26,7 +26,7 @@ const BillVerify = () => {
   });
 
   // Fetch party names
-  const fetchPartyNames = async () => {
+  const fetchPartyNames = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/bill-verify/party-names`);
       if (response.data.success) {
@@ -35,7 +35,7 @@ const BillVerify = () => {
     } catch (error) {
       console.error('Error fetching party names:', error);
     }
-  };
+  }, [API_BASE_URL]);
 
   // Load bill records based on filters
   const handleLoadRecords = async () => {
@@ -111,7 +111,7 @@ const BillVerify = () => {
 
   useEffect(() => {
     fetchPartyNames();
-  }, []);
+  }, [fetchPartyNames]);
 
   return (
     <Layout>

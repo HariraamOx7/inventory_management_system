@@ -5,7 +5,7 @@ import {
   Plus, Edit2, Trash2, Save, X, Store, AlertCircle, Search, ArrowUpDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
@@ -18,7 +18,7 @@ const initialFormState = {
 };
 
 export default function StoreMaster() {
-  const navigate = useNavigate();
+
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -88,7 +88,7 @@ export default function StoreMaster() {
   const handleUpdate = async (code) => {
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/stores/${code}`, editFormData);
+      await axios.put(`${API_URL}/stores?code=${encodeURIComponent(code)}`, editFormData);
       setEditingCode(null);
       fetchStores();
     } catch (error) {
@@ -102,7 +102,7 @@ export default function StoreMaster() {
     if (!window.confirm('Are you sure you want to delete this store?')) return;
     try {
       setLoading(true);
-      await axios.delete(`${API_URL}/stores/${code}`);
+      await axios.delete(`${API_URL}/stores?code=${encodeURIComponent(code)}`);
       fetchStores();
     } catch (error) {
       setError('Error deleting store: ' + error.message);

@@ -1,5 +1,5 @@
 // frontend/src/pages/ItemIssue.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import {
   PackageCheck,
@@ -67,7 +67,7 @@ export default function ItemIssue() {
   const [itemsPerPage] = useState(10);
 
   // Fetch initial data on mount
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       setLoading(true);
       const [issueRes, deptRes, issuesRes] = await Promise.all([
@@ -96,11 +96,11 @@ export default function ItemIssue() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [fetchInitialData]);
 
   // Fetch items belonging to a selected department
   const fetchDepartmentItems = async (departmentName) => {

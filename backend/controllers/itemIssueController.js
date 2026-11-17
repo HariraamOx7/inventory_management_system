@@ -1,3 +1,5 @@
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
 const ItemIssue = require('../models/ItemIssue');
 const ItemIssueDetail = require('../models/ItemIssueDetail');
 const Department = require('../models/Department');
@@ -22,6 +24,22 @@ const getEffectiveStock = (item) => {
   return 0;
 };
 
+// Restoration must follow the issued identity, including after a department change.
+const findIssuedItem = async (detail, departmentName, transaction) => {
+  if (detail.ItemCode) {
+    const item = await Item.findByPk(detail.ItemCode, { transaction, lock: transaction.LOCK.UPDATE });
+    if (!item) throw new Error(`Issued item ${detail.ItemCode} no longer exists`);
+    return item;
+  }
+  const department = await Department.findOne({ where: { dept_name: (departmentName || '').trim() }, transaction });
+  const matches = department ? await Item.findAll({
+    where: { ItemName: detail.ItemName, DepartmentId: department.dept_id },
+    limit: 2, transaction, lock: transaction.LOCK.UPDATE
+  }) : [];
+  if (matches.length !== 1) throw new Error(`Cannot uniquely identify issued item ${detail.ItemName}`);
+  return matches[0];
+};
+
 // Get last issue number
 exports.getLastIssueNo = async (req, res) => {
   try {
@@ -35,7 +53,7 @@ exports.getLastIssueNo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching last issue number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching issue number',
       error: error.message
@@ -57,7 +75,7 @@ exports.getDepartments = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching departments:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching departments',
       error: error.message
@@ -83,7 +101,7 @@ exports.getItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching items',
       error: error.message
@@ -134,7 +152,7 @@ exports.getItemsByDepartment = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching department items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching department items',
       error: error.message
@@ -156,7 +174,7 @@ exports.getItemIssues = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching item issues:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching item issues',
       error: error.message
@@ -168,6 +186,7 @@ exports.getItemIssues = async (req, res) => {
 exports.createItemIssue = async (req, res) => {
   const t = await sequelize.transaction();
   try {
+    validateTransactionItems(req.body?.items, { required: true, allowZero: true });
     const { IssueDate, IndentNo, Department: departmentName, Approval, Remarks, items } = req.body;
 
     if (!departmentName || !items || items.length === 0) {
@@ -226,7 +245,7 @@ exports.createItemIssue = async (req, res) => {
         where: row.ItemCode
           ? { ItemCode: row.ItemCode, DepartmentId: dept.dept_id }
           : { ItemName: row.ItemName, DepartmentId: dept.dept_id },
-        transaction: t
+        transaction: t, lock: t.LOCK.UPDATE
       });
 
       if (!item) {
@@ -277,7 +296,7 @@ exports.createItemIssue = async (req, res) => {
   } catch (error) {
     await t.rollback();
     console.error('Error creating item issue:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating item issue',
       error: error.message
@@ -293,9 +312,6 @@ exports.updateItemIssue = async (req, res) => {
 
     const issue = await ItemIssue.findByPk(issueNo, { transaction: t });    
     
-    const { IssueDate, IndentNo, Department: departmentName, Approval, Remarks, items } = req.body;
-    const deptName = (departmentName || issue.Department || '').trim();
-    
     if (!issue) {
       await t.rollback();
       return res.status(404).json({
@@ -303,6 +319,11 @@ exports.updateItemIssue = async (req, res) => {
         message: 'Item Issue not found'
       });
     }
+
+    validateTransactionItems(req.body?.items, { required: true, allowZero: true });
+    const originalDepartment = issue.Department;
+    const { IssueDate, IndentNo, Department: departmentName, Approval, Remarks, items } = req.body;
+    const deptName = (departmentName || issue.Department || '').trim();
 
     const dept = await Department.findOne({
       where: { dept_name: deptName },
@@ -333,13 +354,7 @@ exports.updateItemIssue = async (req, res) => {
 
     // Restore previously deducted stock
     for (const d of existingDetails) {
-      const item = await Item.findOne({
-        where: {
-          ItemName: d.ItemName,
-          DepartmentId: dept.dept_id
-        },
-        transaction: t
-      });
+      const item = await findIssuedItem(d, originalDepartment, t);
 
       if (item) {
         const restored = getEffectiveStock(item) + Number(d.Qty || 0);
@@ -376,7 +391,7 @@ exports.updateItemIssue = async (req, res) => {
         where: row.ItemCode
           ? { ItemCode: row.ItemCode, DepartmentId: dept.dept_id }
           : { ItemName: row.ItemName, DepartmentId: dept.dept_id },
-        transaction: t
+        transaction: t, lock: t.LOCK.UPDATE
       });
 
       if (!item) {
@@ -427,7 +442,7 @@ exports.updateItemIssue = async (req, res) => {
   } catch (error) {
     await t.rollback();
     console.error('Error updating item issue:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating item issue',
       error: error.message
@@ -450,36 +465,21 @@ exports.deleteItemIssue = async (req, res) => {
       });
     }
 
-    // Look up the department to find items by DepartmentId
-    const dept = await Department.findOne({
-      where: { dept_name: (issue.Department || '').trim() },
-      attributes: ['dept_id'],
-      transaction: t
-    });
-
     // Restore stock for each issued item before deleting
     const existingDetails = await ItemIssueDetail.findAll({
       where: { IssueNo: issueNo },
       transaction: t
     });
 
-    if (dept) {
-      for (const d of existingDetails) {
-        const item = await Item.findOne({
-          where: {
-            ItemName: d.ItemName,
-            DepartmentId: dept.dept_id
-          },
-          transaction: t
-        });
+    for (const d of existingDetails) {
+      const item = await findIssuedItem(d, issue.Department, t);
 
-        if (item) {
-          const restored = getEffectiveStock(item) + Number(d.Qty || 0);
-          await item.update(
-            { OpeningQty: restored, Quantity: restored },
-            { transaction: t }
-          );
-        }
+      if (item) {
+        const restored = getEffectiveStock(item) + Number(d.Qty || 0);
+        await item.update(
+          { OpeningQty: restored, Quantity: restored },
+          { transaction: t }
+        );
       }
     }
 
@@ -494,7 +494,7 @@ exports.deleteItemIssue = async (req, res) => {
   } catch (error) {
     await t.rollback();
     console.error('Error deleting item issue:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting item issue',
       error: error.message

@@ -17,7 +17,8 @@ import {
   Send,
   Boxes,
   FileText,
-  ClipboardList
+  ClipboardList,
+  AlertTriangle
 } from 'lucide-react';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
@@ -563,7 +564,7 @@ function DayBookReport({ data }) {
   );
 }
 
-function GenericGroupingBillReport({ data, groupHeaderLabel = '' }) {
+function GenericGroupingBillReport({ data }) {
   const cols = 9;
   return (
     <table className="rpt-tbl">
@@ -1031,50 +1032,122 @@ function StockAbstractReport({ data, groupLabel = 'Department' }) {
 
 function StockDetailGroupReport({ data }) {
   const cols = 6;
+  const discrepancies = data.discrepancies || [];
+  const [showMismatches, setShowMismatches] = useState(true);
+
   return (
-    <table className="rpt-tbl">
-      <thead>
-        <tr>
-          <th style={{ width: 40 }}>Sl. No.</th>
-          <th>Item Code</th>
-          <th>Item Name</th>
-          <th className="r">Qty</th>
-          <th className="r">Unit Rate</th>
-          <th className="r">Stock Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.groups.map((g, gi) => (
-          <React.Fragment key={`sd-${gi}`}>
-            <tr className="row-group-hdr">
-              <td colSpan={cols}>{g.departmentName || g.subHeadName}</td>
-            </tr>
-            {g.items.map((it, ii) => (
-              <tr key={`sdi${gi}r${ii}`}>
-                <td className="c">{it.slNo}</td>
-                <td className="c">{it.itemCode}</td>
-                <td>{it.itemName}</td>
-                <td className="r font-semibold">{fmt(it.qty)}</td>
-                <td className="r">{fmt(it.unitRate)}</td>
-                <td className="r">{fmt(it.value)}</td>
+    <div>
+      {discrepancies.length > 0 && (
+        <div className="mb-5 p-4 rounded-xl border border-amber-300 bg-amber-50/90 text-amber-900 shadow-sm no-print">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+              <span className="font-bold text-sm text-amber-950">
+                Stock Reconciliation Notice: {discrepancies.length} item(s) have quantity differences between Stock Ledger and Items Master Table
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMismatches(prev => !prev)}
+              className="text-xs px-3 py-1 bg-amber-200/90 hover:bg-amber-300 rounded-lg font-semibold text-amber-900 transition-colors self-start sm:self-auto cursor-pointer"
+            >
+              {showMismatches ? 'Hide Details' : 'Show Mismatched Items'}
+            </button>
+          </div>
+          {showMismatches && (
+            <div className="mt-3 overflow-x-auto rounded-lg border border-amber-200/90 bg-white">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="bg-amber-100/80 text-amber-950 font-bold border-b border-amber-200">
+                    <th className="p-2.5">Item Code</th>
+                    <th className="p-2.5">Item Name</th>
+                    <th className="p-2.5">Department</th>
+                    <th className="p-2.5 text-right">Stock Ledger Qty</th>
+                    <th className="p-2.5 text-right">Items Table Qty</th>
+                    <th className="p-2.5 text-right">Difference</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100/70">
+                  {discrepancies.map((d, idx) => (
+                    <tr key={`disc-${idx}`} className="hover:bg-amber-50/50">
+                      <td className="p-2.5 font-mono font-bold text-slate-800">{d.itemCode}</td>
+                      <td className="p-2.5 font-medium text-slate-700">{d.itemName}</td>
+                      <td className="p-2.5 text-slate-500">{d.departmentName}</td>
+                      <td className="p-2.5 text-right font-bold text-emerald-700">{fmt(d.ledgerQty)}</td>
+                      <td className="p-2.5 text-right font-bold text-slate-700">{fmt(d.masterQty)}</td>
+                      <td className="p-2.5 text-right font-bold text-rose-600">
+                        {d.difference > 0 ? `+${fmt(d.difference)}` : fmt(d.difference)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      <table className="rpt-tbl">
+        <thead>
+          <tr>
+            <th style={{ width: 40 }}>Sl. No.</th>
+            <th>Item Code</th>
+            <th>Item Name</th>
+            <th className="r">Qty</th>
+            <th className="r">Unit Rate</th>
+            <th className="r">Stock Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.groups.map((g, gi) => (
+            <React.Fragment key={`sd-${gi}`}>
+              <tr className="row-group-hdr">
+                <td colSpan={cols}>{g.departmentName || g.subHeadName}</td>
               </tr>
-            ))}
-            <tr className="row-subtotal">
-              <td colSpan={3} className="lbl r">Subtotal:</td>
-              <td className="r">{fmt(g.deptTotalQty || g.shTotalQty)}</td>
-              <td></td>
-              <td className="r red">{fmt(g.deptTotalValue || g.shTotalValue)}</td>
-            </tr>
-          </React.Fragment>
-        ))}
-        <tr className="row-grand">
-          <td colSpan={3} className="lbl r">Grand Total:</td>
-          <td className="r">{fmt(data.reportTotalQty)}</td>
-          <td></td>
-          <td className="r red dbl">{fmt(data.reportTotalValue)}</td>
-        </tr>
-      </tbody>
-    </table>
+              {g.items.map((it, ii) => (
+                <tr key={`sdi${gi}r${ii}`} className={it.hasMismatch ? 'bg-amber-50/60' : ''}>
+                  <td className="c">{it.slNo}</td>
+                  <td className="c">
+                    <span className="font-mono">{it.itemCode}</span>
+                    {it.hasMismatch && (
+                      <span
+                        className="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 print:hidden"
+                        title={`Items table has ${it.masterQty} (Diff: ${it.difference})`}
+                      >
+                        Mismatch
+                      </span>
+                    )}
+                  </td>
+                  <td>{it.itemName}</td>
+                  <td className="r font-semibold">
+                    {fmt(it.qty)}
+                    {it.hasMismatch && (
+                      <div className="text-[10px] text-amber-700 font-normal print:hidden">
+                        Table: {fmt(it.masterQty)}
+                      </div>
+                    )}
+                  </td>
+                  <td className="r">{fmt(it.unitRate)}</td>
+                  <td className="r">{fmt(it.value)}</td>
+                </tr>
+              ))}
+              <tr className="row-subtotal">
+                <td colSpan={3} className="lbl r">Subtotal:</td>
+                <td className="r">{fmt(g.deptTotalQty || g.shTotalQty)}</td>
+                <td></td>
+                <td className="r red">{fmt(g.deptTotalValue || g.shTotalValue)}</td>
+              </tr>
+            </React.Fragment>
+          ))}
+          <tr className="row-grand">
+            <td colSpan={3} className="lbl r">Grand Total:</td>
+            <td className="r">{fmt(data.reportTotalQty)}</td>
+            <td></td>
+            <td className="r red dbl">{fmt(data.reportTotalValue)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -1719,38 +1792,7 @@ const Reports = () => {
     setActiveReportTitle('');
   };
 
-  const handleSaveReport = async () => {
-    if (!printPaperRef.current || !reportData) return;
-    try {
-      setSavingPdf(true);
-      const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'pt',
-        format: 'a4'
-      });
 
-      const cleanTitle = (reportData.reportTitle || activeReportTitle || 'Report')
-        .replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = `${cleanTitle}_${fromDate}_to_${toDate}.pdf`;
-
-      await doc.html(printPaperRef.current, {
-        callback: (pdf) => {
-          pdf.save(filename);
-          showToast('Report PDF downloaded successfully', 'success');
-        },
-        x: 15,
-        y: 15,
-        width: 810,
-        windowWidth: 1100,
-        autoPaging: 'text'
-      });
-    } catch (err) {
-      console.error('Error saving report PDF:', err);
-      showToast('Failed to download report PDF', 'error');
-    } finally {
-      setSavingPdf(false);
-    }
-  };
 
   const renderReportContent = () => {
     if (!reportData) return null;

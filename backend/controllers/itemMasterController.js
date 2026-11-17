@@ -1,3 +1,5 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const ItemMaster = require('../models/ItemMaster');
 const Department = require('../models/Department');
 const UOM = require('../models/UOM');
@@ -36,7 +38,10 @@ exports.generateItemCode = async (req, res) => {
             order: [['ItemCode', 'DESC']]
         });
 
-        const nextNumber = itemsWithPrefix.length + 1;
+        const occupied = new Set(itemsWithPrefix.map(item => item.ItemCode));
+        let nextNumber = 1;
+        const prefix = `${departmentId}/${subHeadCode}/${abbr}/`;
+        while (occupied.has(prefix + String(nextNumber).padStart(4, '0'))) nextNumber += 1;
         const paddedNumber = String(nextNumber).padStart(4, '0');
         const generatedCode = `${departmentId}/${subHeadCode}/${abbr}/${paddedNumber}`;
 
@@ -46,7 +51,7 @@ exports.generateItemCode = async (req, res) => {
         });
     } catch (error) {
         console.error('Error generating item code:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error generating item code',
             error: error.message
@@ -77,7 +82,7 @@ exports.getSubHeadsByDepartment = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching sub heads:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching sub heads',
             error: error.message
@@ -96,7 +101,7 @@ exports.getItemMasters = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching item masters:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching item masters',
             error: error.message 
@@ -116,7 +121,7 @@ exports.getDepartments = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching departments:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching departments',
             error: error.message 
@@ -136,7 +141,7 @@ exports.getUOMs = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching UOMs:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching UOMs',
             error: error.message 
@@ -178,7 +183,7 @@ exports.addItemMaster = async (req, res) => {
             });
         }
         
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding item master',
             error: error.message 
@@ -188,7 +193,10 @@ exports.addItemMaster = async (req, res) => {
 
 exports.updateItemMaster = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) {
+            return res.status(400).json({ success: false, message: 'A valid item code is required' });
+        }
         const { ItemName, UnitRate, Department, UOM } = req.body;
 
         if (!ItemName || ItemName.trim() === '') {
@@ -219,7 +227,7 @@ exports.updateItemMaster = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating item master:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating item master',
             error: error.message
@@ -229,7 +237,10 @@ exports.updateItemMaster = async (req, res) => {
 
 exports.deleteItemMaster = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) {
+            return res.status(400).json({ success: false, message: 'A valid item code is required' });
+        }
         
         const itemMaster = await ItemMaster.findByPk(code);
         if (!itemMaster) {
@@ -239,6 +250,8 @@ exports.deleteItemMaster = async (req, res) => {
             });
         }
 
+        await preventReferencedDeletion('ItemMaster', itemMaster);
+
         await itemMaster.destroy();
 
         res.json({
@@ -247,7 +260,7 @@ exports.deleteItemMaster = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting item master:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting item master',
             error: error.message

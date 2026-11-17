@@ -1,3 +1,6 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
 const { Op, fn, col } = require('sequelize');
 const GateInward = require('../models/GateInward');
 const GateInwardDetail = require('../models/GateInwardDetail');
@@ -102,7 +105,7 @@ const priceInwardDetails = async (details, previousDetails = [], transaction) =>
 const adjustInventory = async (details = [], direction, transaction) => {
   for (const detail of details) {
     const receivedQty = parseFloat(detail.ReceivedQty) || 0;
-    if (receivedQty === 0) continue;
+    if (receivedQty === 0 && Number(detail.StockValue || 0) === 0) continue;
 
     let item = null;
     if (detail.ItemCode) {
@@ -119,7 +122,13 @@ const adjustInventory = async (details = [], direction, transaction) => {
     const currentRate = parseFloat(item.UnitRate) || 0;
     if (detail.StockValue == null) throw new Error(`Missing recorded inward value for ${detail.ItemCode}`);
     const currentValue = currentQty * currentRate;
-    const nextQty = currentQty + adjustment;
+    const proposedQty = currentQty + adjustment;
+    if (proposedQty < -0.000001) {
+      const error = new Error(`Cannot remove inward quantity for ${detail.ItemCode}: it would make stock negative. Reverse the related issues first.`);
+      error.statusCode = 409;
+      throw error;
+    }
+    const nextQty = Math.max(0, proposedQty);
     const nextValue = currentValue + (direction * Number(detail.StockValue));
     const nextRate = nextQty > 0
       ? Math.max(0, nextValue / nextQty)
@@ -139,6 +148,42 @@ const findInvalidReceivedQtyItem = (items = []) => items.find((item) => {
 
   return receivedQty < 0 || receivedQty > pendingQty;
 });
+
+const validateInwardBalances = async (details, partyCode, transaction, excludeInwardNo) => {
+  const invalid = message => {
+    const error = new Error(message);
+    error.statusCode = 400;
+    throw error;
+  };
+  const orderNos = [...new Set(details.map(d => String(d.OrderNo || '')))].sort();
+  // Serialize receipts against the PO so concurrent batches cannot over-receive.
+  for (const orderNo of orderNos) {
+    const order = orderNo ? await PurchaseOrder.findByPk(orderNo, { transaction, lock: transaction.LOCK.UPDATE }) : null;
+    if (!order || order.PartyCode !== partyCode) invalid('Every inward line must belong to a purchase order for the selected party');
+  }
+  const poLines = await PurchaseOrderDetail.findAll({ where: { OrderNo: { [Op.in]: orderNos } }, raw: true, transaction });
+  const where = { OrderNo: { [Op.in]: orderNos } };
+  if (excludeInwardNo) where.InwardNo = { [Op.ne]: excludeInwardNo };
+  const received = await GateInwardDetail.findAll({ where, raw: true, transaction });
+  const remaining = new Map();
+  for (const line of poLines) {
+    const key = `${line.OrderNo}::${line.ItemCode}`;
+    remaining.set(key, (remaining.get(key) || 0) + Number(line.Qty || 0));
+  }
+  for (const line of received) {
+    const key = `${line.OrderNo}::${line.ItemCode}`;
+    if (remaining.has(key)) remaining.set(key, remaining.get(key) - Number(line.ReceivedQty || 0));
+  }
+  for (const line of details) {
+    const key = `${line.OrderNo}::${line.ItemCode}`;
+    const qty = Number(line.ReceivedQty);
+    if (!remaining.has(key)) invalid(`Item ${line.ItemCode} is not on purchase order ${line.OrderNo}`);
+    const pending = remaining.get(key);
+    if (!Number.isFinite(qty) || qty < 0 || qty > pending + 0.000001) invalid(`Received quantity for ${line.ItemCode} exceeds the actual pending quantity (${pending}) or is invalid`);
+    line.PendingQty = pending;
+    remaining.set(key, pending - qty);
+  }
+};
 
 /**
  * Recalculate and update PO status based on total ordered vs total received.
@@ -214,7 +259,7 @@ exports.getLastInwardNo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching last inward number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching inward number',
       error: error.message
@@ -250,7 +295,7 @@ exports.getPurchaseOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase orders:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase orders',
       error: error.message
@@ -294,7 +339,7 @@ exports.getPurchaseOrderItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching order items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching order items',
       error: error.message
@@ -345,7 +390,7 @@ exports.getGateInwards = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching gate inwards:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate inwards',
       error: error.message
@@ -401,7 +446,7 @@ exports.getGateInwardById = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching gate inward:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate inward',
       error: error.message
@@ -412,12 +457,13 @@ exports.getGateInwardById = async (req, res) => {
 // Create gate inward with details
 exports.createGateInward = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { required: true, quantities: ['ReceivedQty'], allowZero: true });
     const {
       PartyCode, PartyName, InwardDate, InvoiceNo, InvoiceDate, items
     } = req.body;
 
     const resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName);
-    if (!resolvedPartyCode || !items || items.length === 0) {
+    if (!resolvedPartyCode || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Party code/name and items are required'
@@ -505,6 +551,7 @@ exports.createGateInward = async (req, res) => {
 
     if (preparedItems.length !== items.length) throw new Error('Every inward line requires a valid item code');
     const newInward = await sequelize.transaction(async transaction => {
+      await validateInwardBalances(preparedItems, resolvedPartyCode, transaction);
       const priced = await priceInwardDetails(preparedItems, [], transaction);
       const created = await GateInward.create({
         OrderNo: orderNos[0], PartyCode: resolvedPartyCode,
@@ -524,7 +571,7 @@ exports.createGateInward = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating gate inward:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating gate inward',
       error: error.message
@@ -535,6 +582,7 @@ exports.createGateInward = async (req, res) => {
 // Update gate inward
 exports.updateGateInward = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { quantities: ['ReceivedQty'], allowZero: true });
     const { inwardNo } = req.params;
     const {
       OrderNo, PartyCode, PartyName, InwardDate, InvoiceNo, InvoiceDate, items
@@ -553,6 +601,9 @@ exports.updateGateInward = async (req, res) => {
       resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName) || inward.PartyCode;
     }
 
+    if (items !== undefined && (!Array.isArray(items) || items.length === 0)) {
+      return res.status(400).json({ success: false, message: 'Gate inward items cannot be empty' });
+    }
     if (items && items.length > 0) {
       const hasReceivedQty = items.some(i => (parseFloat(i.ReceivedQty) || 0) > 0);
       if (!hasReceivedQty) {
@@ -577,7 +628,8 @@ exports.updateGateInward = async (req, res) => {
         where: {
           PartyCode: resolvedPartyCode,
           InvoiceNo: InvoiceNo.trim(),
-          InwardNo: { [Op.ne]: inwardNo }
+          InwardNo: { [Op.ne]: inwardNo },
+          OrderNo: { [Op.ne]: OrderNo || items?.[0]?.OrderNo || inward.OrderNo }
         }
       });
       if (duplicateInward) {
@@ -603,15 +655,27 @@ exports.updateGateInward = async (req, res) => {
         for (const item of items) {
           const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
           if (!itemCode) throw new Error('Every inward line requires a valid item code');
-          preparedItems.push({ InwardNo: inwardNo, OrderNo: item.OrderNo, ItemCode: itemCode,
+          preparedItems.push({ InwardNo: inwardNo, OrderNo: item.OrderNo || inward.OrderNo, ItemCode: itemCode,
             PendingQty: item.PendingQty || item.Qty || 0, ReceivedQty: item.ReceivedQty || 0 });
           if (item.OrderNo) affectedOrderNos.add(item.OrderNo);
         }
+        await validateInwardBalances(preparedItems, resolvedPartyCode, transaction, inwardNo);
         const priced = await priceInwardDetails(preparedItems, previousDetails, transaction);
-        await adjustInventory(previousDetails, -1, transaction);
+        // Apply the net change once. Reversing the whole inward temporarily
+        // loses the remaining stock value when some goods have been issued.
+        const changes = new Map();
+        for (const [lines, direction] of [[previousDetails, -1], [priced, 1]]) {
+          for (const line of lines) {
+            if (line.StockValue == null) throw new Error(`Missing recorded inward value for ${line.ItemCode}`);
+            const change = changes.get(line.ItemCode) || { ItemCode: line.ItemCode, ReceivedQty: 0, StockValue: 0 };
+            change.ReceivedQty += direction * Number(line.ReceivedQty || 0);
+            change.StockValue += direction * Number(line.StockValue);
+            changes.set(line.ItemCode, change);
+          }
+        }
+        await adjustInventory([...changes.values()], 1, transaction);
         await GateInwardDetail.destroy({ where: { InwardNo: inwardNo }, transaction });
         for (const detail of priced) await GateInwardDetail.create(detail, { transaction });
-        await adjustInventory(priced, 1, transaction);
         for (const oNo of affectedOrderNos) await recalcPOStatus(oNo, transaction);
       }
     });
@@ -623,7 +687,7 @@ exports.updateGateInward = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating gate inward:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating gate inward',
       error: error.message
@@ -644,6 +708,8 @@ exports.deleteGateInward = async (req, res) => {
       });
     }
 
+        await preventReferencedDeletion('GateInward', inward);
+
     await sequelize.transaction(async transaction => {
       const details = await GateInwardDetail.findAll({ where: { InwardNo: inwardNo }, raw: true, transaction, lock: transaction.LOCK.UPDATE });
       const orderNos = [...new Set([inward.OrderNo, ...details.map(d => d.OrderNo)].filter(Boolean))];
@@ -659,7 +725,7 @@ exports.deleteGateInward = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting gate inward:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting gate inward',
       error: error.message
@@ -694,7 +760,7 @@ exports.getParties = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching parties:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching parties',
       error: error.message
@@ -730,7 +796,7 @@ exports.getPurchaseOrdersByParty = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase orders by party:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase orders',
       error: error.message
@@ -813,7 +879,7 @@ exports.getItemsByOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching items by order:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching items by order',
       error: error.message
@@ -903,7 +969,7 @@ exports.getItemsByParty = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching items by party:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching items',
       error: error.message
@@ -950,7 +1016,7 @@ exports.checkDuplicateInvoice = async (req, res) => {
     });
   } catch (error) {
     console.error('Error checking duplicate invoice:', error);
-    res.status(500).json({ success: false, message: 'Error checking duplicate', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error checking duplicate', error: error.message });
   }
 };
 
@@ -972,6 +1038,7 @@ exports.deleteGateInwardChain = async (req, res) => {
     await sequelize.transaction(async transaction => {
     // Layer 1: Delete GateInward + Details
     if (layers.gateInward) {
+      await preventReferencedDeletion('GateInward', inward, transaction);
       const details = await GateInwardDetail.findAll({
         where: { InwardNo: inwardNo },
         raw: true, transaction, lock: transaction.LOCK.UPDATE
@@ -1009,8 +1076,9 @@ exports.deleteGateInwardChain = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting gate inward chain:', error);
-    res.status(500).json({ success: false, message: 'Error deleting gate inward chain', error: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: 'Error deleting gate inward chain', error: error.message });
   }
 };
 
 exports.recalcPOStatus = recalcPOStatus;
+exports.adjustInwardInventory = adjustInventory;

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, Trash2, Save, X, Building2, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 export default function Department() {
-    const navigate = useNavigate();
+
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -43,7 +43,7 @@ export default function Department() {
             });
             setNewDepartment('');
             fetchDepartments();
-        } catch (error) {
+        } catch {
             setError('Duplicate Entry for Department');
         } finally {
             setLoading(false);

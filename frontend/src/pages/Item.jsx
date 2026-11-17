@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
     Plus, Edit2, Trash2, Save, X, Package2, AlertCircle, ArrowLeft,
     Search, Filter, RotateCcw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
     Upload, SlidersHorizontal
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Papa from 'papaparse';
 import CustomSelect from '../components/CustomSelect';
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
+
+const getApiErrorMessage = (error, fallback) =>
+    error.response?.data?.message || error.response?.data?.error || error.message || fallback;
 
 const initialFormState = {
     ItemName: '',
@@ -31,7 +34,7 @@ const initialFormState = {
 };
 
 export default function Item() {
-    const navigate = useNavigate();
+
     const [items, setItems] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [subHeads, setSubHeads] = useState([]);
@@ -107,7 +110,7 @@ export default function Item() {
         }
     };
 
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         try {
             setLoading(true);
             const response = await axios.get(`${API_URL}/items`, {
@@ -137,7 +140,7 @@ export default function Item() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, itemsPerPage, search, departmentFilter, subHeadFilter, uomFilter, sortBy]);
 
     useEffect(() => {
         fetchDepartments();
@@ -147,32 +150,20 @@ export default function Item() {
 
     useEffect(() => {
         fetchItems();
-    }, [currentPage, itemsPerPage, search, departmentFilter, subHeadFilter, uomFilter, sortBy]);
+    }, [fetchItems]);
 
     const handleSearchChange = (e) => {
         setSearch(e.target.value);
         setCurrentPage(1);
     };
 
-    const handleDepartmentFilterChange = (e) => {
-        setDepartmentFilter(e.target.value);
-        setCurrentPage(1);
-    };
 
-    const handleSubHeadFilterChange = (e) => {
-        setSubHeadFilter(e.target.value);
-        setCurrentPage(1);
-    };
 
-    const handleUomFilterChange = (e) => {
-        setUomFilter(e.target.value);
-        setCurrentPage(1);
-    };
 
-    const handleLimitChange = (e) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1);
-    };
+
+
+
+
 
     const handleResetFilters = () => {
         setSearch('');
@@ -192,7 +183,7 @@ export default function Item() {
             setShowAddForm(false);
             fetchItems();
         } catch (error) {
-            setError('Error adding item: ' + error.message);
+            setError('Error adding item: ' + getApiErrorMessage(error, 'Unable to create item'));
         } finally {
             setLoading(false);
         }
@@ -251,11 +242,11 @@ export default function Item() {
                 SubHeadCode: editFormData.SubHeadCode
             };
 
-            await axios.put(`${API_URL}/items/${editingCode}`, updateData);
+            await axios.put(`${API_URL}/items`, updateData, { params: { code: editingCode } });
             handleCloseEditDrawer();
             fetchItems();
         } catch (error) {
-            setError('Error updating item: ' + error.message);
+            setError('Error updating item: ' + getApiErrorMessage(error, 'Unable to update item'));
         } finally {
             setLoading(false);
         }
@@ -266,10 +257,10 @@ export default function Item() {
 
         try {
             setLoading(true);
-            await axios.delete(`${API_URL}/items/${code}`);
+            await axios.delete(`${API_URL}/items`, { params: { code } });
             fetchItems();
         } catch (error) {
-            setError('Error deleting item: ' + error.message);
+            setError('Error deleting item: ' + getApiErrorMessage(error, 'Unable to delete item'));
         } finally {
             setLoading(false);
         }

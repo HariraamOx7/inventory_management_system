@@ -11,6 +11,8 @@ const {
 router.get('/', getSuppliers);
 router.get('/last-code', getLastCode);
 router.post('/', addSupplier);
+router.put('/', updateSupplier);
+router.delete('/', deleteSupplier);
 router.put('/:partyCode', updateSupplier);
 router.delete('/:partyCode', deleteSupplier);
 

@@ -15,7 +15,7 @@ GateInwardDetail.init({
     allowNull: false
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: false
   },
   ItemCode: {

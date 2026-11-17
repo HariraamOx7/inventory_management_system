@@ -1,0 +1,26 @@
+
+> frontend@0.0.0 build
+> vite build
+
+vite v7.1.9 building for production...
+transforming...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2028 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                              0.47 kB │ gzip:   0.30 kB
+dist/assets/logo-yKOhI35Z.png               10.02 kB
+dist/assets/index-CYLavrgU.css              55.88 kB │ gzip:   8.91 kB
+dist/assets/purify.es-Jn2rvFN8.js           28.91 kB │ gzip:  10.90 kB
+dist/assets/index.es-BMZ94b0c.js           159.60 kB │ gzip:  53.51 kB
+dist/assets/html2canvas.esm-B0tyYwQk.js    202.36 kB │ gzip:  48.04 kB
+dist/assets/index-CyI9lF_c.js            1,264.11 kB │ gzip: 324.51 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 17.30s

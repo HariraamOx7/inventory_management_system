@@ -1,3 +1,4 @@
+import { roundTotal } from '../utils/roundTotal';
 // frontend/src/pages/BillEntry.jsx
 import { useState, useEffect, useMemo, useCallback, memo, Fragment } from 'react';
 import axios from 'axios';
@@ -9,7 +10,6 @@ import {
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import SearchSelect from '../components/SearchSelect';
-import CustomSelect from '../components/CustomSelect';
 import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
 import { useToastStore } from '../store/toastStore';
@@ -27,6 +27,7 @@ const initialFormState = {
   GateInwardNo: '',
   GRNNo: '',
   PartyName: '',
+  PartyCode: '',
   AccDate: new Date().toISOString().split('T')[0],
   PartyBillNo: '',
   BillDate: new Date().toISOString().split('T')[0],
@@ -327,7 +328,7 @@ export default function BillEntry() {
 
       const [ptRes, partiesRes] = await Promise.all([
         axios.get(`${API_URL}/purchase-types`).catch(() => ({ data: { success: false } })),
-        axios.get(`${API_URL}/bill-entries/available-parties`).catch(() => ({ data: { success: false } }))
+        axios.get(`${API_URL}/bill-entries/available-parties`, { params: { includeCodes: true } }).catch(() => ({ data: { success: false } }))
       ]);
 
       if (ptRes.data?.success) {
@@ -335,7 +336,7 @@ export default function BillEntry() {
       }
 
       if (partiesRes.data?.success) {
-        setParties((partiesRes.data.data || []).map(name => ({ name })));
+        setParties(partiesRes.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
@@ -350,18 +351,23 @@ export default function BillEntry() {
 
   // Fetch available GRNs when party is selected in form
   useEffect(() => {
-    if (formData.PartyName) {
+    let active = true;
+    setGrnsList([]);
+    if (formData.PartyCode) {
       const fetchPartyGRNs = async () => {
         try {
           const grnRes = await axios.get(`${API_URL}/bill-entries/available-grns`, {
-            params: { partyName: formData.PartyName }
-          }).catch(() => ({ data: { success: false } }));
+            params: { partyCode: formData.PartyCode }
+          });
 
-          if (grnRes.data?.success) {
+          if (active && grnRes.data?.success) {
             setGrnsList(grnRes.data.data || []);
           }
         } catch (error) {
-          console.error('Error fetching GRNs for party:', error);
+          if (active) {
+            console.error('Error fetching GRNs for party:', error);
+            showToast('Could not load receipts. Please try again.', 'error');
+          }
         }
       };
 
@@ -369,7 +375,8 @@ export default function BillEntry() {
     } else {
       setGrnsList([]);
     }
-  }, [formData.PartyName]);
+    return () => { active = false; };
+  }, [formData.PartyCode, showToast]);
 
   // Helper to generate default narration
   const generateNarration = useCallback((itemList, billNo, billDate) => {
@@ -407,6 +414,7 @@ export default function BillEntry() {
               const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
               const rateVal = parseFloat(d.UnitRate) || 0;
               return {
+                ItemCode: d.ItemCode,
                 ItemName: d.ItemName,
                 ReceivedQty: qtyVal,
                 Qty: qtyVal,
@@ -431,6 +439,7 @@ export default function BillEntry() {
               ...prev,
               GateInwardNo: receipt.GateInwardNo || prev.GateInwardNo,
               PartyName: receipt.PartyName || prev.PartyName,
+              PartyCode: receipt.PartyCode || prev.PartyCode,
               PartyBillNo: receipt.InvoiceNo || '',
               BillDate: invoiceDateStr,
               Narration: autoNarration || prev.Narration,
@@ -479,8 +488,7 @@ export default function BillEntry() {
     const pf = parseFloat(formData.P_F) || 0;
     const lorryFreight = parseFloat(formData.LorryFreight) || 0;
     const unroundedGrandTotal = total - discount + gst + igst + vatCst + pf + lorryFreight;
-    const grandTotal = Math.round(unroundedGrandTotal);
-    const roundOff = noRoundOff ? 0 : parseFloat((grandTotal - unroundedGrandTotal).toFixed(2));
+    const { grandTotal, roundOff } = roundTotal(unroundedGrandTotal, noRoundOff);
 
     return {
       total,
@@ -566,8 +574,8 @@ export default function BillEntry() {
 
     // Refresh if empty
     if (parties.length === 0) {
-      axios.get(`${API_URL}/bill-entries/available-parties`)
-        .then(res => { if (res.data?.success) setParties((res.data.data || []).map(n => ({ name: n }))); })
+      axios.get(`${API_URL}/bill-entries/available-parties`, { params: { includeCodes: true } })
+        .then(res => { if (res.data?.success) setParties(res.data.data || []); })
         .catch(() => { });
     }
     if (purchaseTypes.length === 0) {
@@ -588,6 +596,7 @@ export default function BillEntry() {
       GateInwardNo: bill.GateInwardNo || '',
       GRNNo: bill.GRNNo || '',
       PartyName: bill.PartyName || '',
+      PartyCode: bill.PartyCode || '',
       AccDate: bill.AccDate ? new Date(bill.AccDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       PartyBillNo: bill.PartyBillNo || '',
       BillDate: bill.BillDate ? new Date(bill.BillDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -632,6 +641,7 @@ export default function BillEntry() {
       const qtyVal = d.Qty !== undefined ? d.Qty : (d.ReceivedQty !== undefined ? d.ReceivedQty : 0);
       const rateVal = parseFloat(d.UnitRate) || 0;
       return {
+        ItemCode: d.ItemCode,
         ItemName: d.ItemName,
         ReceivedQty: qtyVal,
         Qty: qtyVal,
@@ -659,10 +669,10 @@ export default function BillEntry() {
         if (res.data?.success && res.data?.data?.details) {
           const grnItemMap = {};
           res.data.data.details.forEach(gd => {
-            grnItemMap[gd.ItemName] = gd;
+            grnItemMap[`${gd.OrderNo || ''}::${gd.ItemCode || gd.ItemName}`] = gd;
           });
           setItems(prev => prev.map(item => {
-            const gd = grnItemMap[item.ItemName];
+            const gd = grnItemMap[`${item.OrderNo || ''}::${item.ItemCode || item.ItemName}`];
             if (gd) {
               return {
                 ...item,
@@ -708,7 +718,7 @@ export default function BillEntry() {
   }, [fetchBillEntries, showToast]);
 
   // Helper: run layered deletion confirmation for a duplicate bill entry chain
-  const handleDuplicateBillCleanup = useCallback(async (duplicate, payload) => {
+  const handleDuplicateBillCleanup = useCallback(async (duplicate) => {
     const { VoucherNo, PartyName: dupParty, PartyBillNo: dupBillNo, GRNNo, GateInwardNo, hasReceipt, hasGateInward, hasPurchaseOrder } = duplicate;
 
     // Layer 1: Confirm BillEntry deletion
@@ -791,6 +801,7 @@ export default function BillEntry() {
         const qty = parseFloat(item.ReceivedQty !== undefined ? item.ReceivedQty : item.Qty) || 0;
         const rate = parseFloat(item.UnitRate) || 0;
         return {
+          ItemCode: item.ItemCode,
           ItemName: item.ItemName,
           OrderNo: item.OrderNo || null,
           Qty: qty,
@@ -975,7 +986,11 @@ export default function BillEntry() {
 
     // Discount (Credit)
     if (discountAmt > 0) {
+      doc.text('To', col1X, y);
+      doc.text('DISCOUNT', col1X + 12, y);
+      doc.text(fmt(discountAmt), col3X + 30, y, { align: 'right' });
       totalCredit += discountAmt;
+      y += 5;
     }
 
     // VAT/CST
@@ -1005,39 +1020,34 @@ export default function BillEntry() {
     // Original unrounded amount for display
     const originalPayable = totalAmount - discountAmt + gstAmount + igstAmount + vatCstAmt + pfAmt + lorryAmt;
 
-    // Round off = difference between rounded and original amount
-    const roundOff = parseFloat((Math.round(originalPayable) - originalPayable).toFixed(2));
-
-    // Skip round off line if the bill was saved with "No Round Off" active
-    const billHasNoRoundOff = bill.RoundOff !== undefined && bill.RoundOff !== null && Math.abs(parseFloat(bill.RoundOff) || 0) < 0.0001;
-
-    if (Math.abs(roundOff) > 0.0001 && !billHasNoRoundOff) {
-      doc.text('To', col1X, y);
+    // Print the saved payable amount and rounding, preserving paise.
+    const roundOff = parseFloat(bill.RoundOff) || 0;
+    const payable = bill.GrandTotal !== undefined && bill.GrandTotal !== null
+      ? parseFloat(bill.GrandTotal) || 0 : originalPayable + roundOff;
+    if (Math.abs(roundOff) > 0.0001) {
       doc.text('ROUND OFF', col1X + 12, y);
       if (roundOff > 0) {
-        doc.text(fmt(roundOff), col3X + 30, y, { align: 'right' });
+        doc.text(fmt(roundOff), col2X + 15, y, { align: 'right' });
+        totalDebit += roundOff;
       } else {
+        doc.text('To', col1X, y);
         doc.text(fmt(Math.abs(roundOff)), col3X + 30, y, { align: 'right' });
-        
+        totalCredit += Math.abs(roundOff);
       }
       y += 5;
     }
 
-    // Party Name (Credit entry) — show original unrounded amount
     doc.text('To', col1X, y);
     doc.text(bill.PartyName || '', col1X + 12, y);
-    doc.text(fmt(originalPayable), col3X + 30, y, { align: 'right' });
-    //totalCredit += Math.abs(roundOff);
-    totalCredit = Math.round(originalPayable);
+    doc.text(fmt(payable), col3X + 30, y, { align: 'right' });
+    totalCredit += payable;
     y += 3;
     drawLine(y);
     y += 5;
 
-    // Totals row (always strictly balanced with rounded debit)
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    const roundedDebit = Math.round(totalDebit);
-    doc.text(fmt(roundedDebit), col2X + 15, y, { align: 'right' });
+    doc.text(fmt(totalDebit), col2X + 15, y, { align: 'right' });
     doc.text(fmt(totalCredit), col3X + 30, y, { align: 'right' });
     y += 3;
     drawLine(y);
@@ -1331,9 +1341,12 @@ export default function BillEntry() {
                         <SearchSelect
                           label="Party Name *"
                           required
-                          options={parties.map(p => ({ value: p.name, label: p.name }))}
-                          value={formData.PartyName}
-                          onChange={(val) => setFormData(prev => ({ ...prev, PartyName: val, GateInwardNo: '', GRNNo: '' }))}
+                          options={parties.map(p => ({ value: p.PartyCode, label: `${p.name} (${p.PartyCode})` }))}
+                          value={formData.PartyCode}
+                          onChange={(val) => {
+                            const party = parties.find(p => String(p.PartyCode) === String(val));
+                            setFormData(prev => ({ ...prev, PartyCode: val, PartyName: party?.name || '', GateInwardNo: '', GRNNo: '' }));
+                          }}
                           placeholder="Search supplier or party..."
                         />
                       )}
@@ -1450,14 +1463,13 @@ export default function BillEntry() {
                       </div>
 
                       <div>
-                        <CustomSelect
+                        <SearchSelect
                           label="Purchase Type"
+                          placeholder="Search purchase type"
                           value={formData.PurchaseType}
                           onChange={(val) => setFormData(prev => ({ ...prev, PurchaseType: val }))}
-                          options={[
-                            { value: '', label: 'Select Purchase Type' },
-                            ...purchaseTypes.map(pt => ({ value: pt.PurchaseType || pt.typename || pt.type, label: pt.PurchaseType || pt.typename || pt.type }))
-                          ]}
+                          options={purchaseTypes.map(pt => ({ value: pt.PurchaseType || pt.typename || pt.type, label: pt.PurchaseType || pt.typename || pt.type }))}
+                          maxResults={purchaseTypes.length}
                         />
                       </div>
                     </div>

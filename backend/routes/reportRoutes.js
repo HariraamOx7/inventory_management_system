@@ -46,6 +46,7 @@ router.get('/stock/subhead-wise', reportController.getSubHeadWiseStockAbstract);
 router.get('/stock/subhead-detail', reportController.getSubHeadWiseStockDetail);
 router.get('/stock/nil-stock', reportController.getNilStockItems);
 router.get('/stock/max-level', reportController.getMaxLevelStockItems);
+router.get('/stock/reconciliation-diagnostic', reportController.getStockReconciliationDiagnostic);
 
 // ── 5. Others (Gate Pass & Location) Reports ─────────────────────────
 router.get('/others/gatepass-pending', reportController.getGatePassPendingReport);

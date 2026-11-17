@@ -38,11 +38,10 @@ const initialPTFormState = {
   TCSLedger: 'TAX COLLECTED AT SOURCE (T.C.S PAID)'
 };
 
-export { initialPTFormState };
 
 export default function PurchaseTypeModal({ isOpen, onClose, onSaved, editData }) {
   const [ptForm, setPtForm] = useState(initialPTFormState);
-  const [defaultFormulas, setDefaultFormulas] = useState({});
+  const [, setDefaultFormulas] = useState({});
   const [saving, setSaving] = useState(false);
   const [ptError, setPtError] = useState('');
 
@@ -157,18 +156,7 @@ export default function PurchaseTypeModal({ isOpen, onClose, onSaved, editData }
     }
   }, [isOpen, editData]);
 
-  const handleResetFormulas = () => {
-    setPtForm(prev => ({
-      ...prev,
-      AssessValue: defaultFormulas.AssessValue || initialPTFormState.AssessValue,
-      RoundOff: defaultFormulas.RoundOff || initialPTFormState.RoundOff,
-      LorryFreight: defaultFormulas.LorryFreight || initialPTFormState.LorryFreight,
-      SGST: defaultFormulas.SGST || initialPTFormState.SGST,
-      CGST: defaultFormulas.CGST || initialPTFormState.CGST,
-      IGST: defaultFormulas.IGST || initialPTFormState.IGST,
-      TCS: defaultFormulas.TCS || initialPTFormState.TCS
-    }));
-  };
+
 
   const handleSavePT = async () => {
     if (!ptForm.PurchaseType.trim()) {

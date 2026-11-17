@@ -1,4 +1,8 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
+const validateTransactionItems = require('../services/validateTransactionItems');
 const { Op, fn, col } = require('sequelize');
+const sequelize = require('../config/db');
 const Receipt = require('../models/Receipt');
 const ReceiptDetail = require('../models/ReceiptDetail');
 const Supplier = require('../models/Supplier');
@@ -52,6 +56,20 @@ const resolveItemCode = async (itemCode, itemName) => {
   return resolveItemIdentifier(Item, itemCode, itemName);
 };
 
+const resolveReceiptItems = async (items) => {
+  const resolved = [];
+  for (const item of items) {
+    const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
+    if (!itemCode || !(await Item.findByPk(itemCode))) {
+      const error = new Error(`Cannot identify receipt item: ${item.ItemName || item.ItemCode || '(unnamed item)'}. Please check the item master.`);
+      error.statusCode = 400;
+      throw error;
+    }
+    resolved.push({ ...item, ItemCode: itemCode });
+  }
+  return resolved;
+};
+
 const getPurchaseOrderUnitRateMap = async (orderNos = []) => {
   if (orderNos.length === 0) return new Map();
 
@@ -92,7 +110,7 @@ exports.getLastGRNNo = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching last GRN number:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching GRN number',
       error: error.message
@@ -146,7 +164,7 @@ exports.getParties = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching parties for receipt:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching parties',
       error: error.message
@@ -207,7 +225,7 @@ exports.getAvailablePurchaseOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching available purchase orders for receipt:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase orders',
       error: error.message
@@ -332,7 +350,7 @@ exports.getPurchaseOrderReceiptDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching purchase order details for receipt:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching purchase order receipt details',
       error: error.message
@@ -413,7 +431,7 @@ exports.getAvailableGateInwards = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching available gate inwards:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching available gate inwards',
       error: error.message
@@ -534,7 +552,7 @@ exports.getGateInwardDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching gate inward details:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate inward details',
       error: error.message
@@ -567,7 +585,7 @@ exports.getGateInwardsByParty = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching gate inwards:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching gate inwards',
       error: error.message
@@ -605,7 +623,7 @@ exports.getGateInwardItems = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching inward items:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching inward items',
       error: error.message
@@ -642,6 +660,15 @@ exports.getReceipts = async (req, res) => {
     }
 
     const orConditions = [];
+    // Older saves could leave a header without details. Resolve its PO from the
+    // saved inward first so every batch, rather than just the first, is loaded.
+    const primaryInwards = inwardNos.size > 0 ? await GateInward.findAll({
+      where: { InwardNo: { [Op.in]: Array.from(inwardNos) } },
+      attributes: ['InwardNo', 'OrderNo'], raw: true
+    }) : [];
+    for (const inward of primaryInwards) {
+      if (inward.OrderNo) orderNos.add(inward.OrderNo);
+    }
     if (orderNos.size > 0) orConditions.push({ OrderNo: { [Op.in]: Array.from(orderNos) } });
     if (inwardNos.size > 0) orConditions.push({ InwardNo: { [Op.in]: Array.from(inwardNos) } });
 
@@ -667,11 +694,19 @@ exports.getReceipts = async (req, res) => {
         json.details = json.details.map(d => ({ ...d, ItemName: d.item?.ItemName || '' }));
       }
       if (gi.OrderNo) {
-        if (!giByOrder.has(gi.OrderNo)) giByOrder.set(gi.OrderNo, []);
-        giByOrder.get(gi.OrderNo).push(json);
+        const key = String(gi.OrderNo);
+        if (!giByOrder.has(key)) giByOrder.set(key, []);
+        giByOrder.get(key).push(json);
       }
-      giByInward.set(gi.InwardNo, json);
+      giByInward.set(String(gi.InwardNo), json);
     }
+
+    const missingOrders = receipts.filter(r => !r.details?.length)
+      .map(r => giByInward.get(String(r.GateInwardNo))?.OrderNo).filter(Boolean);
+    const recoveryPODetails = missingOrders.length ? await PurchaseOrderDetail.findAll({
+      where: { OrderNo: { [Op.in]: [...new Set(missingOrders)] } },
+      raw: true
+    }) : [];
 
     const result = receipts.map(r => {
       const rJson = r.toJSON();
@@ -683,15 +718,38 @@ exports.getReceipts = async (req, res) => {
         }));
       }
 
-      const rOrderNo = (rJson.details && rJson.details[0]?.OrderNo) || null;
+      const primaryInward = giByInward.get(String(rJson.GateInwardNo));
+      const rOrderNo = rJson.details?.find(d => d.OrderNo)?.OrderNo || primaryInward?.OrderNo || null;
       let linkedGIs = [];
-      if (rOrderNo && giByOrder.has(rOrderNo)) {
-        linkedGIs = giByOrder.get(rOrderNo);
-      } else if (rJson.GateInwardNo && giByInward.has(rJson.GateInwardNo)) {
-        linkedGIs = [giByInward.get(rJson.GateInwardNo)];
+      if (rOrderNo && giByOrder.has(String(rOrderNo))) {
+        linkedGIs = giByOrder.get(String(rOrderNo));
+      } else if (primaryInward) {
+        linkedGIs = [primaryInward];
+      }
+      if (!rJson.details?.length && primaryInward?.PartyCode === rJson.PartyCode) {
+        const recovered = new Map();
+        for (const gi of linkedGIs) {
+          if (gi.PartyCode !== rJson.PartyCode) continue;
+          for (const detail of gi.details || []) {
+            const orderNo = detail.OrderNo || gi.OrderNo;
+            const key = `${orderNo}::${detail.ItemCode}`;
+            const poDetail = recoveryPODetails.find(d => String(d.OrderNo) === String(orderNo) && d.ItemCode === detail.ItemCode);
+            if (!detail.ItemCode || !poDetail) continue;
+            const row = recovered.get(key) || {
+              ItemCode: detail.ItemCode, ItemName: detail.ItemName,
+              OrderNo: orderNo, Qty: 0, UnitRate: parseDec(poDetail.UnitRate)
+            };
+            row.Qty += parseDec(detail.ReceivedQty);
+            row.TotalAmount = row.Qty * row.UnitRate;
+            recovered.set(key, row);
+          }
+        }
+        rJson.details = [...recovered.values()].filter(d => d.Qty > 0);
+        rJson.detailsRecovered = rJson.details.length > 0;
       }
       return {
         ...rJson,
+        OrderNo: rOrderNo,
         gateInwards: linkedGIs
       };
     });
@@ -702,7 +760,7 @@ exports.getReceipts = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching receipts:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching receipts',
       error: error.message
@@ -713,15 +771,16 @@ exports.getReceipts = async (req, res) => {
 // Create receipt with details
 exports.createReceipt = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { required: true, quantities: ['Qty', 'ReceivedQty'] });
     const {
       PartyCode, PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
       DCNo, DCDate, FormType, BillAmount, Total, Discount,
-      GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items,
+      GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items, OrderNo,
       DutyWithoutPF, VatWithPF
     } = req.body;
 
     const resolvedPartyCode = await resolvePartyCode(PartyCode, PartyName);
-    if (!resolvedPartyCode || !GateInwardNo || !items || items.length === 0) {
+    if (!resolvedPartyCode || !GateInwardNo || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Party code/name, gate inward number, and items are required'
@@ -776,48 +835,69 @@ exports.createReceipt = async (req, res) => {
       }
     }
 
-    const orderNos = [...new Set(items.map(item => cleanOrderNo(item.OrderNo)).filter(Boolean))];
+    const normalizedItems = items.map(item => ({
+      ...item, OrderNo: cleanOrderNo(item.OrderNo || gateInward.OrderNo || OrderNo)
+    }));
+    const orderNos = [...new Set(normalizedItems.map(item => item.OrderNo).filter(Boolean))];
     const unitRateMap = await getPurchaseOrderUnitRateMap(orderNos);
 
-    const newReceipt = await Receipt.create({
-      PartyCode: resolvedPartyCode,
-      GateInwardNo: GateInwardNo ? parseInt(GateInwardNo, 10) : null,
-      InwardDate: cleanDate(InwardDate) || cleanDate(gateInward.InwardDate) || cleanDate(new Date()),
-      InvoiceNo: InvoiceNo ? InvoiceNo.trim() : (gateInward.InvoiceNo ? gateInward.InvoiceNo.trim() : null),
-      InvoiceDate: cleanDate(InvoiceDate) || cleanDate(gateInward.InvoiceDate),
-      DCNo: DCNo ? DCNo.trim() : null,
-      DCDate: cleanDate(DCDate),
-      FormType: FormType ? FormType.trim() : null,
-      BillAmount: parseDec(BillAmount, 0),
-      Total: parseDec(Total, 0),
-      Discount: parseDec(Discount, 0),
-      GST: parseDec(GST, 0),
-      IGST: parseDec(IGST, 0),
-      VAT_CST: parseDec(VAT_CST, 0),
-      P_F: parseDec(P_F, 0),
-      LorryFreight: parseDec(LorryFreight, 0),
-      RoundOff: parseDec(RoundOff, 0),
-      GrandTotal: parseDec(GrandTotal, 0),
-      DutyWithoutPF: !!DutyWithoutPF,
-      VatWithPF: !!VatWithPF,
-      Status: 'ReceiptCreated'
-    });
-
-    for (const item of items) {
-      const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-      if (!itemCode) continue;
-
-      const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
-      const unitRate = resolveUnitRate(item, itemCode, unitRateMap);
-      await ReceiptDetail.create({
-        GRNNo: newReceipt.GRNNo,
-        OrderNo: cleanOrderNo(item.OrderNo),
-        ItemCode: itemCode,
-        Qty: qty,
-        UnitRate: unitRate,
-        TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
+    const resolvedItems = await resolveReceiptItems(normalizedItems);
+    const newReceipt = await sequelize.transaction(async (transaction) => {
+      if (gateInward.OrderNo) {
+        await PurchaseOrder.findByPk(gateInward.OrderNo, { transaction, lock: transaction.LOCK.UPDATE });
+      }
+      await GateInward.findByPk(GateInwardNo, { transaction, lock: transaction.LOCK.UPDATE });
+      const relatedInwards = gateInward.OrderNo ? await GateInward.findAll({
+        where: { OrderNo: gateInward.OrderNo }, attributes: ['InwardNo'], raw: true, transaction
+      }) : [{ InwardNo: GateInwardNo }];
+      const duplicate = await Receipt.findOne({
+        where: { GateInwardNo: { [Op.in]: relatedInwards.map(gi => gi.InwardNo) } }, transaction
       });
-    }
+      if (duplicate) {
+        const error = new Error('A receipt has already been created for this purchase order');
+        error.statusCode = 409;
+        throw error;
+      }
+      const createdReceipt = await Receipt.create({
+        PartyCode: resolvedPartyCode,
+        GateInwardNo: GateInwardNo ? parseInt(GateInwardNo, 10) : null,
+        InwardDate: cleanDate(InwardDate) || cleanDate(gateInward.InwardDate) || cleanDate(new Date()),
+        InvoiceNo: InvoiceNo ? InvoiceNo.trim() : (gateInward.InvoiceNo ? gateInward.InvoiceNo.trim() : null),
+        InvoiceDate: cleanDate(InvoiceDate) || cleanDate(gateInward.InvoiceDate),
+        DCNo: DCNo ? DCNo.trim() : null,
+        DCDate: cleanDate(DCDate),
+        FormType: FormType ? FormType.trim() : null,
+        BillAmount: parseDec(BillAmount, 0),
+        Total: parseDec(Total, 0),
+        Discount: parseDec(Discount, 0),
+        GST: parseDec(GST, 0),
+        IGST: parseDec(IGST, 0),
+        VAT_CST: parseDec(VAT_CST, 0),
+        P_F: parseDec(P_F, 0),
+        LorryFreight: parseDec(LorryFreight, 0),
+        RoundOff: parseDec(RoundOff, 0),
+        GrandTotal: parseDec(GrandTotal, 0),
+        DutyWithoutPF: !!DutyWithoutPF,
+        VatWithPF: !!VatWithPF,
+        Status: 'ReceiptCreated'
+      }, { transaction });
+
+      for (const item of resolvedItems) {
+        const itemCode = item.ItemCode;
+
+        const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
+        const unitRate = resolveUnitRate(item, itemCode, unitRateMap);
+        await ReceiptDetail.create({
+          GRNNo: createdReceipt.GRNNo,
+          OrderNo: cleanOrderNo(item.OrderNo),
+          ItemCode: itemCode,
+          Qty: qty,
+          UnitRate: unitRate,
+          TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
+        }, { transaction });
+      }
+      return createdReceipt;
+    });
 
     res.status(201).json({
       success: true,
@@ -826,7 +906,7 @@ exports.createReceipt = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating receipt:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating receipt',
       error: error.message
@@ -837,6 +917,7 @@ exports.createReceipt = async (req, res) => {
 // Update receipt
 exports.updateReceipt = async (req, res) => {
   try {
+    validateTransactionItems(req.body?.items, { quantities: ['Qty', 'ReceivedQty'] });
     const { grnNo } = req.params;
     const gNo = parseInt(grnNo, 10);
 
@@ -850,7 +931,7 @@ exports.updateReceipt = async (req, res) => {
     const {
       PartyCode, PartyName, GateInwardNo, InwardDate, InvoiceNo, InvoiceDate,
       DCNo, DCDate, FormType, BillAmount, Total, Discount,
-      GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items,
+      GST, IGST, VAT_CST, P_F, LorryFreight, RoundOff, GrandTotal, items, OrderNo,
       DutyWithoutPF, VatWithPF
     } = req.body;
 
@@ -890,30 +971,40 @@ exports.updateReceipt = async (req, res) => {
       VatWithPF: VatWithPF !== undefined ? !!VatWithPF : receipt.VatWithPF
     };
 
-    await receipt.update(updateData);
-
-    if (items && Array.isArray(items) && items.length > 0) {
-      const orderNos = [...new Set(items.map(item => cleanOrderNo(item.OrderNo)).filter(Boolean))];
-      const unitRateMap = await getPurchaseOrderUnitRateMap(orderNos);
-
-      await ReceiptDetail.destroy({ where: { GRNNo: gNo } });
-
-      for (const item of items) {
-        const itemCode = await resolveItemCode(item.ItemCode, item.ItemName);
-        if (!itemCode) continue;
-
-        const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
-        const unitRate = resolveUnitRate(item, itemCode, unitRateMap);
-        await ReceiptDetail.create({
-          GRNNo: gNo,
-          OrderNo: cleanOrderNo(item.OrderNo),
-          ItemCode: itemCode,
-          Qty: qty,
-          UnitRate: unitRate,
-          TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
-        });
-      }
+    if (items !== undefined && (!Array.isArray(items) || items.length === 0)) {
+      return res.status(400).json({ success: false, message: 'Receipt items cannot be empty' });
     }
+    const gateInward = updateData.GateInwardNo ? await GateInward.findByPk(updateData.GateInwardNo) : null;
+    if (updateData.GateInwardNo && (!gateInward || gateInward.PartyCode !== resolvedPartyCode)) {
+      return res.status(400).json({ success: false, message: 'The receipt party must match its gate inward' });
+    }
+    const resolvedItems = items ? await resolveReceiptItems(items.map(item => ({
+      ...item, OrderNo: cleanOrderNo(item.OrderNo || gateInward?.OrderNo || OrderNo)
+    }))) : null;
+    const orderNos = resolvedItems ? [...new Set(resolvedItems.map(item => cleanOrderNo(item.OrderNo)).filter(Boolean))] : [];
+    const unitRateMap = await getPurchaseOrderUnitRateMap(orderNos);
+    await sequelize.transaction(async (transaction) => {
+      await receipt.update(updateData, { transaction });
+
+      if (resolvedItems) {
+        await ReceiptDetail.destroy({ where: { GRNNo: gNo }, transaction });
+
+        for (const item of resolvedItems) {
+          const itemCode = item.ItemCode;
+
+          const qty = parseDec(item.Qty !== undefined ? item.Qty : item.ReceivedQty, 0);
+          const unitRate = resolveUnitRate(item, itemCode, unitRateMap);
+          await ReceiptDetail.create({
+            GRNNo: gNo,
+            OrderNo: cleanOrderNo(item.OrderNo),
+            ItemCode: itemCode,
+            Qty: qty,
+            UnitRate: unitRate,
+            TotalAmount: parseDec(item.TotalAmount, qty * unitRate)
+          }, { transaction });
+        }
+      }
+    });
 
     res.json({
       success: true,
@@ -922,7 +1013,7 @@ exports.updateReceipt = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating receipt:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating receipt',
       error: error.message
@@ -943,8 +1034,12 @@ exports.deleteReceipt = async (req, res) => {
       });
     }
 
-    await ReceiptDetail.destroy({ where: { GRNNo: grnNo } });
-    await receipt.destroy();
+        await preventReferencedDeletion('Receipt', receipt);
+
+    await sequelize.transaction(async transaction => {
+      await ReceiptDetail.destroy({ where: { GRNNo: grnNo }, transaction });
+      await receipt.destroy({ transaction });
+    });
 
     res.json({
       success: true,
@@ -952,7 +1047,7 @@ exports.deleteReceipt = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting receipt:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting receipt',
       error: error.message

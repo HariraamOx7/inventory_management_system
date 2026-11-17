@@ -1,3 +1,5 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const { literal } = require('sequelize');
 const SubHead = require('../models/SubHead');
 const Department = require('../models/Department');
@@ -14,7 +16,7 @@ exports.getLastCode = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching last code:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching last code',
             error: error.message
@@ -38,7 +40,7 @@ exports.getSubHeads = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching sub heads:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching sub heads',
             error: error.message 
@@ -67,7 +69,7 @@ exports.getSubHeadsByDepartment = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching sub heads:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching sub heads',
             error: error.message 
@@ -113,7 +115,7 @@ exports.addSubHead = async (req, res) => {
         });
     } catch (error) {
         console.error('Error adding sub head:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error adding sub head',
             error: error.message
@@ -124,7 +126,8 @@ exports.addSubHead = async (req, res) => {
 
 exports.updateSubHead = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         const { sub_group_name, department_id } = req.body;
 
         if (!sub_group_name || sub_group_name.trim() === '' || !department_id) {
@@ -162,7 +165,7 @@ exports.updateSubHead = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating sub head:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating sub head',
             error: error.message
@@ -172,7 +175,8 @@ exports.updateSubHead = async (req, res) => {
 
 exports.deleteSubHead = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         
         const subHead = await SubHead.findByPk(code);
         if (!subHead) {
@@ -182,6 +186,8 @@ exports.deleteSubHead = async (req, res) => {
             });
         }
 
+        await preventReferencedDeletion('SubHead', subHead);
+
         await subHead.destroy();
 
         res.json({
@@ -190,7 +196,7 @@ exports.deleteSubHead = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting sub head:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting sub head',
             error: error.message

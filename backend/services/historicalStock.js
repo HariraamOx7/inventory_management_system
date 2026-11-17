@@ -1,10 +1,11 @@
+//backend/services/historicalStock.js
 const db = require('../config/db');
 const crypto = require('node:crypto');
 
 const fields = ['openingQty', 'openingValue', 'receivedQty', 'receivedValue', 'issueQty', 'issueValue', 'closingQty', 'closingValue'];
 const round = value => Number(Number(value || 0).toFixed(2));
 
-async function getHistoricalDepartmentStock({ from, to, departments, transaction }) {
+async function getHistoricalDepartmentStock({ from, to, departments, transaction, legacyReport = false }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || from > to) {
     throw new Error('A valid report start and end date are required.');
   }
@@ -109,12 +110,21 @@ async function getHistoricalDepartmentStock({ from, to, departments, transaction
   const itemBalances = [];
   for (const row of rows) {
     if (departments && !departments.some(value => String(value) === String(row.departmentId) || value.toLowerCase() === row.departmentName.toLowerCase())) continue;
+    const openingQty = Number(row.openingQty);
+    const receivedQty = Number(row.receivedQty);
+    const issueQty = Number(row.issueQty);
+    const closingQty = round(openingQty + receivedQty - issueQty);
+    if (legacyReport && [openingQty, receivedQty, issueQty, closingQty].every(qty => round(qty) === 0)) continue;
+    const originalAdjustment = Number(row.closingValueAdjustment || 0);
+    const rawClosingValue = round(Number(row.openingValue) + Number(row.receivedValue) - Number(row.issueValue) + originalAdjustment);
+    const legacyAdjustment = legacyReport && closingQty === 0 && rawClosingValue < 0 ? -rawClosingValue : 0;
+    const displayAdjustment = originalAdjustment + legacyAdjustment;
     itemBalances.push({
       itemCode: row.ItemCode, itemName: row.ItemName, departmentName: row.departmentName,
       departmentId: row.departmentId, unitRate: Number(row.UnitRate || 0), uom: row.UOM || '',
       location: row.Location || '', subHeadCode: row.SubHeadCode,
-      quantity: round(Number(row.openingQty) + Number(row.receivedQty) - Number(row.issueQty)),
-      value: round(Number(row.openingValue) + Number(row.receivedValue) - Number(row.issueValue) + Number(row.closingValueAdjustment || 0))
+      quantity: closingQty,
+      value: round(rawClosingValue + legacyAdjustment)
     });
     let item = grouped.get(row.departmentName);
     if (!item) {
@@ -124,7 +134,7 @@ async function getHistoricalDepartmentStock({ from, to, departments, transaction
     }
     item.itemCount++;
     for (const field of fields.slice(0, 6)) item[field] += Number(row[field]);
-    item.reconciliationAdjustment += Number(row.closingValueAdjustment || 0);
+    item.reconciliationAdjustment += displayAdjustment;
   }
   const items = [...grouped.values()].map((item, index) => {
     item.closingQty = item.openingQty + item.receivedQty - item.issueQty;
@@ -136,7 +146,7 @@ async function getHistoricalDepartmentStock({ from, to, departments, transaction
   const totals = Object.fromEntries(fields.map(field => [field, round(items.reduce((sum, item) => sum + item[field], 0))]));
   return {
     reportTitle: 'Department wise stock abstract', historical: true,
-    valuationBasis: 'Historical receipt stock cost and recorded issue value',
+    valuationBasis: legacyReport ? 'Legacy report: excludes quantity-zero rows and clears negative closing value at zero quantity' : 'Historical receipt stock cost and recorded issue value',
     source: batches[0].SourceName, fromDate: from, toDate: to,
     items, itemBalances, totals, reconciliationAdjustment: round(items.reduce((sum, item) => sum + item.reconciliationAdjustment, 0)),
     reportTotalQty: totals.closingQty, reportTotalValue: totals.closingValue
@@ -208,6 +218,7 @@ async function getMigratedCurrentStock({ departments, transaction } = {}) {
   const inward = await db.query(`SELECT d.ItemCode,SUM(d.ReceivedQty) qty,SUM(d.StockValue) value,MAX(h.InwardDate) lastDate FROM gate_inward_details d JOIN gate_inwards h ON h.InwardNo=d.InwardNo WHERE h.InwardDate > :to GROUP BY d.ItemCode`, { ...opts, replacements: { to } });
   const issues = await db.query(`SELECT d.ItemCode,SUM(d.Qty) qty,SUM(d.TotalAmount) value,MAX(h.IssueDate) lastDate FROM item_issue_details d JOIN item_issues h ON h.IssueNo=d.IssueNo WHERE h.IssueDate > :to GROUP BY d.ItemCode`, { ...opts, replacements: { to } });
   const newByCode = new Map(newItems.map(i => [i.ItemCode, i]));
+  const newByCodeLower = new Map(newItems.map(i => [String(i.ItemCode).trim().toLowerCase(), i]));
   let asOf = to;
   for (const i of newItems) if (!balances.has(i.ItemCode)) balances.set(i.ItemCode, { itemCode: i.ItemCode, quantity: 0, value: 0 });
   for (const [rows, sign] of [[inward, 1], [issues, -1]]) for (const movement of rows) {
@@ -218,12 +229,19 @@ async function getMigratedCurrentStock({ departments, transaction } = {}) {
   }
   const grouped = new Map(), itemBalances = [];
   for (const item of balances.values()) {
-    const master = newByCode.get(item.itemCode);
-    if (!master || Math.abs(Number(master.Quantity || 0) - item.quantity) > 0.001) {
-      const error = new Error(`Current quantity differs from the stock ledger for ${item.itemCode}. Reconcile it before using the report.`); error.status = 422; throw error;
+    const master = newByCode.get(item.itemCode) || newByCodeLower.get(String(item.itemCode).trim().toLowerCase());
+    const deptId = master?.departmentId || item.departmentId;
+    const deptName = master?.departmentName || item.departmentName || 'Unassigned';
+    if (departments && !departments.some(v => String(v) === String(deptId) || String(v).toLowerCase() === deptName.toLowerCase())) continue;
+    if (!master) {
+      console.warn(`[Stock Ledger] Item ${item.itemCode} in stock history is not in items table.`);
+      continue;
     }
-    Object.assign(item, { itemName: master.ItemName, unitRate: Number(master.UnitRate || 0), uom: master.UOM || '', location: master.Location || '', subHeadCode: master.SubHeadCode, departmentId: master.departmentId, departmentName: master.departmentName, quantity: round(item.quantity), value: round(item.value) });
-    if (departments && !departments.some(v => String(v) === String(item.departmentId) || String(v).toLowerCase() === item.departmentName.toLowerCase())) continue;
+    const diff = Math.abs(Number(master.Quantity || 0) - item.quantity);
+    if (diff > 0.001) {
+      console.warn(`[Stock Ledger] Quantity difference for ${item.itemCode}: master=${master.Quantity}, ledger=${item.quantity}`);
+    }
+    Object.assign(item, { itemName: master.ItemName, unitRate: Number(master.UnitRate || 0), uom: master.UOM || '', location: master.Location || '', subHeadCode: master.SubHeadCode, departmentId: deptId, departmentName: deptName, quantity: round(item.quantity), value: round(item.value) });
     itemBalances.push(item);
     if (!grouped.has(item.departmentName)) grouped.set(item.departmentName, { departmentName: item.departmentName, itemCount: 0, closingQty: 0, closingValue: 0 });
     const group = grouped.get(item.departmentName); group.itemCount++; group.closingQty += item.quantity; group.closingValue += item.value;

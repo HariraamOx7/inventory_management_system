@@ -9,6 +9,8 @@ const {
 
 router.get('/', getStates);
 router.post('/', addState);
+router.put('/', updateState);
+router.delete('/', deleteState);
 router.put('/:code', updateState);
 router.delete('/:code', deleteState);
 

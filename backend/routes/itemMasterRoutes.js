@@ -17,6 +17,8 @@ router.get('/', getItemMasters);
 router.get('/departments/all', getDepartments);
 router.get('/uoms/all', getUOMs);
 router.post('/', addItemMaster);
+router.put('/', updateItemMaster);
+router.delete('/', deleteItemMaster);
 router.put('/:code', updateItemMaster);
 router.delete('/:code', deleteItemMaster);
 

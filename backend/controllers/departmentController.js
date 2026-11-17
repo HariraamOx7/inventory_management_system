@@ -1,3 +1,5 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const Department = require('../models/Department');
 
 exports.getDepartments = async (req, res) => {
@@ -11,7 +13,7 @@ exports.getDepartments = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching departments:', error);
-    res.status(500).json({ 
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching departments',
       error: error.message 
@@ -37,7 +39,7 @@ exports.addDepartment = async (req, res) => {
   } catch (error) {
     console.error('Error adding department:', error);
     
-    res.status(500).json({ 
+    res.status(errorStatus(error)).json({
       success: false, 
       message: 'Duplicate department name or error adding department',
       error: error.message 
@@ -72,7 +74,7 @@ exports.updateDepartment = async (req, res) => {
             data: department
         });
     } catch (error) {
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating department',
             error: error.message
@@ -92,6 +94,8 @@ exports.deleteDepartment = async (req, res) => {
             });
         }
 
+        await preventReferencedDeletion('Department', department);
+
         await department.destroy();
 
         res.json({
@@ -99,7 +103,7 @@ exports.deleteDepartment = async (req, res) => {
             message: 'Department deleted successfully'
         });
     } catch (error) {
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting department',
             error: error.message
