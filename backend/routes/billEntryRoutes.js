@@ -9,8 +9,11 @@ router.get('/available-grns', billEntryController.getAvailableGRNs);
 router.get('/grn-details', billEntryController.getGRNDetails);
 router.get('/print-data/:voucherNo', billEntryController.getPrintData);
 router.get('/check-duplicate', billEntryController.checkDuplicateBillEntry);
+router.get('/by-party', billEntryController.getBillEntriesByParty);
 
 router.get('/', billEntryController.getBillEntries);
+// Keep voucher lookup after named routes so helper endpoints remain reachable.
+router.get('/:voucherNo', billEntryController.getBillEntry);
 router.post('/', billEntryController.createBillEntry);
 router.put('/:voucherNo', billEntryController.updateBillEntry);
 router.delete('/delete-chain/:voucherNo', billEntryController.deleteBillChain);
