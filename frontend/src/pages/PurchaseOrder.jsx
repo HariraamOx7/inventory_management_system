@@ -87,6 +87,7 @@ const initialDetailState = {
   UOM: '',
   UnitRate: '',
   TotalAmount: 0,
+  DiscountType: 'percentage',
   DiscountPct: '',
   DiscountAmt: 0,
   GSTType: 'SGST+CGST',
@@ -315,7 +316,9 @@ export default function PurchaseOrder() {
     const totalAmount = qty * unitRate;
 
     const discountPct = parseFloat(detailData.DiscountPct) || 0;
-    const discountAmt = (totalAmount * discountPct) / 100;
+    const discountAmt = detailData.DiscountType === 'amount'
+      ? (parseFloat(detailData.DiscountAmt) || 0)
+      : (totalAmount * discountPct) / 100;
     const amountAfterDiscount = totalAmount - discountAmt;
 
     const pfAmt = parseFloat(detailData.PF_Amount) || 0;
@@ -341,7 +344,7 @@ export default function PurchaseOrder() {
     setDetailData(prev => ({
       ...prev,
       TotalAmount: totalAmount,
-      DiscountAmt: discountAmt,
+      DiscountAmt: prev.DiscountType === 'amount' ? prev.DiscountAmt : discountAmt,
       SGST: sgst,
       CGST: cgst,
       IGST: igst,
@@ -351,6 +354,8 @@ export default function PurchaseOrder() {
     detailData.Qty,
     detailData.UnitRate,
     detailData.DiscountPct,
+    detailData.DiscountType,
+    detailData.DiscountAmt,
     detailData.SGSTPct,
     detailData.CGSTPct,
     detailData.IGSTPct,
@@ -429,6 +434,7 @@ export default function PurchaseOrder() {
       UOM: d.UOM || '',
       UnitRate: parseFloat(d.UnitRate) > 0 ? d.UnitRate : '',
       TotalAmount: d.TotalAmount || 0,
+      DiscountType: parseFloat(d.DiscountPct) > 0 ? 'percentage' : (parseFloat(d.DiscountAmt) > 0 ? 'amount' : 'percentage'),
       DiscountPct: parseFloat(d.DiscountPct) > 0 ? d.DiscountPct : '',
       DiscountAmt: d.DiscountAmt || 0,
       GSTType: d.GSTType || 'SGST+CGST',
@@ -481,6 +487,7 @@ export default function PurchaseOrder() {
       UOM: d.UOM || '',
       UnitRate: parseFloat(d.UnitRate) > 0 ? d.UnitRate : '',
       TotalAmount: d.TotalAmount || 0,
+      DiscountType: parseFloat(d.DiscountPct) > 0 ? 'percentage' : (parseFloat(d.DiscountAmt) > 0 ? 'amount' : 'percentage'),
       DiscountPct: parseFloat(d.DiscountPct) > 0 ? d.DiscountPct : '',
       DiscountAmt: d.DiscountAmt || 0,
       GSTType: d.GSTType || 'SGST+CGST',
@@ -528,6 +535,8 @@ export default function PurchaseOrder() {
 
     setDetailData(curr => ({
       ...curr,
+      DiscountType: targetItem.DiscountType || (parseFloat(targetItem.DiscountPct) > 0 ? 'percentage' : (parseFloat(targetItem.DiscountAmt) > 0 ? 'amount' : 'percentage')),
+      DiscountAmt: targetItem.DiscountAmt || 0,
       DiscountPct: targetItem.DiscountPct !== undefined ? targetItem.DiscountPct : '',
       GSTType: targetItem.GSTType || 'SGST+CGST',
       SGSTPct: targetItem.SGSTPct !== undefined ? targetItem.SGSTPct : '',
@@ -593,6 +602,7 @@ export default function PurchaseOrder() {
       UOM: item.UOM || '',
       UnitRate: parseFloat(item.UnitRate) > 0 ? item.UnitRate : '',
       TotalAmount: item.TotalAmount || 0,
+      DiscountType: item.DiscountType || (parseFloat(item.DiscountPct) > 0 ? 'percentage' : (parseFloat(item.DiscountAmt) > 0 ? 'amount' : 'percentage')),
       DiscountPct: parseFloat(item.DiscountPct) > 0 ? item.DiscountPct : '',
       DiscountAmt: item.DiscountAmt || 0,
       GSTType: item.GSTType || 'SGST+CGST',
@@ -1534,16 +1544,29 @@ export default function PurchaseOrder() {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Discount (%)</label>
-                          <input
-                            type="number"
-                            step="1"
-                            value={detailData.DiscountPct}
-                            onWheel={(e) => e.target.blur()}
-                            onChange={(e) => setDetailData({ ...detailData, DiscountPct: e.target.value })}
-                            placeholder="0%"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Discount</label>
+                          <div className="flex gap-1">
+                            <select
+                              aria-label="Discount type"
+                              value={detailData.DiscountType}
+                              onChange={(e) => setDetailData({ ...detailData, DiscountType: e.target.value, DiscountPct: '', DiscountAmt: 0 })}
+                              className="px-2 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="percentage">%</option>
+                              <option value="amount">₹</option>
+                            </select>
+                            <input
+                              aria-label={detailData.DiscountType === 'amount' ? 'Discount amount' : 'Discount percentage'}
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={detailData.DiscountType === 'amount' ? detailData.DiscountAmt : detailData.DiscountPct}
+                              onWheel={(e) => e.target.blur()}
+                              onChange={(e) => setDetailData({ ...detailData, [detailData.DiscountType === 'amount' ? 'DiscountAmt' : 'DiscountPct']: e.target.value })}
+                              placeholder={detailData.DiscountType === 'amount' ? '0.00' : '0%'}
+                              className="w-full min-w-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
                         </div>
 
                         <div>
