@@ -11,11 +11,11 @@ PurchaseOrderDetail.init({
     autoIncrement: true
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: false
   },
-  ItemName: {
-    type: DataTypes.STRING(255),
+  ItemCode: {
+    type: DataTypes.STRING(30),
     allowNull: false
   },
   Qty: {

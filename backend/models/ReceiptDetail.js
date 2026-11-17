@@ -15,10 +15,10 @@ ReceiptDetail.init({
     allowNull: false
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: true
   },
-  ItemName: {
+  ItemCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },
@@ -33,6 +33,19 @@ ReceiptDetail.init({
   TotalAmount: {
     type: DataTypes.DECIMAL(15, 2),
     defaultValue: 0
+  },
+  StockUnitRate: {
+    type: DataTypes.DECIMAL(20, 8),
+    allowNull: true
+  },
+  StockValue: {
+    type: DataTypes.DECIMAL(20, 6),
+    allowNull: true
+  },
+  SourceKey: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    unique: true
   }
 }, {
   sequelize,

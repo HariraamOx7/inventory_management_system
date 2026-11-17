@@ -5,19 +5,19 @@ import {
   Plus, Edit2, Trash2, Save, X, MapPin, AlertCircle, Search, ArrowUpDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialFormState = {
   StateName: ''
 };
 
 export default function State() {
-  const navigate = useNavigate();
+
   const [states, setStates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -88,7 +88,7 @@ export default function State() {
   const handleUpdate = async (code) => {
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/states/${code}`, editFormData);
+      await axios.put(`${API_URL}/states?code=${encodeURIComponent(code)}`, editFormData);
       setEditingCode(null);
       fetchStates();
       setError(null);
@@ -103,7 +103,7 @@ export default function State() {
     if (!window.confirm('Are you sure you want to delete this state?')) return;
     try {
       setLoading(true);
-      await axios.delete(`${API_URL}/states/${code}`);
+      await axios.delete(`${API_URL}/states?code=${encodeURIComponent(code)}`);
       fetchStates();
     } catch (error) {
       setError('Error deleting state: ' + error.message);

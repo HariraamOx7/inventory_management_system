@@ -9,6 +9,8 @@ const {
 
 router.get('/', getStores);
 router.post('/', addStore);
+router.put('/', updateStore);
+router.delete('/', deleteStore);
 router.put('/:id', updateStore);
 router.delete('/:id', deleteStore);
 

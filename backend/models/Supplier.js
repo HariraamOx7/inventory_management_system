@@ -4,10 +4,9 @@ const sequelize = require('../config/db');
 class Supplier extends Model {}
 
 Supplier.init({
-  AccCode: {
-    type: DataTypes.INTEGER,
+  PartyCode: {
+    type: DataTypes.STRING(30),
     primaryKey: true,
-    autoIncrement: true,
     allowNull: false
   },
   Description: {

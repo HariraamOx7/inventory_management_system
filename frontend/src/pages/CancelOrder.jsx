@@ -1,5 +1,5 @@
 // frontend/src/pages/CancelOrder.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Plus } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -7,7 +7,7 @@ import SearchSelect from '../components/SearchSelect';
 import { useToastStore } from '../store/toastStore';
 
 const CancelOrder = () => {
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
   const showToast = useToastStore(state => state.showToast);
   const [formView, setFormView] = useState(false);
   const [cancelOrders, setCancelOrders] = useState([]);
@@ -25,7 +25,7 @@ const CancelOrder = () => {
   const [editingId, setEditingId] = useState(null);
 
   // Fetch cancel orders
-  const fetchCancelOrders = async () => {
+  const fetchCancelOrders = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/cancel-orders`);
@@ -38,10 +38,10 @@ const CancelOrder = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, showToast]);
 
   // Fetch purchase orders for dropdown
-  const fetchPurchaseOrders = async () => {
+  const fetchPurchaseOrders = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/cancel-orders/purchase-orders`);
       if (response.data.success) {
@@ -50,7 +50,7 @@ const CancelOrder = () => {
     } catch (error) {
       console.error('Error fetching purchase orders:', error);
     }
-  };
+  }, [API_BASE_URL]);
 
   // Get last cancel number
   const getLastCancelNo = async () => {
@@ -182,7 +182,7 @@ const CancelOrder = () => {
   useEffect(() => {
     fetchCancelOrders();
     fetchPurchaseOrders();
-  }, []);
+  }, [fetchCancelOrders, fetchPurchaseOrders]);
 
   if (loading && !formView) {
     return (

@@ -6,7 +6,7 @@ import Layout from '../components/Layout';
 import SearchSelect from '../components/SearchSelect';
 import { useToastStore } from '../store/toastStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialFormState = {
   GpNo: '',
@@ -86,19 +86,10 @@ export default function GatePassOut() {
     };
 
     fetchInitialData();
-  }, []);
+  }, [showToast]);
 
   // Handle party selection and auto-fill address
-  const handlePartySelect = (partyName) => {
-    const selectedParty = parties.find(p => p.name === partyName);
-    if (selectedParty) {
-      setFormData(prev => ({
-        ...prev,
-        PartyName: partyName,
-        Address: selectedParty.address || ''
-      }));
-    }
-  };
+
 
   const handleAddItem = () => {
     if (!itemData.ItemName || !itemData.Qty) {
@@ -430,7 +421,9 @@ export default function GatePassOut() {
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
-                    step="1" value={itemData.Qty}
+                    step="any"
+                    value={itemData.Qty || ''}
+                    placeholder="0"
                     onChange={(e) => setItemData({ ...itemData, Qty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />

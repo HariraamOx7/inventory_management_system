@@ -19,10 +19,14 @@ import {
   Moon,
   Settings,
   XCircle,
-  FileCheck
+  FileCheck,
+  KeyRound,
+  Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToastStore } from '../store/toastStore';
+import { useAuthStore } from '../store/authStore';
+import ChangePasswordModal from './ChangePasswordModal';
 
 function ToastContainer({ toast, onClose }) {
   useEffect(() => {
@@ -119,14 +123,14 @@ const Layout = ({ children }) => {
       setTransactionsOpen(true);
     }
   }, [location.pathname, isTransactionsPath]);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const toast = useToastStore(state => state.toast);
   const hideToast = useToastStore(state => state.hideToast);
+  const { logout } = useAuthStore();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
   };
 
@@ -179,11 +183,10 @@ const Layout = ({ children }) => {
             navigate('/dashboard');
             setSidebarOpen(false);
           }}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-            location.pathname === '/dashboard'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
-          }`}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${location.pathname === '/dashboard'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            }`}
         >
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
@@ -193,11 +196,10 @@ const Layout = ({ children }) => {
         <div>
           <button
             onClick={() => setMastersOpen(!mastersOpen)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-              isMastersPath
-                ? 'text-white bg-[#141b36]'
-                : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${isMastersPath
+              ? 'text-white bg-[#141b36]'
+              : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Cog size={19} className="text-slate-400" />
@@ -221,11 +223,10 @@ const Layout = ({ children }) => {
                       navigate(sub.path);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
-                      isActive
-                        ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
-                    }`}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive
+                      ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
+                      }`}
                   >
                     {sub.name}
                   </button>
@@ -239,11 +240,10 @@ const Layout = ({ children }) => {
         <div>
           <button
             onClick={() => setTransactionsOpen(!transactionsOpen)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-              isTransactionsPath
-                ? 'text-white bg-[#141b36]'
-                : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${isTransactionsPath
+              ? 'text-white bg-[#141b36]'
+              : 'text-slate-300 hover:text-white hover:bg-[#161c36]'
+              }`}
           >
             <div className="flex items-center gap-3">
               <ClipboardList size={19} className="text-slate-400" />
@@ -267,11 +267,10 @@ const Layout = ({ children }) => {
                       navigate(sub.path);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
-                      isActive
-                        ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
-                    }`}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive
+                      ? 'text-indigo-300 bg-[#1e274c] font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-[#161c36]'
+                      }`}
                   >
                     {sub.name}
                   </button>
@@ -286,11 +285,10 @@ const Layout = ({ children }) => {
             navigate('/reports');
             setSidebarOpen(false);
           }}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            location.pathname === '/reports'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
-          }`}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${location.pathname === '/reports'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            }`}
         >
           <FileText size={18} />
           <span>Reports</span>
@@ -302,11 +300,10 @@ const Layout = ({ children }) => {
             navigate('/cancel-order');
             setSidebarOpen(false);
           }}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            location.pathname === '/cancel-order'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
-          }`}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${location.pathname === '/cancel-order'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            }`}
         >
           <XCircle size={18} />
           <span>Cancel Order</span>
@@ -318,16 +315,56 @@ const Layout = ({ children }) => {
             navigate('/bill-verify');
             setSidebarOpen(false);
           }}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            location.pathname === '/bill-verify'
-              ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
-          }`}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${location.pathname === '/bill-verify'
+            ? 'bg-[#5b52f6] text-white shadow-lg shadow-indigo-600/25'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-[#161c36]'
+            }`}
         >
           <FileCheck size={18} />
           <span>Bill Verify</span>
         </button>
       </nav>
+
+      {/* User Profile & Account Footer */}
+      <div className="p-3 border-t border-[#1e2746]/60 bg-[#0d1326]">
+        <div className="flex items-center justify-between px-2 py-1.5 mb-2">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
+              {(user?.full_name || user?.username || 'U')[0].toUpperCase()}
+            </div>
+            <div className="truncate">
+              <div className="text-xs font-semibold text-white truncate">
+                {user?.full_name || user?.username || 'User'}
+              </div>
+              <div className="text-[10px] font-medium text-indigo-400 capitalize">
+                {user?.role || 'Operator'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsChangePasswordOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[#141b36] hover:bg-[#1e274c] text-slate-300 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+            title="Change Password"
+          >
+            <KeyRound size={13} className="text-indigo-400" />
+            <span>Password</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 text-xs font-medium transition-colors cursor-pointer"
+            title="Sign Out"
+          >
+            <LogOut size={13} className="text-rose-400" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 
@@ -367,6 +404,11 @@ const Layout = ({ children }) => {
       {toast && (
         <ToastContainer toast={toast} onClose={hideToast} />
       )}
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 };

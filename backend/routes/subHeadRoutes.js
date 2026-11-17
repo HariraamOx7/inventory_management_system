@@ -13,6 +13,8 @@ router.get('/last-code',getLastCode);
 router.get('/', getSubHeads);
 router.get('/by-department', getSubHeadsByDepartment);
 router.post('/', addSubHead);
+router.put('/', updateSubHead);
+router.delete('/', deleteSubHead);
 router.put('/:code', updateSubHead);
 router.delete('/:code', deleteSubHead);
 

@@ -1,4 +1,6 @@
+const errorStatus = require('../services/errorStatus');
 // backend/controllers/billVerifyController.js
+const { Op } = require('sequelize');
 const BillVerify = require('../models/BillVerify');
 const BillEntry = require('../models/BillEntry');
 const Supplier = require('../models/Supplier');
@@ -12,7 +14,7 @@ exports.getBillVerifyRecords = async (req, res) => {
     
     if (fromDate && toDate) {
       where.VerifyDate = {
-        [require('sequelize').Op.between]: [fromDate, toDate]
+        [Op.between]: [fromDate, toDate]
       };
     }
     
@@ -35,7 +37,7 @@ exports.getBillVerifyRecords = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching bill verify records:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bill verify records',
       error: error.message
@@ -47,13 +49,22 @@ exports.getBillVerifyRecords = async (req, res) => {
 exports.getPartyNames = async (req, res) => {
   try {
     const records = await BillEntry.findAll({
-      attributes: ['PartyName'],
-      group: ['PartyName'],
-      raw: true,
-      order: [['PartyName', 'ASC']]
+      attributes: ['PartyCode'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
+      group: ['BillEntry.PartyCode', 'supplier.PartyCode', 'supplier.AccountName'],
+      order: [['PartyCode', 'ASC']]
     });
 
-    const partyNames = records.map(r => r.PartyName).filter(Boolean);
+    const partyNames = [...new Set(records.map(r => {
+      const p = r.toJSON();
+      return p.supplier ? p.supplier.AccountName : p.PartyCode;
+    }).filter(Boolean))];
 
     res.json({
       success: true,
@@ -61,7 +72,7 @@ exports.getPartyNames = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching party names:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching party names',
       error: error.message
@@ -72,28 +83,54 @@ exports.getPartyNames = async (req, res) => {
 // Get bills by party name
 exports.getBillsByParty = async (req, res) => {
   try {
-    const { partyName } = req.query;
+    const { partyName, partyCode } = req.query;
 
-    if (!partyName) {
+    if (!partyName && !partyCode) {
       return res.status(400).json({
         success: false,
-        message: 'Party name is required'
+        message: 'Party name or party code is required'
       });
     }
 
+    let resolvedPartyCode = partyCode;
+    if (!resolvedPartyCode && partyName) {
+      const sup = await Supplier.findOne({
+        where: {
+          [Op.or]: [
+            { AccountName: partyName.trim() },
+            { PartyCode: partyName.trim() }
+          ]
+        }
+      });
+      resolvedPartyCode = sup ? sup.PartyCode : partyName.trim();
+    }
+
     const bills = await BillEntry.findAll({
-      attributes: ['VoucherNo', 'BillDate', 'PartyName', 'BillAmount', 'GST', 'IGST'],
-      where: { PartyName: partyName },
+      attributes: ['VoucherNo', 'BillDate', 'PartyCode', 'BillAmount', 'GST', 'IGST'],
+      include: [
+        {
+          model: Supplier,
+          as: 'supplier',
+          attributes: ['PartyCode', 'AccountName']
+        }
+      ],
+      where: { PartyCode: resolvedPartyCode },
       order: [['VoucherNo', 'DESC']]
+    });
+
+    const formatted = bills.map(b => {
+      const p = b.toJSON();
+      p.PartyName = p.supplier?.AccountName || p.PartyCode;
+      return p;
     });
 
     res.json({
       success: true,
-      data: bills
+      data: formatted
     });
   } catch (error) {
     console.error('Error fetching bills by party:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching bills',
       error: error.message
@@ -133,7 +170,7 @@ exports.createBillVerify = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating bill verify record:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error creating bill verify record',
       error: error.message
@@ -168,7 +205,7 @@ exports.updateBillVerify = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating bill verify record:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating bill verify record',
       error: error.message
@@ -198,7 +235,7 @@ exports.deleteBillVerify = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting bill verify record:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting bill verify record',
       error: error.message

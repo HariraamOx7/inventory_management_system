@@ -1,0 +1,22 @@
+Copied 32 tables to an isolated rehearsal schema; user accounts excluded.
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+✔ new inward retains cost across PO price edits, contributes to ledger and reverses (3501.8954ms)
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+✔ August movement totals match the legacy source (795.9858ms)
+✔ dated legacy department report matches all August spreadsheet controls (696.3338ms)
+✔ a later period closes to the same balance as the full period (1518.9636ms)
+✔ a date without a verified opening does not fall back to current stock (3.2708ms)
+✔ verified October 26 historical controls remain unchanged (701.3134ms)
+✔ current department reports use the verified ledger (3313.099ms)
+✔ item, department, subhead and location reports use the same ledger value (6041.837ms)
+✔ current ledger refuses unverified stock edits (1068.9218ms)
+✔ ledger fingerprint catches value changes without timestamp changes (173.4368ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18792.9566
+Migration rehearsal copy removed; source data unchanged.

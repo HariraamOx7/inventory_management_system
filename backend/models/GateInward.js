@@ -11,10 +11,10 @@ GateInward.init({
     autoIncrement: true
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: false
   },
-  PartyName: {
+  PartyCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },
@@ -29,18 +29,6 @@ GateInward.init({
   },
   InvoiceDate: {
     type: DataTypes.DATEONLY,
-    allowNull: true
-  },
-  DCNo: {
-    type: DataTypes.STRING(100),
-    allowNull: true
-  },
-  DCDate: {
-    type: DataTypes.DATEONLY,
-    allowNull: true
-  },
-  LRCNo: {
-    type: DataTypes.STRING(100),
     allowNull: true
   },
   Status: {

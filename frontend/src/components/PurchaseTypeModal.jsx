@@ -16,7 +16,7 @@ const DETAIL_VARIABLES = [
   '[TCS]'
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialPTFormState = {
   Code: '',
@@ -38,11 +38,10 @@ const initialPTFormState = {
   TCSLedger: 'TAX COLLECTED AT SOURCE (T.C.S PAID)'
 };
 
-export { initialPTFormState };
 
 export default function PurchaseTypeModal({ isOpen, onClose, onSaved, editData }) {
   const [ptForm, setPtForm] = useState(initialPTFormState);
-  const [defaultFormulas, setDefaultFormulas] = useState({});
+  const [, setDefaultFormulas] = useState({});
   const [saving, setSaving] = useState(false);
   const [ptError, setPtError] = useState('');
 
@@ -157,18 +156,7 @@ export default function PurchaseTypeModal({ isOpen, onClose, onSaved, editData }
     }
   }, [isOpen, editData]);
 
-  const handleResetFormulas = () => {
-    setPtForm(prev => ({
-      ...prev,
-      AssessValue: defaultFormulas.AssessValue || initialPTFormState.AssessValue,
-      RoundOff: defaultFormulas.RoundOff || initialPTFormState.RoundOff,
-      LorryFreight: defaultFormulas.LorryFreight || initialPTFormState.LorryFreight,
-      SGST: defaultFormulas.SGST || initialPTFormState.SGST,
-      CGST: defaultFormulas.CGST || initialPTFormState.CGST,
-      IGST: defaultFormulas.IGST || initialPTFormState.IGST,
-      TCS: defaultFormulas.TCS || initialPTFormState.TCS
-    }));
-  };
+
 
   const handleSavePT = async () => {
     if (!ptForm.PurchaseType.trim()) {
@@ -201,8 +189,8 @@ export default function PurchaseTypeModal({ isOpen, onClose, onSaved, editData }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden mx-4 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden mx-4 flex flex-col border-0">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between shrink-0">
           <div>

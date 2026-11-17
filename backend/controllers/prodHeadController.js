@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 const ProductHead = require('../models/ProductHead');
 
 exports.getProductHeads = async (req, res) => {
@@ -11,7 +12,7 @@ exports.getProductHeads = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching product heads:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching product heads',
             error: error.message 
@@ -50,7 +51,7 @@ exports.addProductHead = async (req, res) => {
             });
         }
         
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding product head',
             error: error.message 
@@ -60,7 +61,8 @@ exports.addProductHead = async (req, res) => {
 
 exports.updateProductHead = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         const { ProdHeadDesc } = req.body;
 
         if (!ProdHeadDesc || ProdHeadDesc.trim() === '') {
@@ -88,7 +90,7 @@ exports.updateProductHead = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating product head:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating product head',
             error: error.message
@@ -98,7 +100,8 @@ exports.updateProductHead = async (req, res) => {
 
 exports.deleteProductHead = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         
         const productHead = await ProductHead.findByPk(code);
         if (!productHead) {
@@ -116,7 +119,7 @@ exports.deleteProductHead = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting product head:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting product head',
             error: error.message

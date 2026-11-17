@@ -5,15 +5,15 @@ import {
   Plus, Edit2, Trash2, Save, X, Scale, AlertCircle, Search, ArrowUpDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 export default function UOM() {
-  const navigate = useNavigate();
+
   const [uoms, setUoms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

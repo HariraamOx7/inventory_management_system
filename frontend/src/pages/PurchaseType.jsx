@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { AlertCircle, Plus, Pencil, Trash2, ShoppingBag } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import PurchaseTypeModal from '../components/PurchaseTypeModal';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 export default function PurchaseType() {
-  const navigate = useNavigate();
+
   const [purchaseTypes, setPurchaseTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -66,7 +66,7 @@ export default function PurchaseType() {
     }
   };
 
-  const handleSaved = (savedPT) => {
+  const handleSaved = () => {
     setShowModal(false);
     setEditData(null);
     setSuccessMsg(editData ? 'Purchase Type updated successfully' : 'Purchase Type added successfully');

@@ -9,6 +9,8 @@ const {
 
 router.get('/', getProductHeads);
 router.post('/', addProductHead);
+router.put('/', updateProductHead);
+router.delete('/', deleteProductHead);
 router.put('/:code', updateProductHead);
 router.delete('/:code', deleteProductHead);
 

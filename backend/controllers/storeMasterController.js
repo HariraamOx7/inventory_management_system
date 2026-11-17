@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 const StoreMaster = require('../models/StoreMaster');
 
 exports.getStores = async (req, res) => {
@@ -11,7 +12,7 @@ exports.getStores = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching stores:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching stores',
             error: error.message 
@@ -50,7 +51,7 @@ exports.addStore = async (req, res) => {
             });
         }
         
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding store',
             error: error.message 
@@ -60,7 +61,8 @@ exports.addStore = async (req, res) => {
 
 exports.updateStore = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code ?? req.params.id;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         const { StoreName } = req.body;
 
         if (!StoreName || StoreName.trim() === '') {
@@ -97,7 +99,7 @@ exports.updateStore = async (req, res) => {
             });
         }
         
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating store',
             error: error.message
@@ -107,7 +109,8 @@ exports.updateStore = async (req, res) => {
 
 exports.deleteStore = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code ?? req.params.id;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         
         const store = await StoreMaster.findByPk(code);
         if (!store) {
@@ -125,7 +128,7 @@ exports.deleteStore = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting store:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting store',
             error: error.message

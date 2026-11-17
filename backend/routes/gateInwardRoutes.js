@@ -6,8 +6,14 @@ const gateInwardController = require('../controllers/gateInwardController');
 // Get all parties from purchase orders
 router.get('/get-parties', gateInwardController.getParties);
 
-// Get items for a specific party
+// Get purchase orders for a specific party
+router.get('/purchase-orders-by-party', gateInwardController.getPurchaseOrdersByParty);
+
+// Get items for a specific party (legacy - returns items from ALL POs)
 router.get('/items-by-party', gateInwardController.getItemsByParty);
+
+// Get items for a specific purchase order (1:1 PO-to-GI flow)
+router.get('/items-by-order', gateInwardController.getItemsByOrder);
 
 // Get last inward number (for auto-increment)
 router.get('/last-inward-no', gateInwardController.getLastInwardNo);

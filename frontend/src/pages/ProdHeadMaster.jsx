@@ -5,12 +5,12 @@ import {
   Plus, Edit2, Trash2, Save, X, Package, AlertCircle, Search, ArrowUpDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import PageHeader from '../components/ui/PageHeader';
 import FilterPanel from '../components/ui/FilterPanel';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialFormState = {
   ProdHeadCode: '',
@@ -18,7 +18,7 @@ const initialFormState = {
 };
 
 export default function ProductHead() {
-  const navigate = useNavigate();
+
   const [productHeads, setProductHeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -88,7 +88,7 @@ export default function ProductHead() {
   const handleUpdate = async (code) => {
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/product-heads/${code}`, editFormData);
+      await axios.put(`${API_URL}/product-heads?code=${encodeURIComponent(code)}`, editFormData);
       setEditingCode(null);
       fetchProductHeads();
     } catch (error) {
@@ -102,7 +102,7 @@ export default function ProductHead() {
     if (!window.confirm('Are you sure you want to delete this product head?')) return;
     try {
       setLoading(true);
-      await axios.delete(`${API_URL}/product-heads/${code}`);
+      await axios.delete(`${API_URL}/product-heads?code=${encodeURIComponent(code)}`);
       fetchProductHeads();
     } catch (error) {
       setError('Error deleting product head: ' + error.message);

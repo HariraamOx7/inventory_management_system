@@ -1,5 +1,14 @@
+const sequelize = require('../config/db');
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const { Op } = require('sequelize');
 const Supplier = require('../models/Supplier');
+
+
+const nextSupplierCode = async () => {
+  const [rows] = await sequelize.query("SELECT COALESCE(MAX(CAST(PartyCode AS UNSIGNED)), 0) AS maximum FROM suppliers WHERE PartyCode REGEXP '^[0-9]+$'");
+  return (BigInt(String(rows[0].maximum)) + 1n).toString();
+};
 
 exports.getSuppliers = async (req, res) => {
   try {
@@ -9,7 +18,10 @@ exports.getSuppliers = async (req, res) => {
 
     if (search && search.trim() !== '') {
       andConditions.push({
-        AccountName: { [Op.like]: `%${search.trim()}%` }
+        [Op.or]: [
+          { AccountName: { [Op.like]: `%${search.trim()}%` } },
+          { PartyCode: { [Op.like]: `%${search.trim()}%` } }
+        ]
       });
     }
 
@@ -40,7 +52,7 @@ exports.getSuppliers = async (req, res) => {
     }
 
     const queryOptions = {
-      order: [['AccCode', 'ASC']]
+      order: [['PartyCode', 'ASC']]
     };
 
     if (andConditions.length > 0) {
@@ -70,30 +82,24 @@ exports.getSuppliers = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching suppliers:', error);
-    res.status(500).json({ 
-      success: false,
+    res.status(errorStatus(error)).json({
+      success: false, 
       message: 'Error fetching suppliers',
       error: error.message 
     });
   }
 };
 
-// Add this new function
 exports.getLastCode = async (req, res) => {
   try {
-    const lastSupplier = await Supplier.findOne({
-      order: [['AccCode', 'DESC']],
-      attributes: ['AccCode']
-    });
-    
-    const lastCode = lastSupplier ? lastSupplier.AccCode : 0;
+    const lastCode = (BigInt(await nextSupplierCode()) - 1n).toString();
     res.json({
       success: true,
       data: { lastCode: lastCode }
     });
   } catch (error) {
     console.error('Error fetching last code:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error fetching last code',
       error: error.message
@@ -101,15 +107,16 @@ exports.getLastCode = async (req, res) => {
   }
 };
 
-// Update addSupplier to auto-generate AccCode
 exports.addSupplier = async (req, res) => {
   try {
     const {
+      PartyCode, AccCode,
       Description, AccountName, Place, Address, DeliveryAddress,
       OpeningCredit, OpeningDebit, TINNo, CSTNo, PhNo, Fax, CellNo, Email,
       WebSite, AccountNo, ContactPerson, Pincode, PanNumber, Department, GSTNo
     } = req.body;
     
+    const requestedCode = PartyCode || AccCode;
     if (!AccountName) {
       return res.status(400).json({
         success: false,
@@ -117,7 +124,12 @@ exports.addSupplier = async (req, res) => {
       });
     }
     
-    const newSupplier = await Supplier.create({ 
+    let newSupplier;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = requestedCode || await nextSupplierCode();
+      try {
+      newSupplier = await Supplier.create({
+      PartyCode: String(code).trim(),
       Description: Description ? Description.trim() : null,
       AccountName: AccountName ? AccountName.trim() : null,
       Place: Place ? Place.trim() : null,
@@ -138,7 +150,12 @@ exports.addSupplier = async (req, res) => {
       PanNumber: PanNumber ? PanNumber.trim() : null,
       Department: Department ? Department.trim() : null,
       GSTNo: GSTNo ? GSTNo.trim() : null
-    });
+      });
+      break;
+      } catch (error) {
+        if (requestedCode || error.name !== 'SequelizeUniqueConstraintError' || attempt === 4) throw error;
+      }
+    }
     
     res.status(201).json({
       success: true,
@@ -146,7 +163,7 @@ exports.addSupplier = async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding supplier:', error);
-    res.status(500).json({ 
+    res.status(errorStatus(error)).json({
       success: false, 
       message: 'Error adding supplier',
       error: error.message 
@@ -154,17 +171,17 @@ exports.addSupplier = async (req, res) => {
   }
 };
 
-// Update updateSupplier
 exports.updateSupplier = async (req, res) => {
   try {
-    const { accCode } = req.params;
+    const partyCode = req.query?.code ?? req.params.partyCode ?? req.params.accCode;
+        if (typeof partyCode !== 'string' || !partyCode.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
     const {
       Description, AccountName, Place, Address, DeliveryAddress,
       OpeningCredit, OpeningDebit, TINNo, CSTNo, PhNo, Fax, CellNo, Email,
       WebSite, AccountNo, ContactPerson, Pincode, PanNumber, Department, GSTNo
     } = req.body;
 
-    const supplier = await Supplier.findByPk(parseInt(accCode));
+    const supplier = await Supplier.findByPk(partyCode);
     if (!supplier) {
       return res.status(404).json({
         success: false,
@@ -201,7 +218,7 @@ exports.updateSupplier = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating supplier:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error updating supplier',
       error: error.message
@@ -209,18 +226,20 @@ exports.updateSupplier = async (req, res) => {
   }
 };
 
-// Update deleteSupplier
 exports.deleteSupplier = async (req, res) => {
   try {
-    const { accCode } = req.params;
+    const partyCode = req.query?.code ?? req.params.partyCode ?? req.params.accCode;
+        if (typeof partyCode !== 'string' || !partyCode.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
 
-    const supplier = await Supplier.findByPk(parseInt(accCode));
+    const supplier = await Supplier.findByPk(partyCode);
     if (!supplier) {
       return res.status(404).json({
         success: false,
         message: 'Supplier not found'
       });
     }
+
+        await preventReferencedDeletion('Supplier', supplier);
 
     await supplier.destroy();
     res.json({
@@ -229,7 +248,7 @@ exports.deleteSupplier = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting supplier:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: 'Error deleting supplier',
       error: error.message

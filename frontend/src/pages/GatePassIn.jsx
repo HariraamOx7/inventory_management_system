@@ -6,7 +6,7 @@ import Layout from '../components/Layout';
 import SearchSelect from '../components/SearchSelect';
 import { useToastStore } from '../store/toastStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialFormState = {
   InNo: '',
@@ -80,7 +80,7 @@ export default function GatePassIn() {
     };
 
     fetchInitialData();
-  }, []);
+  }, [showToast]);
 
   const handleAddItem = () => {
     if (!itemData.ItemName || !itemData.RecQty) {
@@ -392,7 +392,9 @@ export default function GatePassIn() {
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
-                    step="1" value={itemData.PendingQty}
+                    step="any"
+                    value={itemData.PendingQty || ''}
+                    placeholder="0"
                     onChange={(e) => setItemData({ ...itemData, PendingQty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -403,7 +405,9 @@ export default function GatePassIn() {
                   <input
                     type="number"
                     onWheel={(e) => e.target.blur()}
-                    step="1" value={itemData.RecQty}
+                    step="any"
+                    value={itemData.RecQty || ''}
+                    placeholder="0"
                     onChange={(e) => setItemData({ ...itemData, RecQty: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />

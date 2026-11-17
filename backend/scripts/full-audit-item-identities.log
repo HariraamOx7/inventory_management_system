@@ -1,0 +1,11 @@
+✔ legacy alphanumeric codes and leading zeros survive (2.2663ms)
+✔ name lookup remains available when no code is provided (0.1547ms)
+✔ duplicate names require an explicit item code (1.9929ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 85.0051

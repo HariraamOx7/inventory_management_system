@@ -1,3 +1,4 @@
+const errorStatus = require('../services/errorStatus');
 const State = require('../models/State');
 const { literal } = require('sequelize');
 
@@ -12,7 +13,7 @@ exports.getStates = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching states:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching states',
             error: error.message 
@@ -57,7 +58,7 @@ exports.addState = async (req, res) => {
             });
         }
         
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding state',
             error: error.message 
@@ -67,7 +68,8 @@ exports.addState = async (req, res) => {
 
 exports.updateState = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         const { StateName } = req.body;
 
         if (!StateName || StateName.trim() === '') {
@@ -104,7 +106,7 @@ exports.updateState = async (req, res) => {
             });
         }
         
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating state',
             error: error.message
@@ -114,7 +116,8 @@ exports.updateState = async (req, res) => {
 
 exports.deleteState = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         
         const state = await State.findByPk(code);
         if (!state) {
@@ -132,7 +135,7 @@ exports.deleteState = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting state:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting state',
             error: error.message

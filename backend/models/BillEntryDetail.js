@@ -15,10 +15,10 @@ BillEntryDetail.init({
     allowNull: false
   },
   OrderNo: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     allowNull: true
   },
-  ItemName: {
+  ItemCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },

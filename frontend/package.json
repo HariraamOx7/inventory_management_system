@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api:prod": "node scripts/update-api-url.js prod",
+    "api:dev": "node scripts/update-api-url.js dev",
+    "api:toggle": "node scripts/update-api-url.js toggle"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

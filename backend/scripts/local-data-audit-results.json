@@ -1,0 +1,17 @@
+{
+  "database": "stores",
+  "scope": "Read-only local schema and data consistency counts; not production certification",
+  "missingColumns": [],
+  "counts": {
+    "receiptHeadersWithoutItems": 1,
+    "billHeadersWithoutItems": 1,
+    "inwardHeadersWithoutItems": 0,
+    "purchaseHeadersWithoutItems": 0,
+    "orphanReceiptItems": 0,
+    "receiptItemsMissingMaster": 0,
+    "billItemsMissingMaster": 0,
+    "duplicateBilledGRNs": 0,
+    "negativeStockItems": 0,
+    "inwardItemsWithoutRecordedCost": 0
+  }
+}

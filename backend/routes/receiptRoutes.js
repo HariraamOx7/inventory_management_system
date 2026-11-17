@@ -5,7 +5,11 @@ const receiptController = require('../controllers/receiptController');
 router.get('/last-grn-no', receiptController.getLastGRNNo);
 router.get('/parties', receiptController.getParties);
 
-// New endpoints used by frontend
+// Purchase Order based receipt creation endpoints
+router.get('/available-purchase-orders', receiptController.getAvailablePurchaseOrders);
+router.get('/purchase-order-details', receiptController.getPurchaseOrderReceiptDetails);
+
+// Gate Inward endpoints (also maintained for backward compatibility)
 router.get('/available-gate-inwards', receiptController.getAvailableGateInwards);
 router.get('/gate-inward-details', receiptController.getGateInwardDetails);
 

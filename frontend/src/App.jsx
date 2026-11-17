@@ -23,6 +23,7 @@ import ItemIssue from './pages/ItemIssue.jsx';
 import GatePassOut from './pages/GatePassOut.jsx';
 import GatePassIn from './pages/GatePassIn.jsx';
 import Reports from './pages/Reports.jsx';
+import ReportView from './pages/ReportView.jsx';
 import CancelOrder from './pages/CancelOrder';
 import BillVerify from './pages/BillVerify';
 
@@ -190,6 +191,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/reports/view" 
+          element={
+            <ProtectedRoute>
+              <ReportView />
             </ProtectedRoute>
           } 
         />

@@ -4,12 +4,12 @@ import { Plus, Edit2, Trash2, Save, X, Package2, AlertCircle, ArrowLeft } from '
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://krexports.org/krest/api';
 
 const initialFormState = {
     ItemCode: '',
     ItemName: '',
-    UnitRate: 0,
+    UnitRate: '',
     Department: '',
     DepartmentId: '',
     SubHeadCode: '',
@@ -166,7 +166,10 @@ export default function ItemMaster() {
 
     const handleEdit = (itemMaster) => {
         setEditingCode(itemMaster.ItemCode);
-        setEditFormData(itemMaster);
+        setEditFormData({
+            ...itemMaster,
+            UnitRate: parseFloat(itemMaster.UnitRate) > 0 ? itemMaster.UnitRate : ''
+        });
 
         // Load sub heads for the department
         const dept = departments.find(d => d.dept_name === itemMaster.Department);
@@ -178,12 +181,12 @@ export default function ItemMaster() {
     const handleUpdate = async (code) => {
         try {
             setLoading(true);
-            await axios.put(`${API_URL}/item-masters/${code}`, {
+            await axios.put(`${API_URL}/item-masters`, {
                 ItemName: editFormData.ItemName,
                 UnitRate: editFormData.UnitRate,
                 Department: editFormData.Department,
                 UOM: editFormData.UOM
-            });
+            }, { params: { code } });
             setEditingCode(null);
             fetchItemMasters();
         } catch (error) {
@@ -198,7 +201,7 @@ export default function ItemMaster() {
 
         try {
             setLoading(true);
-            await axios.delete(`${API_URL}/item-masters/${code}`);
+            await axios.delete(`${API_URL}/item-masters`, { params: { code } });
             fetchItemMasters();
         } catch (error) {
             setError('Error deleting item master: ' + error.message);
@@ -298,10 +301,10 @@ export default function ItemMaster() {
                         type="number"
                         onWheel={(e) => e.target.blur()}
                         name="UnitRate"
-                        value={data.UnitRate}
+                        value={data.UnitRate || ''}
                         onChange={(e) => handleInputChange(e, isEdit)}
-                        placeholder="Enter unit rate"
-                        step="1" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                        step="any" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 

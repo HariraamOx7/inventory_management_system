@@ -1,3 +1,5 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const PartyMaster = require('../models/PartyMaster');
 const Supplier = require('../models/Supplier');
 
@@ -12,7 +14,7 @@ exports.getParties = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching parties:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching parties',
             error: error.message 
@@ -67,7 +69,7 @@ exports.getSupplierByName = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching supplier:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching supplier details',
             error: error.message 
@@ -79,16 +81,20 @@ exports.getSupplierByName = async (req, res) => {
 exports.getSuppliers = async (req, res) => {
     try {
         const suppliers = await Supplier.findAll({
-            attributes: ['AccCode', 'AccountName'],
+            attributes: ['PartyCode', 'AccountName'],
             order: [['AccountName', 'ASC']]
         });
         res.json({
             success: true,
-            data: suppliers
+            data: suppliers.map(s => ({
+                PartyCode: s.PartyCode,
+                AccCode: s.PartyCode,
+                AccountName: s.AccountName
+            }))
         });
     } catch (error) {
         console.error('Error fetching suppliers:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching suppliers',
             error: error.message 
@@ -147,7 +153,7 @@ exports.addParty = async (req, res) => {
             });
         }
         
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding party',
             error: error.message 
@@ -157,7 +163,8 @@ exports.addParty = async (req, res) => {
 
 exports.updateParty = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         const {
             AccountName, Place, Address, DeliveryAddress, TINNo, CSTNo,
             PhNo, Email, Fax, WebSite, AccountNo, ContactPerson, CellNo,
@@ -198,7 +205,7 @@ exports.updateParty = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating party:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating party',
             error: error.message
@@ -208,7 +215,8 @@ exports.updateParty = async (req, res) => {
 
 exports.deleteParty = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ success: false, message: 'A valid record code is required' });
         
         const party = await PartyMaster.findByPk(code);
         if (!party) {
@@ -218,6 +226,8 @@ exports.deleteParty = async (req, res) => {
             });
         }
 
+        await preventReferencedDeletion('PartyMaster', party);
+
         await party.destroy();
 
         res.json({
@@ -226,7 +236,7 @@ exports.deleteParty = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting party:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting party',
             error: error.message

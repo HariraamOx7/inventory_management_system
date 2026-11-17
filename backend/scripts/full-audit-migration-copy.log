@@ -1,0 +1,22 @@
+Copied 32 tables to an isolated rehearsal schema; user accounts excluded.
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+✔ new inward retains cost across PO price edits, contributes to ledger and reverses (3970.1933ms)
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+✔ August movement totals match the legacy source (666.1129ms)
+✔ dated legacy department report matches all August spreadsheet controls (594.216ms)
+✔ a later period closes to the same balance as the full period (1209.4335ms)
+✔ a date without a verified opening does not fall back to current stock (3.8526ms)
+✔ verified October 26 historical controls remain unchanged (715.9858ms)
+✔ current department reports use the verified ledger (3072.3001ms)
+✔ item, department, subhead and location reports use the same ledger value (5506.8261ms)
+✔ current ledger refuses unverified stock edits (983.8732ms)
+✔ ledger fingerprint catches value changes without timestamp changes (97.7036ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18105.3209
+Migration rehearsal copy removed; source data unchanged.

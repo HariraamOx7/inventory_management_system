@@ -1,0 +1,301 @@
+{
+  "scope": "Actual HTTP CRUD, list/reload and detail persistence for 20 modules, physical stock, bulk upload and numbering",
+  "results": [
+    {
+      "name": "HTTP Department create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Department edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP SubHead create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP SubHead edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP UOM create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP UOM edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP State create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP State edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP StoreMaster create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP StoreMaster edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ProductHead create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ProductHead edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Supplier create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Supplier edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PartyMaster create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PartyMaster edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PurchaseType create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PurchaseType edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ItemMaster create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ItemMaster edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Item create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Item edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PurchaseOrder create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PurchaseOrder edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GateInward create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GateInward edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP gate inward updates physical stock once across create and edit",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Receipt create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Receipt edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP BillEntry create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP BillEntry edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP BillVerify create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP BillVerify edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ItemIssue create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ItemIssue edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP item issue edit deducts stock once",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GatePassOut create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GatePassOut edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GatePassIn create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GatePassIn edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP CancelOrder create persists header and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP CancelOrder edit and reload persists fields and every detail",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/receipt/item-wise totals reconcile with the saved transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/receipt/party-wise totals reconcile with the saved transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/billing/item-wise totals reconcile with the saved transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/billing/day-book totals reconcile with the saved transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "/reports/issue/item-wise totals reconcile with the saved transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "Bulk upload generates distinct codes and reports rejected rows",
+      "status": "PASS"
+    },
+    {
+      "name": "Item code generation skips sequence gaps and occupied codes",
+      "status": "PASS"
+    },
+    {
+      "name": "State sequential code generation crosses single-digit boundary",
+      "status": "PASS"
+    },
+    {
+      "name": "SubHead sequential code generation crosses single-digit boundary",
+      "status": "PASS"
+    },
+    {
+      "name": "operator can perform authorized business CRUD",
+      "status": "PASS"
+    },
+    {
+      "name": "manager can perform authorized business CRUD",
+      "status": "PASS"
+    },
+    {
+      "name": "Supplier form without a code receives a unique generated PartyCode",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP CancelOrder delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GatePassIn delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GatePassOut delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ItemIssue delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP BillVerify delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP BillEntry delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Receipt delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GateInward delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PurchaseOrder delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Item delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ItemMaster delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PurchaseType delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PartyMaster delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Supplier delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP ProductHead delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP StoreMaster delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP State delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP UOM delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP SubHead delete removes header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP Department delete removes header and details",
+      "status": "PASS"
+    }
+  ]
+}

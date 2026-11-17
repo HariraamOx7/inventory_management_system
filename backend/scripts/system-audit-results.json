@@ -1,0 +1,597 @@
+{
+  "database": "stores_rehearsal_system_1793372126129",
+  "results": [
+    {
+      "name": "Bill rejects unresolved items without leaving a header",
+      "status": "PASS"
+    },
+    {
+      "name": "PurchaseOrder failed edit retains header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "BillEntry failed edit retains header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "BillEntry failed create leaves no partial record",
+      "status": "PASS"
+    },
+    {
+      "name": "GatePassOut failed edit retains header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "GatePassOut failed create leaves no partial record",
+      "status": "PASS"
+    },
+    {
+      "name": "GatePassIn failed edit retains header and details",
+      "status": "PASS"
+    },
+    {
+      "name": "GatePassIn failed create leaves no partial record",
+      "status": "PASS"
+    },
+    {
+      "name": "Item issue delete restores the exact item code",
+      "status": "PASS"
+    },
+    {
+      "name": "Item issue update restores the exact item code",
+      "status": "PASS"
+    },
+    {
+      "name": "Gate inward rejects quantities above actual pending balance",
+      "status": "PASS"
+    },
+    {
+      "name": "Gate inward rejects duplicate-line overflow and items outside the PO",
+      "status": "PASS"
+    },
+    {
+      "name": "Same-PO invoice batches can be edited and exclude their own received quantity",
+      "status": "PASS"
+    },
+    {
+      "name": "Concurrent gate inwards cannot receive the same pending balance twice",
+      "status": "PASS"
+    },
+    {
+      "name": "Purchase order save preserves the submitted summary rounding",
+      "status": "PASS"
+    },
+    {
+      "name": "purchaseOrder deletion preserves stock value and transaction consistency",
+      "status": "PASS"
+    },
+    {
+      "name": "billChain deletion preserves stock value and transaction consistency",
+      "status": "PASS"
+    },
+    {
+      "name": "failedBillChain deletion preserves stock value and transaction consistency",
+      "status": "PASS"
+    },
+    {
+      "name": "Deleting either PO in a shared inward cannot delete the other PO goods",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP login and authenticated profile",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP rejects anonymous and invalid-token business access",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP items edit/delete retains slash, percent, and leading-zero codes",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP item-masters edit/delete retains slash, percent, and leading-zero codes",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP viewer can read but cannot modify business data",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/auth/me",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/dashboard/stats",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/departments",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/suppliers/last-code",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/stores",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/product-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/sub-heads/last-code",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/sub-heads",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/sub-heads/by-department",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/uoms",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-masters/sub-heads-by-dept",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-masters",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-masters/departments/all",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-masters/uoms/all",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/parties",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/parties/suppliers/all",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/parties/supplier-details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/states",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-orders/last-order-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-orders/suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-orders/items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-orders/supplier-details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/get-parties",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/purchase-orders-by-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/items-by-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/items-by-order",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/last-inward-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/purchase-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/order-items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards/check-duplicate-invoice",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-inwards",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/last-grn-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/parties",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/available-purchase-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/purchase-order-details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/available-gate-inwards",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/gate-inward-details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/gate-inwards-by-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts/inward-items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/receipts",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries/last-voucher-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries/available-parties",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries/available-gate-inwards",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries/available-grns",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries/grn-details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries/check-duplicate",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-entries",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-issues/last-issue-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-issues/departments",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-issues/items-by-department",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-issues/items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/item-issues",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-outs/last-gp-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-outs/parties",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-outs/departments",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-outs/items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-outs",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-ins/last-in-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-ins/parties",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-ins/items",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/gate-pass-ins",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/cancel-orders/last-cancel-no",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/cancel-orders/purchase-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/cancel-orders/purchase-order-details",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/cancel-orders",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-verify/party-names",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-verify/bills-by-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/bill-verify",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/orderno-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/supplier-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/department-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/pending-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/pending-date-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/price-comparison",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/purchase/party-pending",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/day-book",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/purchasetype-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/purchasetype-wise-abstract",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/purchase-register",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/date-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/party-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/party-wise-abstract",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/department-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/department-wise-abstract",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/subhead-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/billing/item-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/receipt/date-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/receipt/party-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/receipt/subhead-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/receipt/department-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/receipt/item-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/receipt/return-pending",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/item-wise-report",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/item-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/item-opening",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/department-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/department-closing",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/department-detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/subhead-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/subhead-detail",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/nil-stock",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/stock/max-level",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-pending",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-pending-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-returnable-nonreturnable",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-returnable-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-nonreturnable",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-in",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/gatepass-in-party",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/others/item-location",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/date-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/item-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/subhead-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/department-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/month-movement-item",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/month-movement-dept",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/month-movement-subhead",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/reports/issue/department-item-wise",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-types",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-types/next-code",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP GET /api/purchase-types/default-formulas",
+      "status": "PASS"
+    }
+  ]
+}

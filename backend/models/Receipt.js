@@ -10,7 +10,7 @@ Receipt.init({
     primaryKey: true,
     autoIncrement: true
   },
-  PartyName: {
+  PartyCode: {
     type: DataTypes.STRING(255),
     allowNull: false
   },

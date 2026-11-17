@@ -1,0 +1,226 @@
+{
+  "scope": "Isolated desktop browser checks; production data not used",
+  "routes": [
+    {
+      "route": "/dashboard",
+      "headings": [
+        "\t\t\t18 heading Dashboard, Value: 1",
+        "\t\t\t43 heading Monthly Transactions, Value: 2",
+        "\t\t\t48 heading Status Overview, Value: 2",
+        "\t\t\t51 heading Recent Gate Inward Log, Value: 2"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/department",
+      "headings": [
+        "\t\t\t27 heading Department Master, Value: 1",
+        "\t\t\t29 heading Add New Department, Value: 2",
+        "\t\t\t33 heading Department List (1), Value: 2"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/supplier",
+      "headings": [
+        "\t\t\t27 heading Supplier Master, Value: 1",
+        "\t\t\t39 heading All Suppliers, Value: 2",
+        "\t\t\t42 heading UI audit supplier, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/storemaster",
+      "headings": [
+        "\t\t\t27 heading Store Master, Value: 1",
+        "\t\t\t33 heading All Stores, Value: 2",
+        "\t\t\t36 heading No stores found, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/prodheadmaster",
+      "headings": [
+        "\t\t\t27 heading Product Head Master, Value: 1",
+        "\t\t\t33 heading All Product Heads, Value: 2",
+        "\t\t\t36 heading No product heads found, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/subhead",
+      "headings": [
+        "\t\t\t27 heading Sub Head Master, Value: 1",
+        "\t\t\t35 heading All Sub Heads, Value: 2",
+        "\t\t\t38 heading UI audit subhead, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/item",
+      "headings": [
+        "\t\t\t27 heading Item Master, Value: 1",
+        "\t\t\t42 heading All Items, Value: 2",
+        "\t\t\t45 heading UI transaction item, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/uom",
+      "headings": [
+        "\t\t\t27 heading Unit of Measurement (UOM), Value: 1",
+        "\t\t\t33 heading All Units of Measurement, Value: 2",
+        "\t\t\t36 heading No UOMs found, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/purchasetype",
+      "headings": [
+        "\t\t\t27 heading Purchase Type Master, Value: 1",
+        "\t\t\t30 heading Purchase Types, Value: 2"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/gppartymaster",
+      "headings": [
+        "\t\t\t27 heading Party Master, Value: 1",
+        "\t\t\t30 heading All Parties, Value: 2",
+        "\t\t\t33 heading No parties yet, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/gpitemmaster",
+      "headings": [
+        "\t\t\t28 heading Item Master, Value: 1",
+        "\t\t\t32 heading Item List, Value: 2",
+        "\t\t\t35 heading UI audit GP slash item, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/state",
+      "headings": [
+        "\t\t\t27 heading State Master, Value: 1",
+        "\t\t\t33 heading All States, Value: 2",
+        "\t\t\t36 heading No states found, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/transaction/purchase-order",
+      "headings": [
+        "\t\t\t25 heading Purchase Order Entry, Value: 1"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/transaction/gate-inward",
+      "headings": [
+        "\t\t\t25 heading Gate Inward, Value: 1",
+        "\t\t\t35 heading All Gate Inwards, Value: 2",
+        "\t\t\t38 heading UI audit supplier, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/transaction/bill-entry",
+      "headings": [
+        "\t\t\t25 heading Bill Entry (Purchase Invoice), Value: 1",
+        "\t\t\t35 heading All Bill Entries, Value: 2",
+        "\t\t\t\t\t\t60 heading No Bill Entries found, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/transaction/issue",
+      "headings": [
+        "\t\t\t25 heading Item Issue, Value: 1",
+        "\t\t\t29 heading 0, Value: 3",
+        "\t\t\t32 heading 0, Value: 3",
+        "\t\t\t35 heading 0, Value: 3",
+        "\t\t\t38 heading 0, Value: 3",
+        "\t\t\t46 heading Item Issue Records, Value: 2",
+        "\t\t\t\t\t\t71 heading No Item Issues Found, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/transaction/gate-pass-out",
+      "headings": [
+        "\t\t\t25 heading Gate Pass Entry, Value: 2"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/transaction/gate-pass-in",
+      "headings": [
+        "\t\t\t25 heading Gate Income Entry, Value: 2"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/reports",
+      "headings": [
+        "\t\t\t19 heading Reports & Registers, Value: 1",
+        "\t\t\t55 heading No Report Loaded, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/cancel-order",
+      "headings": [
+        "\t\t\t18 heading Cancel Order, Value: 2",
+        "\t\t\t20 heading Cancel Order List, Value: 3"
+      ],
+      "errors": []
+    },
+    {
+      "route": "/bill-verify",
+      "headings": [
+        "\t\t\t18 heading Bill Verify, Value: 1"
+      ],
+      "errors": []
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Item slash-code edit, reload, and delete",
+      "status": "PASS"
+    },
+    {
+      "name": "Receipt create, PO display, product reload, edit, and no-round paise",
+      "status": "PASS"
+    },
+    {
+      "name": "Supplier slash-code edit and automatic-code create",
+      "status": "PASS"
+    },
+    {
+      "name": "GP item slash-code edit",
+      "status": "PASS"
+    },
+    {
+      "name": "Bill create/reload/edit with same-name products retaining exact codes",
+      "status": "PASS",
+      "databaseVerified": true
+    },
+    {
+      "name": "Purchase voucher download and discounted paise",
+      "status": "PASS",
+      "pdfVisuallyVerified": true
+    }
+  ],
+  "notes": [
+    "Supplier AccCode/PartyCode console warning was reproduced and fixed.",
+    "Optional blank bill purchase type rejection was reproduced; final HTTP regression verifies the fix."
+  ],
+  "screenshots": [
+    "ui-item-delete-verified.png",
+    "ui-receipt-reload-verified.png",
+    "ui-supplier-create-verified.png",
+    "ui-bill-duplicate-names-verified.png"
+  ]
+}

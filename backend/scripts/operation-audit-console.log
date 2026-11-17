@@ -1,0 +1,245 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+PASS MODEL Department insert/read/update/delete persistence
+PASS MODEL SubHead insert/read/update/delete persistence
+PASS MODEL Item insert/read/update/delete persistence
+PASS MODEL Supplier insert/read/update/delete persistence
+PASS MODEL ItemMaster insert/read/update/delete persistence
+PASS MODEL PartyMaster insert/read/update/delete persistence
+PASS MODEL PurchaseType insert/read/update/delete persistence
+PASS MODEL State insert/read/update/delete persistence
+PASS MODEL StoreMaster insert/read/update/delete persistence
+PASS MODEL ProductHead insert/read/update/delete persistence
+PASS MODEL UOM insert/read/update/delete persistence
+PASS MODEL PurchaseOrder insert/read/update/delete persistence
+PASS MODEL PurchaseOrderDetail insert/read/update/delete persistence
+PASS MODEL GateInward insert/read/update/delete persistence
+PASS MODEL GateInwardDetail insert/read/update/delete persistence
+PASS MODEL Receipt insert/read/update/delete persistence
+PASS MODEL ReceiptDetail insert/read/update/delete persistence
+PASS MODEL BillEntry insert/read/update/delete persistence
+PASS MODEL BillEntryDetail insert/read/update/delete persistence
+PASS MODEL ItemIssue insert/read/update/delete persistence
+PASS MODEL ItemIssueDetail insert/read/update/delete persistence
+PASS MODEL GatePassOut insert/read/update/delete persistence
+PASS MODEL GatePassOutDetail insert/read/update/delete persistence
+PASS MODEL GatePassIn insert/read/update/delete persistence
+PASS MODEL GatePassInDetail insert/read/update/delete persistence
+PASS MODEL CancelOrder insert/read/update/delete persistence
+PASS MODEL BillVerify insert/read/update/delete persistence
+PASS MODEL User insert/read/update/delete persistence
+PASS BUSINESS Department create
+PASS BUSINESS Department update persistence
+PASS BUSINESS SubHead create
+PASS BUSINESS SubHead update persistence
+PASS BUSINESS UOM create
+PASS BUSINESS UOM update persistence
+PASS BUSINESS State create
+PASS BUSINESS State update persistence
+PASS BUSINESS StoreMaster create
+PASS BUSINESS StoreMaster update persistence
+PASS BUSINESS ProductHead create
+PASS BUSINESS ProductHead update persistence
+PASS BUSINESS Supplier create
+PASS BUSINESS Supplier update persistence
+PASS BUSINESS PartyMaster create
+PASS BUSINESS PartyMaster update persistence
+PASS BUSINESS PurchaseType create
+PASS BUSINESS PurchaseType update persistence
+PASS BUSINESS ItemMaster create
+PASS BUSINESS ItemMaster update persistence
+PASS BUSINESS Item create
+PASS BUSINESS Item update persistence
+PASS BUSINESS PurchaseOrder create
+PASS BUSINESS PurchaseOrder update persistence
+PASS BUSINESS GateInward create
+PASS BUSINESS GateInward update persistence
+PASS BUSINESS Receipt create
+PASS BUSINESS Receipt update persistence
+PASS BUSINESS BillEntry create
+PASS BUSINESS BillEntry update persistence
+PASS BUSINESS BillVerify create
+PASS BUSINESS BillVerify update persistence
+PASS BUSINESS ItemIssue create
+PASS BUSINESS ItemIssue update persistence
+PASS BUSINESS GatePassOut create
+PASS BUSINESS GatePassOut update persistence
+PASS BUSINESS GatePassIn create
+PASS BUSINESS GatePassIn update persistence
+PASS BUSINESS CancelOrder create
+PASS BUSINESS CancelOrder update persistence
+PASS BUSINESS CancelOrder delete persistence
+PASS BUSINESS GatePassIn delete persistence
+PASS BUSINESS GatePassOut delete persistence
+PASS BUSINESS ItemIssue delete persistence
+PASS BUSINESS BillVerify delete persistence
+PASS BUSINESS BillEntry delete persistence
+PASS BUSINESS Receipt delete persistence
+PASS BUSINESS GateInward delete persistence
+PASS BUSINESS PurchaseOrder delete persistence
+PASS BUSINESS Item delete persistence
+PASS BUSINESS ItemMaster delete persistence
+PASS BUSINESS PurchaseType delete persistence
+PASS BUSINESS PartyMaster delete persistence
+PASS BUSINESS Supplier delete persistence
+PASS BUSINESS ProductHead delete persistence
+PASS BUSINESS StoreMaster delete persistence
+PASS BUSINESS State delete persistence
+PASS BUSINESS UOM delete persistence
+PASS BUSINESS SubHead delete persistence
+PASS BUSINESS Department delete persistence
+PASS REGRESSION receipt and bill dropdowns distinguish suppliers with identical names
+PASS REGRESSION item updates preserve exact string codes and stock
+PASS ROUTE POST /api/auth/login rejects invalid/missing record
+PASS ROUTE PUT /api/auth/change-password rejects invalid/missing record
+PASS ROUTE POST /api/auth/register rejects invalid/missing record
+PASS ROUTE POST /api/departments/ rejects invalid/missing record
+PASS ROUTE PUT /api/departments/:dept_id rejects invalid/missing record
+PASS ROUTE DELETE /api/departments/:dept_id rejects invalid/missing record
+PASS ROUTE POST /api/suppliers/ rejects invalid/missing record
+PASS ROUTE PUT /api/suppliers/ rejects invalid/missing record
+PASS ROUTE DELETE /api/suppliers/ rejects invalid/missing record
+PASS ROUTE PUT /api/suppliers/:partyCode rejects invalid/missing record
+PASS ROUTE DELETE /api/suppliers/:partyCode rejects invalid/missing record
+PASS ROUTE POST /api/stores/ rejects invalid/missing record
+PASS ROUTE PUT /api/stores/ rejects invalid/missing record
+PASS ROUTE DELETE /api/stores/ rejects invalid/missing record
+PASS ROUTE PUT /api/stores/:id rejects invalid/missing record
+PASS ROUTE DELETE /api/stores/:id rejects invalid/missing record
+PASS ROUTE POST /api/product-heads/ rejects invalid/missing record
+PASS ROUTE PUT /api/product-heads/ rejects invalid/missing record
+PASS ROUTE DELETE /api/product-heads/ rejects invalid/missing record
+PASS ROUTE PUT /api/product-heads/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/product-heads/:code rejects invalid/missing record
+PASS ROUTE POST /api/sub-heads/ rejects invalid/missing record
+PASS ROUTE PUT /api/sub-heads/ rejects invalid/missing record
+PASS ROUTE DELETE /api/sub-heads/ rejects invalid/missing record
+PASS ROUTE PUT /api/sub-heads/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/sub-heads/:code rejects invalid/missing record
+PASS ROUTE POST /api/items/ rejects invalid/missing record
+PASS ROUTE PUT /api/items/ rejects invalid/missing record
+PASS ROUTE DELETE /api/items/ rejects invalid/missing record
+PASS ROUTE PUT /api/items/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/items/:code rejects invalid/missing record
+PASS ROUTE POST /api/items/bulk-upload rejects invalid/missing record
+PASS ROUTE POST /api/uoms/ rejects invalid/missing record
+PASS ROUTE PUT /api/uoms/:id rejects invalid/missing record
+PASS ROUTE DELETE /api/uoms/:id rejects invalid/missing record
+PASS ROUTE POST /api/item-masters/generate-code rejects invalid/missing record
+PASS ROUTE POST /api/item-masters/ rejects invalid/missing record
+PASS ROUTE PUT /api/item-masters/ rejects invalid/missing record
+PASS ROUTE DELETE /api/item-masters/ rejects invalid/missing record
+PASS ROUTE PUT /api/item-masters/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/item-masters/:code rejects invalid/missing record
+PASS ROUTE POST /api/parties/ rejects invalid/missing record
+PASS ROUTE PUT /api/parties/ rejects invalid/missing record
+PASS ROUTE DELETE /api/parties/ rejects invalid/missing record
+PASS ROUTE PUT /api/parties/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/parties/:code rejects invalid/missing record
+PASS ROUTE POST /api/states/ rejects invalid/missing record
+PASS ROUTE PUT /api/states/ rejects invalid/missing record
+PASS ROUTE DELETE /api/states/ rejects invalid/missing record
+PASS ROUTE PUT /api/states/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/states/:code rejects invalid/missing record
+PASS ROUTE POST /api/purchase-orders/ rejects invalid/missing record
+Error creating purchase order: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createPurchaseOrder [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\purchaseOrderController.js:271:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:38
+    at check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:41)
+    at main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS ROUTE PUT /api/purchase-orders/:orderNo rejects invalid/missing record
+PASS ROUTE DELETE /api/purchase-orders/:orderNo rejects invalid/missing record
+Error creating gate inward: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGateInward [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gateInwardController.js:460:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:38
+    at check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:41)
+    at main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS ROUTE POST /api/gate-inwards/ rejects invalid/missing record
+PASS ROUTE PUT /api/gate-inwards/:inwardNo rejects invalid/missing record
+PASS ROUTE DELETE /api/gate-inwards/delete-inward-chain/:inwardNo rejects invalid/missing record
+PASS ROUTE DELETE /api/gate-inwards/:inwardNo rejects invalid/missing record
+Error creating receipt: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createReceipt [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:774:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:38
+    at check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:41)
+    at main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS ROUTE POST /api/receipts/ rejects invalid/missing record
+PASS ROUTE PUT /api/receipts/:grnNo rejects invalid/missing record
+PASS ROUTE DELETE /api/receipts/:grnNo rejects invalid/missing record
+Error creating bill entry: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createBillEntry [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\billEntryController.js:514:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:38
+    at check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:41)
+    at main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS ROUTE POST /api/bill-entries/ rejects invalid/missing record
+PASS ROUTE PUT /api/bill-entries/:voucherNo rejects invalid/missing record
+PASS ROUTE DELETE /api/bill-entries/delete-chain/:voucherNo rejects invalid/missing record
+PASS ROUTE DELETE /api/bill-entries/:voucherNo rejects invalid/missing record
+Error creating item issue: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createItemIssue [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\itemIssueController.js:189:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:7
+    at async check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:35)
+    at async main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:6) {
+  statusCode: 400
+}
+PASS ROUTE POST /api/item-issues/ rejects invalid/missing record
+PASS ROUTE PUT /api/item-issues/:issueNo rejects invalid/missing record
+PASS ROUTE DELETE /api/item-issues/:issueNo rejects invalid/missing record
+Error creating gate pass out: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassOut [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassOutController.js:135:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:38
+    at check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:41)
+    at main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS ROUTE POST /api/gate-pass-outs/ rejects invalid/missing record
+PASS ROUTE PUT /api/gate-pass-outs/:gpNo rejects invalid/missing record
+PASS ROUTE DELETE /api/gate-pass-outs/:gpNo rejects invalid/missing record
+Error creating gate pass in: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.createGatePassIn [as handle] (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\gatePassInController.js:108:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:104:38
+    at check (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:9:41)
+    at main (D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\operation-audit.cjs:99:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS ROUTE POST /api/gate-pass-ins/ rejects invalid/missing record
+PASS ROUTE PUT /api/gate-pass-ins/:inNo rejects invalid/missing record
+PASS ROUTE DELETE /api/gate-pass-ins/:inNo rejects invalid/missing record
+PASS ROUTE POST /api/cancel-orders/ rejects invalid/missing record
+PASS ROUTE PUT /api/cancel-orders/:cancelNo rejects invalid/missing record
+PASS ROUTE DELETE /api/cancel-orders/:cancelNo rejects invalid/missing record
+PASS ROUTE POST /api/bill-verify/ rejects invalid/missing record
+PASS ROUTE PUT /api/bill-verify/:verifyNo rejects invalid/missing record
+PASS ROUTE DELETE /api/bill-verify/:verifyNo rejects invalid/missing record
+PASS ROUTE POST /api/purchase-types/ rejects invalid/missing record
+PASS ROUTE PUT /api/purchase-types/:code rejects invalid/missing record
+PASS ROUTE DELETE /api/purchase-types/:code rejects invalid/missing record
+173 passed; 0 failed. Disposable database removed.

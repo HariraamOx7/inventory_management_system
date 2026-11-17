@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function PageHeader({
   title,
-  subtitle,
   icon: Icon,
   backPath,
   backText,

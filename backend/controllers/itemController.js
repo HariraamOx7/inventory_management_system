@@ -1,8 +1,49 @@
+const preventReferencedDeletion = require('../services/preventReferencedDeletion');
+const errorStatus = require('../services/errorStatus');
 const Item = require('../models/Item');
 const Department = require('../models/Department');
 const SubHead = require('../models/SubHead');
 const { Op } = require('sequelize');
 const sequelize = require('../config/db');
+
+const ITEM_CODE_RETRY_LIMIT = 5;
+
+const getDepartmentAbbreviation = (departmentName) => {
+    const normalizedName = String(departmentName || '').replace(/[^a-z0-9]/gi, '');
+    const abbreviation = normalizedName.slice(0, 2);
+
+    return abbreviation.charAt(0).toUpperCase() + abbreviation.slice(1).toLowerCase();
+};
+
+const getNextItemCode = async (department, subHeadCode) => {
+    const [rows] = await sequelize.query(`
+        SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(ItemCode, '/', -1) AS UNSIGNED)), 0) AS maxSequence
+        FROM items
+        WHERE ItemCode REGEXP '^[^/]+/[^/]+/[^/]+/[0-9]+$'
+    `);
+    const nextSequence = Number(rows[0]?.maxSequence || 0) + 1;
+    const departmentCode = String(department.dept_id).padStart(2, '0');
+    const normalizedSubHeadCode = String(subHeadCode).padStart(2, '0');
+    const abbreviation = getDepartmentAbbreviation(department.dept_name);
+
+    return `${departmentCode}/${normalizedSubHeadCode}/${abbreviation}/${String(nextSequence).padStart(4, '0')}`;
+};
+
+const createItemWithGeneratedCode = async (itemData, department, subHeadCode) => {
+    for (let attempt = 0; attempt < ITEM_CODE_RETRY_LIMIT; attempt += 1) {
+        const ItemCode = await getNextItemCode(department, subHeadCode);
+
+        try {
+            return await Item.create({ ItemCode, ...itemData });
+        } catch (error) {
+            if (error.name !== 'SequelizeUniqueConstraintError' || attempt === ITEM_CODE_RETRY_LIMIT - 1) {
+                throw error;
+            }
+        }
+    }
+
+    throw new Error('Unable to generate a unique item code');
+};
 
 const getQuantityValue = (quantity, openingQty) => {
     const resolvedQuantity = quantity !== undefined && quantity !== null && quantity !== ''
@@ -102,7 +143,7 @@ exports.getItems = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching items:', error);
-        res.status(500).json({ 
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error fetching items',
             error: error.message 
@@ -144,7 +185,7 @@ exports.addItem = async (req, res) => {
 
         const resolvedQuantity = getQuantityValue(Quantity, OpeningQty);
 
-        const newItem = await Item.create({ 
+        const newItem = await createItemWithGeneratedCode({
             ItemName: ItemName.trim(),
             Category: Category ? Category.trim() : null,
             Commodity: Commodity ? Commodity.trim() : null,
@@ -159,7 +200,7 @@ exports.addItem = async (req, res) => {
             HSNCode: HSNCode ? HSNCode.trim() : null,
             SubHeadCode: SubHeadCode,
             UOM: UOM ? UOM.trim() : null
-        });
+        }, department, SubHeadCode);
         
         res.status(201).json({
             success: true,
@@ -168,7 +209,15 @@ exports.addItem = async (req, res) => {
         });
     } catch (error) {
         console.error('Error adding item:', error);
-        res.status(500).json({ 
+
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(409).json({
+                success: false,
+                message: 'An item with the generated code already exists. Please try again.'
+            });
+        }
+
+        res.status(errorStatus(error)).json({
             success: false, 
             message: 'Error adding item',
             error: error.message 
@@ -178,17 +227,18 @@ exports.addItem = async (req, res) => {
 
 exports.updateItem = async (req, res) => {
     try {
-        const { code } = req.params;
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) {
+            return res.status(400).json({ success: false, message: 'A valid item code is required' });
+        }
         const {
             ItemName, Category, Commodity, UnitRate, MinStockLevel,
-            Quantity, OpeningQty, MaxStockLevel, OpenValue, Location, DepartmentId,
+            MaxStockLevel, OpenValue, Location, DepartmentId,
             HSNCode, SubHeadCode, UOM
         } = req.body;
 
-        // Convert code to integer
-        const itemCode = parseInt(code);
-        
-        const item = await Item.findByPk(itemCode);
+        // ItemCode is a string: retain prefixes and leading zeroes.
+        const item = await Item.findByPk(code);
         if (!item) {
             return res.status(404).json({
                 success: false,
@@ -196,16 +246,14 @@ exports.updateItem = async (req, res) => {
             });
         }
 
-        const resolvedQuantity = getQuantityValue(Quantity, OpeningQty, item.Quantity);
-
+        // Only update non-stock fields — preserve OpeningQty and Quantity
+        // so that issue/receipt deductions are not accidentally overwritten
         await item.update({ 
             ItemName: ItemName ? ItemName.trim() : item.ItemName,
             Category: Category ? Category.trim() : null,
             Commodity: Commodity ? Commodity.trim() : null,
             UnitRate: UnitRate || 0,
             MinStockLevel: MinStockLevel || 0,
-            OpeningQty: resolvedQuantity,
-            Quantity: resolvedQuantity,
             MaxStockLevel: MaxStockLevel || 0,
             OpenValue: OpenValue || 0,
             Location: Location ? Location.trim() : null,
@@ -221,7 +269,7 @@ exports.updateItem = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating item:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error updating item',
             error: error.message
@@ -231,16 +279,20 @@ exports.updateItem = async (req, res) => {
 
 exports.deleteItem = async (req, res) => {
     try {
-        const { code } = req.params;
-        const decodedCode = decodeURIComponent(code);
+        const code = req.query?.code ?? req.params.code;
+        if (typeof code !== 'string' || !code.trim()) {
+            return res.status(400).json({ success: false, message: 'A valid item code is required' });
+        }
         
-        const item = await Item.findByPk(decodedCode);
+        const item = await Item.findByPk(code);
         if (!item) {
             return res.status(404).json({
                 success: false,
                 message: 'Item not found'
             });
         }
+
+        await preventReferencedDeletion('Item', item);
 
         await item.destroy();
         res.json({
@@ -249,7 +301,7 @@ exports.deleteItem = async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting item:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error deleting item',
             error: error.message
@@ -311,7 +363,7 @@ exports.bulkUploadItems = async (req, res) => {
                 }
 
                 // Create item
-                await Item.create({
+                await createItemWithGeneratedCode({
                     ItemName: ItemName.trim(),
                     Category: item.Category ? item.Category.trim() : null,
                     Commodity: item.Commodity ? item.Commodity.trim() : null,
@@ -326,7 +378,7 @@ exports.bulkUploadItems = async (req, res) => {
                     HSNCode: item.HSNCode ? item.HSNCode.trim() : null,
                     SubHeadCode: SubHeadCode,
                     UOM: item.UOM ? item.UOM.trim() : null
-                });
+                }, department, SubHeadCode);
 
                 uploaded++;
             } catch (error) {
@@ -348,7 +400,7 @@ exports.bulkUploadItems = async (req, res) => {
         });
     } catch (error) {
         console.error('Error in bulk upload:', error);
-        res.status(500).json({
+        res.status(errorStatus(error)).json({
             success: false,
             message: 'Error processing bulk upload',
             error: error.message

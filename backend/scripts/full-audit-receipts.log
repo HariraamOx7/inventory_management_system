@@ -1,0 +1,13 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+PASS create/list preserves PO, product, quantity, and both batches
+PASS header-only receipt recovers all batches and persists on save
+Error updating receipt: Error: At least one valid item row is required
+    at fail (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:2:17)
+    at validateTransactionItems (D:\PROJECT\shop_new_ui\shop\Stores\backend\services\validateTransactionItems.js:12:52)
+    at exports.updateReceipt (D:\PROJECT\shop_new_ui\shop\Stores\backend\controllers\receiptController.js:920:5)
+    at D:\PROJECT\shop_new_ui\shop\Stores\backend\scripts\receipt-roundtrip.test.cjs:64:22
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400
+}
+PASS empty update cannot remove saved products
+PASS failed detail writes roll back create and update
